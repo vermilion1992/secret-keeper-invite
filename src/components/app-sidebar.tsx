@@ -38,16 +38,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
-      <div className="flex items-center justify-between px-3 py-3">
+      <div className="flex items-center justify-center px-3 py-6">
         <div className="flex items-center gap-2">
           <img 
             src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
             alt="BotForge Logo" 
-            className="h-20 w-auto object-contain"
+            className={state === 'collapsed' ? 'h-8 w-auto' : 'h-24 w-auto'} 
           />
         </div>
-        {/* Fallback trigger visible in mini state */}
-        <SidebarTrigger className="m-1" />
       </div>
 
       <SidebarContent>
