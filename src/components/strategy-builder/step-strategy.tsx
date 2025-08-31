@@ -591,18 +591,37 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
 
-      {/* Centered Modal with Animation and Blur */}
+      {/* Centered Modal with Animation, Blur and Particles */}
       {expandedItem && createPortal(
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(8px)',
+            overflow: 'hidden'
           }}
           onClick={closeModal}
         >
+          {/* Floating Particles */}
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute opacity-20"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                width: `${4 + Math.random() * 8}px`,
+                height: `${4 + Math.random() * 8}px`,
+                background: 'linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)))',
+                borderRadius: '50%',
+                animation: `float-particle-${i % 3} ${8 + Math.random() * 6}s infinite ease-in-out`,
+                animationDelay: `${Math.random() * 4}s`
+              }}
+            />
+          ))}
+          
           <div
-            className="bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in"
+            className="bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in relative z-10"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
