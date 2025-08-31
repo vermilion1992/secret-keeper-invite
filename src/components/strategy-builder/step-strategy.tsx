@@ -604,23 +604,24 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         >
           {/* Constellation Background Effect */}
           <div className="absolute inset-0 overflow-hidden">
-            <svg className="absolute inset-0 w-full h-full opacity-40">
+            <svg className="absolute inset-0 w-full h-full opacity-70 pointer-events-none">
               {/* Generate constellation stars */}
-              {[...Array(15)].map((_, i) => {
+              {[...Array(40)].map((_, i) => {
                 const x = Math.random() * 100;
                 const y = Math.random() * 100;
-                const size = 1 + Math.random() * 2;
+                const size = 1.5 + Math.random() * 2.5;
                 return (
                   <circle
                     key={`star-${i}`}
                     cx={`${x}%`}
                     cy={`${y}%`}
                     r={size}
-                    fill="hsl(var(--primary))"
+                    fill="hsl(0 0% 100% / 0.9)"
                     className="animate-pulse"
                     style={{
                       animationDelay: `${Math.random() * 4}s`,
-                      animationDuration: `${3 + Math.random() * 2}s`
+                      animationDuration: `${2 + Math.random() * 2}s`,
+                      filter: 'drop-shadow(0 0 6px hsl(var(--primary)))'
                     }}
                   />
                 );
