@@ -69,6 +69,11 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Glassmorphism */
+    --glass-bg: 0 0% 100% / 0.8;
+    --glass-border: 240 30% 85% / 0.3;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   }
 
   .dark {
@@ -109,6 +114,11 @@ All colors MUST be HSL.
     --chart-3: 215 15% 70%;  /* Grey for Break-even */
     --chart-4: 35 85% 65%;   /* Orange for Small Losses */
     --chart-5: 0 85% 60%;    /* Red for Big Losses */
+
+    /* Glassmorphism */
+    --glass-bg: 240 20% 12% / 0.8;
+    --glass-border: 240 30% 30% / 0.2;
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 
     --border: 240 25% 18% / 0.3;
     --input: 240 25% 18% / 0.3;
