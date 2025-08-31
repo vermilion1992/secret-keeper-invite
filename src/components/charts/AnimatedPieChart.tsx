@@ -78,7 +78,7 @@ export function AnimatedPieChart({ data, title, subtitle, icon: Icon }: Animated
         </CardHeader>
         <CardContent className="pt-2">
           <motion.div
-            className="h-[300px]"
+            className="h-[320px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
