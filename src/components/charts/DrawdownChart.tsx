@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { LucideIcon } from 'lucide-react';
 
 interface DrawdownData {
@@ -36,27 +37,29 @@ export function DrawdownChart({ data, title, subtitle, icon: Icon }: DrawdownCha
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6 }}
     >
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50">
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50 h-full">
         <CardHeader className="pb-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <CardTitle className="flex items-center gap-3">
-              {Icon && (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/10 to-orange-500/20 flex items-center justify-center shadow-lg">
-                  <Icon className="w-5 h-5 text-red-500" />
-                </div>
-              )}
-              <div>
-                <div className="text-lg font-semibold">{title}</div>
-                {subtitle && (
-                  <div className="text-sm text-muted-foreground mt-1">{subtitle}</div>
-                )}
+          <div className="flex items-center gap-3">
+            {Icon && (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/10 to-orange-500/20 flex items-center justify-center shadow-lg">
+                <Icon className="w-5 h-5 text-red-500" />
               </div>
-            </CardTitle>
-          </motion.div>
+            )}
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+              {subtitle && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{subtitle}</p>
+              )}
+            </div>
+            <div className="text-right shrink-0">
+              <Badge variant="destructive" className="text-xs whitespace-nowrap">
+                Max: -8.2%
+              </Badge>
+              <p className="text-sm text-muted-foreground mt-1">
+                Drawdown
+              </p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <motion.div

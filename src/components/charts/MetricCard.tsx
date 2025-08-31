@@ -38,7 +38,7 @@ export function MetricCard({
       }}
       whileTap={{ scale: 0.98 }}
     >
-      <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+      <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group h-full">
         {/* Animated background gradient */}
         <motion.div 
           className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
@@ -59,7 +59,7 @@ export function MetricCard({
           }}
         />
 
-        <CardContent className="p-6 relative">
+        <CardContent className="p-6 relative h-full flex flex-col">
           <div className="flex items-start justify-between mb-4">
             <motion.div 
               className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300`}
@@ -82,6 +82,7 @@ export function MetricCard({
             </motion.div>
           </div>
           <motion.div
+            className="flex-1"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 + 0.5 }}
