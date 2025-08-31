@@ -6,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart, PieChart, TrendingDown as DrawdownIcon, GitCompare, Maximize2, Minimize2 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart, PieChart, TrendingDown as DrawdownIcon, GitCompare, Maximize2, Minimize2, Info } from 'lucide-react';
 import { AnimatedLineChart } from '@/components/charts/AnimatedLineChart';
 import { AnimatedBarChart } from '@/components/charts/AnimatedBarChart';
 import { AnimatedPieChart } from '@/components/charts/AnimatedPieChart';
@@ -249,6 +251,144 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Advanced Stats Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.0 }}
+      >
+        <TooltipProvider>
+          <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50">
+            <CardContent className="p-6">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="advanced-stats" className="border-none">
+                  <AccordionTrigger className="text-lg font-semibold hover:no-underline py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-6 bg-gradient-to-b from-primary to-primary/60 rounded-full" />
+                      Advanced Statistics
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {[
+                        {
+                          label: "Biggest Winner",
+                          value: "+$2,450 (18.3%)",
+                          tooltip: "The most profitable single trade in both dollar amount and percentage"
+                        },
+                        {
+                          label: "Biggest Loser", 
+                          value: "-$890 (6.2%)",
+                          tooltip: "The largest loss on a single trade in both dollar amount and percentage"
+                        },
+                        {
+                          label: "Average Trade Duration",
+                          value: "2.4 days",
+                          tooltip: "Average time a position is held from entry to exit"
+                        },
+                        {
+                          label: "Longest Trade Duration",
+                          value: "12.3 days",
+                          tooltip: "The maximum time any single position was held"
+                        },
+                        {
+                          label: "Shortest Trade Duration",
+                          value: "0.3 days",
+                          tooltip: "The minimum time any single position was held"
+                        },
+                        {
+                          label: "Long vs Short Breakdown",
+                          value: "68% Long / 32% Short",
+                          tooltip: "Percentage distribution between long and short positions"
+                        },
+                        {
+                          label: "Win Rate (Longs)",
+                          value: "71.2%",
+                          tooltip: "Percentage of profitable long positions"
+                        },
+                        {
+                          label: "Win Rate (Shorts)",
+                          value: "58.9%",
+                          tooltip: "Percentage of profitable short positions"
+                        },
+                        {
+                          label: "Profit Factor",
+                          value: "1.85",
+                          tooltip: "Gross profit divided by gross loss. Values > 1.0 indicate profitability"
+                        },
+                        {
+                          label: "Expectancy",
+                          value: "$45.20",
+                          tooltip: "Average expected return per trade based on historical performance"
+                        },
+                        {
+                          label: "Kelly %",
+                          value: "12.3%",
+                          tooltip: "Optimal position size according to Kelly Criterion for risk management"
+                        },
+                        {
+                          label: "Trade Frequency",
+                          value: "13 per month",
+                          tooltip: "Average number of trades executed per time period"
+                        },
+                        {
+                          label: "Equity Peak vs Valley",
+                          value: "$13,200 / $9,850",
+                          tooltip: "Highest and lowest portfolio values during the backtest period"
+                        },
+                        {
+                          label: "Max Consecutive Wins",
+                          value: "8 trades",
+                          tooltip: "Longest streak of consecutive profitable trades"
+                        },
+                        {
+                          label: "Max Consecutive Losses",
+                          value: "4 trades",
+                          tooltip: "Longest streak of consecutive losing trades"
+                        },
+                        {
+                          label: "Recovery Factor",
+                          value: "2.87",
+                          tooltip: "Net profit divided by maximum drawdown. Higher values indicate better recovery"
+                        },
+                        {
+                          label: "Average Risk:Reward Ratio",
+                          value: "1:1.9",
+                          tooltip: "Average ratio of risk taken to potential reward per trade"
+                        }
+                      ].map((stat, index) => (
+                        <motion.div
+                          key={stat.label}
+                          className="flex items-start justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.1 + index * 0.05 }}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-foreground">{stat.label}</span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="w-3 h-3 text-muted-foreground hover:text-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="max-w-xs">{stat.tooltip}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <p className="text-lg font-semibold text-primary">{stat.value}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
       </motion.div>
 
       {/* Chart Section */}
