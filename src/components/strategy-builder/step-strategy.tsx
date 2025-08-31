@@ -724,33 +724,17 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         </TabsList>
         
         <TabsContent value="strategies" className="space-y-4">
-          <ScrollArea 
-            className="h-[420px] pr-4" 
-            style={{ 
-              scrollbarWidth: 'auto',
-              scrollbarColor: 'hsl(var(--primary)) hsl(var(--background))'
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {accessibleStrategies.map((strategy) => renderStrategyTile(strategy))}
-              {lockedStrategies.map((strategy) => renderStrategyTile(strategy, true))}
-            </div>
-          </ScrollArea>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {accessibleStrategies.map((strategy) => renderStrategyTile(strategy))}
+            {lockedStrategies.map((strategy) => renderStrategyTile(strategy, true))}
+          </div>
         </TabsContent>
 
         <TabsContent value="indicators" className="space-y-4">
-          <ScrollArea 
-            className="h-[420px] pr-4"
-            style={{ 
-              scrollbarWidth: 'auto',
-              scrollbarColor: 'hsl(var(--primary)) hsl(var(--background))'
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {accessibleIndicators.map((indicator) => renderIndicatorTile(indicator))}
-              {lockedIndicators.map((indicator) => renderIndicatorTile(indicator, true))}
-            </div>
-          </ScrollArea>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {accessibleIndicators.map((indicator) => renderIndicatorTile(indicator))}
+            {lockedIndicators.map((indicator) => renderIndicatorTile(indicator, true))}
+          </div>
         </TabsContent>
       </Tabs>
 
