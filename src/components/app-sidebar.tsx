@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CurrencyDollarIcon, 
   ChatBubbleLeftRightIcon, 
@@ -38,14 +39,28 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
-      <div className="flex items-center justify-center px-3 py-6">
-        <div className="flex items-center gap-2">
-          <img 
-            src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
-            alt="BotForge Logo" 
-            className={state === 'collapsed' ? 'h-8 w-auto' : 'h-24 w-auto'} 
-          />
-        </div>
+      <div className="flex items-center justify-center px-3 py-6 min-h-[96px]">
+        <AnimatePresence mode="wait">
+          {state !== 'collapsed' && (
+            <motion.div
+              key="logo"
+              initial={{ opacity: 0, scale: 0.8, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: -10 }}
+              transition={{ 
+                duration: 0.3,
+                ease: "easeOut"
+              }}
+              className="flex items-center gap-2"
+            >
+              <img 
+                src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
+                alt="BotForge Logo" 
+                className="h-24 w-auto" 
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <SidebarContent>
