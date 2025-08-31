@@ -510,7 +510,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 </div>
               </div>
             </div>
-            <Badge variant="outline" className="text-xs w-fit">{strategy.tier}</Badge>
+            <Badge variant="default" className="text-xs font-semibold uppercase w-fit">{strategy.tier} TIER</Badge>
           </CardHeader>
           
           <CardContent className="pt-0 space-y-2">
@@ -570,7 +570,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 </div>
               </div>
             </div>
-            <Badge variant="outline" className="text-xs w-fit">{indicator.tier}</Badge>
+            <Badge variant="default" className="text-xs font-semibold uppercase w-fit">{indicator.tier} TIER</Badge>
           </CardHeader>
           
           <CardContent className="pt-0 space-y-2">
