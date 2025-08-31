@@ -599,7 +599,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
       {/* Modal Overlay */}
       {expandedItem && (
         <div 
-          className="fixed z-[9999] flex items-center justify-center p-4"
+          className="fixed z-[9999] flex justify-center p-4"
           style={{ 
             position: 'fixed',
             top: 0,
@@ -607,7 +607,8 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
             right: 0,
             bottom: 0,
             margin: 0,
-            padding: '1rem'
+            padding: '1rem',
+            paddingTop: '120px' // Position at Dashboard button height
           }}
         >
           {/* Backdrop */}
