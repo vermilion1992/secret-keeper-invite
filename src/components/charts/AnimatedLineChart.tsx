@@ -67,37 +67,37 @@ export function AnimatedLineChart({
       transition={{ duration: 0.5 }}
     >
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50 h-full">
-        <CardHeader className="pb-4 min-h-[76px]">
+        <CardHeader className="pb-2">
           <div className="flex items-center gap-3">
             {Icon && (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
                 <Icon className="w-5 h-5 text-white" />
               </div>
             )}
-            <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-              {subtitle && (
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{subtitle}</p>
-              )}
-            </div>
-            <div className="text-right shrink-0">
-              <div className="flex items-center gap-2 justify-end">
-                {isPositive ? (
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500" />
-                )}
-                <Badge variant={isPositive ? "default" : "destructive"} className="text-xs whitespace-nowrap">
-                  {isPositive ? '+' : ''}{changePercent.toFixed(1)}%
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                ${currentValue.toLocaleString()}
-              </p>
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
             </div>
           </div>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground mt-2 ml-13">{subtitle}</p>
+          )}
+          <div className="flex items-center justify-between mt-2 ml-13">
+            <div className="flex items-center gap-2">
+              {isPositive ? (
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
+              ) : (
+                <TrendingDown className="w-4 h-4 text-red-500" />
+              )}
+              <Badge variant={isPositive ? "default" : "destructive"} className="text-xs">
+                {isPositive ? '+' : ''}{changePercent.toFixed(1)}%
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              ${currentValue.toLocaleString()}
+            </p>
+          </div>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-2">
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
