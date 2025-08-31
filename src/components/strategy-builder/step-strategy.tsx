@@ -599,13 +599,16 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
       {/* Modal Overlay */}
       {expandedItem && (
         <div 
-          className="fixed z-[9999] bg-background/80 backdrop-blur-sm animate-fade-in"
+          className="animate-fade-in"
           style={{
             position: 'fixed',
             top: 0,
             left: 0,
-            right: 0,
-            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -616,7 +619,12 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           {/* Modal Content */}
           <div 
             className="w-full max-w-2xl animate-scale-in"
-            style={{ maxHeight: '90vh' }}
+            style={{ 
+              maxHeight: '90vh',
+              backgroundColor: 'hsl(var(--card))',
+              borderRadius: '8px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <Card className="animate-scale-in border-primary bg-card shadow-2xl overflow-y-auto" style={{ maxHeight: '90vh' }}>
