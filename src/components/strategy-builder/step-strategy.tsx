@@ -605,7 +605,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           {/* Aurora Background Effect */}
           <div className="absolute inset-0 overflow-hidden">
             <div 
-              className="absolute inset-0 opacity-30"
+              className="absolute inset-0 opacity-40"
               style={{
                 background: `
                   linear-gradient(45deg, 
@@ -622,7 +622,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
               }}
             />
             <div 
-              className="absolute inset-0 opacity-25"
+              className="absolute inset-0 opacity-35"
               style={{
                 background: `
                   linear-gradient(-45deg, 
@@ -638,7 +638,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
               }}
             />
             <div 
-              className="absolute inset-0 opacity-20"
+              className="absolute inset-0 opacity-30"
               style={{
                 background: `
                   radial-gradient(ellipse at center, 
