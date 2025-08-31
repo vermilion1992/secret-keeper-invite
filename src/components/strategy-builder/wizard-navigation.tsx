@@ -17,13 +17,12 @@ export function WizardNavigation({ steps, currentStep, onStepClick }: WizardNavi
           <div key={step.step} className="flex items-center gap-3">
             <button
               onClick={() => onStepClick(step.step)}
-              disabled={!step.isComplete && step.step !== currentStep}
-              className={`flex items-center gap-3 w-full p-3 rounded-lg transition-all ${
+              className={`flex items-center gap-3 w-full p-3 rounded-lg transition-all hover:bg-accent/50 ${
                 step.isActive
                   ? 'bg-primary/20 border border-primary/30'
                   : step.isComplete
                   ? 'bg-success/10 border border-success/20 hover:bg-success/20'
-                  : 'bg-muted/30 border border-muted/30 opacity-60 cursor-not-allowed'
+                  : 'bg-muted/20 border border-muted/30'
               }`}
             >
               <div className="flex-shrink-0">
