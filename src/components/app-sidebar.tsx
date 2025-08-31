@@ -44,20 +44,68 @@ export function AppSidebar() {
           {state !== 'collapsed' && (
             <motion.div
               key="logo"
-              initial={{ opacity: 0, scale: 0.8, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: -10 }}
-              transition={{ 
-                duration: 0.3,
-                ease: "easeOut"
+              initial={{ 
+                opacity: 0, 
+                scale: 0.5, 
+                rotateY: -45,
+                rotateX: 15,
+                y: 20,
+                filter: "blur(8px)"
               }}
-              className="flex items-center gap-2"
+              animate={{ 
+                opacity: 1, 
+                scale: 1, 
+                rotateY: 0,
+                rotateX: 0,
+                y: 0,
+                filter: "blur(0px)"
+              }}
+              exit={{ 
+                opacity: 0, 
+                scale: 0.7, 
+                rotateY: 45,
+                rotateX: -10,
+                y: -15,
+                filter: "blur(4px)"
+              }}
+              transition={{ 
+                type: "spring",
+                damping: 20,
+                stiffness: 300,
+                mass: 0.8,
+                opacity: { duration: 0.3 },
+                filter: { duration: 0.4 }
+              }}
+              className="flex items-center gap-2 perspective-1000"
+              style={{ transformStyle: "preserve-3d" }}
             >
-              <img 
-                src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
-                alt="BotForge Logo" 
-                className="h-24 w-auto" 
-              />
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ 
+                  delay: 0.1,
+                  type: "spring",
+                  damping: 15,
+                  stiffness: 400
+                }}
+                className="relative"
+              >
+                <motion.img 
+                  src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
+                  alt="BotForge Logo" 
+                  className="h-24 w-auto drop-shadow-2xl"
+                  initial={{ filter: "brightness(0.7)" }}
+                  animate={{ filter: "brightness(1) drop-shadow(0 0 20px rgba(138, 43, 226, 0.3))" }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                />
+                {/* Subtle glow effect */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 rounded-lg blur-xl"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
