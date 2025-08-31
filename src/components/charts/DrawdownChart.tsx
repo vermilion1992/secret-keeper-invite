@@ -37,29 +37,30 @@ export function DrawdownChart({ data, title, subtitle, icon: Icon }: DrawdownCha
       transition={{ duration: 0.6 }}
     >
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50">
-        <CardHeader>
+        <CardHeader className="pb-4">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <CardTitle className="flex items-center gap-2">
-              <motion.div
-                className="p-2 rounded-lg bg-gradient-to-br from-red-500/10 to-orange-500/20"
-                whileHover={{ scale: 1.1 }}
-              >
-                <Icon className="w-5 h-5 text-red-500" />
-              </motion.div>
+            <CardTitle className="flex items-center gap-3">
+              {Icon && (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/10 to-orange-500/20 flex items-center justify-center shadow-lg">
+                  <Icon className="w-5 h-5 text-red-500" />
+                </div>
+              )}
               <div>
                 <div className="text-lg font-semibold">{title}</div>
-                <div className="text-sm text-muted-foreground font-normal">{subtitle}</div>
+                {subtitle && (
+                  <div className="text-sm text-muted-foreground mt-1">{subtitle}</div>
+                )}
               </div>
             </CardTitle>
           </motion.div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <motion.div
-            className="h-80"
+            className="h-[320px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}

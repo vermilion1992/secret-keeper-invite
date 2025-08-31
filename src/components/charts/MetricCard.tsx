@@ -86,9 +86,9 @@ export function MetricCard({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 + 0.5 }}
           >
-            <p className="text-sm text-muted-foreground font-medium mb-1">{label}</p>
+            <p className="text-sm text-muted-foreground font-medium mb-1 leading-tight">{label}</p>
             <motion.p 
-              className="text-2xl font-bold mb-1"
+              className="text-2xl font-bold mb-1 leading-tight"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ 
@@ -99,7 +99,7 @@ export function MetricCard({
             >
               {value}
             </motion.p>
-            <p className="text-xs text-muted-foreground">{subtext}</p>
+            <p className="text-xs text-muted-foreground leading-tight line-clamp-2">{subtext}</p>
           </motion.div>
         </CardContent>
       </Card>
