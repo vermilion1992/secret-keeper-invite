@@ -607,13 +607,18 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           >
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
-                    {expandedItem.name}
-                  </h2>
-                  <Badge variant="outline" className="text-xs">
-                    {expandedItem.tier} tier
-                  </Badge>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    <expandedItem.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">
+                      {expandedItem.name}
+                    </h2>
+                    <Badge variant="default" className="text-sm font-semibold uppercase">
+                      {expandedItem.tier} TIER
+                    </Badge>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -672,7 +677,13 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={closeModal}
+                  onClick={() => {
+                    // Clear selection on cancel if this was the selected item
+                    if (selected?.id === expandedItem.id) {
+                      onSelect(null);
+                    }
+                    closeModal();
+                  }}
                   className="flex-1"
                 >
                   Cancel
