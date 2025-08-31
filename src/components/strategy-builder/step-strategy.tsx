@@ -484,7 +484,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 <TooltipTrigger>
                   <Lock className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="z-50" sideOffset={5}>
                   <p>Upgrade to unlock this option</p>
                 </TooltipContent>
               </Tooltip>
@@ -503,7 +503,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                     <TooltipTrigger>
                       <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
+                    <TooltipContent side="top" className="max-w-xs z-50" sideOffset={5}>
                       <p>{strategy.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -544,7 +544,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 <TooltipTrigger>
                   <Lock className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="z-50" sideOffset={5}>
                   <p>Upgrade to unlock this option</p>
                 </TooltipContent>
               </Tooltip>
@@ -563,7 +563,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                     <TooltipTrigger>
                       <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
+                    <TooltipContent side="top" className="max-w-xs z-50" sideOffset={5}>
                       <p>{indicator.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
