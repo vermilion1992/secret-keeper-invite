@@ -43,7 +43,7 @@ export function AppSidebar() {
           <img 
             src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
             alt="BotForge Logo" 
-            className="h-8 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         </div>
         {/* Fallback trigger visible in mini state */}
