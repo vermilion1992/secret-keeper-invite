@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { WizardNavigation } from './wizard-navigation';
 import { StepMarketType } from './step-market-type';
 import { StepPairTemplate } from './step-pair-template';
-import { MarketType, PairTemplate, UserTier, WizardStep } from '@/types/botforge';
+import { StepStrategy } from './step-strategy';
+import { MarketType, PairTemplate, UserTier, WizardStep, Strategy } from '@/types/botforge';
 
 interface StrategyBuilderWizardProps {
   userTier: UserTier;
@@ -16,6 +17,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedMarketType, setSelectedMarketType] = useState<MarketType | null>(null);
   const [selectedPairTemplate, setSelectedPairTemplate] = useState<PairTemplate | null>(null);
+  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
 
   const [steps, setSteps] = useState<WizardStep[]>([
     { step: 1, title: 'Market Type', description: 'Choose Spot or Perpetual Futures', isComplete: false, isActive: true },
@@ -59,6 +61,10 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
 
   const handlePairTemplateSelect = (template: PairTemplate) => {
     setSelectedPairTemplate(template);
+  };
+
+  const handleStrategySelect = (strategy: Strategy) => {
+    setSelectedStrategy(strategy);
   };
 
   const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
@@ -127,10 +133,12 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
               )}
 
               {currentStep === 3 && (
-                <div className="text-center py-20">
-                  <h2 className="text-2xl font-bold mb-4">Strategy Selection</h2>
-                  <p className="text-muted-foreground">Coming next...</p>
-                </div>
+                <StepStrategy
+                  selected={selectedStrategy}
+                  onSelect={handleStrategySelect}
+                  onNext={handleNext}
+                  userTier={userTier}
+                />
               )}
 
               {currentStep > 3 && (
