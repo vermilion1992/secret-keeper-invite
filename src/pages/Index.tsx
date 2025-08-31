@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowTrendingUpIcon, UsersIcon, CommandLineIcon, ChatBubbleLeftRightIcon, ArrowRightIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "react-router-dom";
@@ -92,7 +92,7 @@ const Index = () => {
               <CardDescription>Most profitable bot this week</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                 {/* Left side: Bot details */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -134,8 +134,8 @@ const Index = () => {
                 </div>
                 
                 {/* Right side: Compact performance chart */}
-                <div className="h-[200px] bg-card/50 rounded-lg border p-4">
-                  <div className="h-full">
+                <Card className="h-[200px]">
+                  <CardContent className="h-full p-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={topBotPerformanceData} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
                         <defs>
@@ -152,8 +152,8 @@ const Index = () => {
                         <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
