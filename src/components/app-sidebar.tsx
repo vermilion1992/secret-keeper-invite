@@ -38,13 +38,7 @@ export function AppSidebar() {
     isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : '';
 
   return (
-    <Sidebar 
-      className={`
-        ${state === 'collapsed' ? 'w-14' : 'w-60'} 
-        backdrop-blur-xl bg-background/80 border-r border-border/50 shadow-2xl
-      `} 
-      collapsible="icon"
-    >
+    <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
       <div className="flex items-center justify-center px-3 py-6 min-h-[96px]">
         <AnimatePresence mode="wait">
           {state !== 'collapsed' && (
@@ -112,42 +106,15 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-display font-semibold tracking-wider uppercase text-muted-foreground/80">
-            Navigation
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={({ isActive }) => `
-                        group relative overflow-hidden transition-all duration-300 ease-out
-                        hover:scale-[1.02] hover:shadow-lg hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10
-                        ${isActive 
-                          ? 'bg-gradient-to-r from-primary/10 to-primary/5 text-primary font-semibold border-r-2 border-primary shadow-lg' 
-                          : 'hover:text-primary/80'
-                        }
-                        before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/20 before:to-transparent 
-                        before:translate-x-[-100%] before:transition-transform before:duration-300 
-                        hover:before:translate-x-0
-                      `}
-                    >
-                      <motion.div 
-                        className="flex items-center relative z-10"
-                        whileHover={{ x: 2 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      >
-                        <motion.div
-                          whileHover={{ rotate: 5, scale: 1.1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        >
-                          <item.icon className="mr-3 h-4 w-4" />
-                        </motion.div>
-                        <span className="font-medium">{item.title}</span>
-                      </motion.div>
+                    <NavLink to={item.url} end className={getNavCls}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
