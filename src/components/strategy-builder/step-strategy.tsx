@@ -606,7 +606,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           {[...Array(12)].map((_, i) => (
             <div
               key={i}
-              className="absolute opacity-60"
+              className="absolute opacity-30"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -615,7 +615,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 background: `radial-gradient(circle, hsl(var(--primary) / 0.8), hsl(var(--accent) / 0.6))`,
                 borderRadius: '50%',
                 boxShadow: `0 0 ${6 + Math.random() * 8}px hsl(var(--primary) / 0.4)`,
-                animation: `float-particle-${i % 3} ${6 + Math.random() * 4}s infinite ease-in-out`,
+                animation: `float-particle-${i % 3} 30s infinite ease-in-out`,
                 animationDelay: `${Math.random() * 3}s`,
                 zIndex: 1
               }}
