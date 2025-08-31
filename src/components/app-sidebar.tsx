@@ -1,5 +1,12 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { CircleDollarSign, MessageCircle, Users, Bot, LayoutDashboard, Wand2 } from 'lucide-react';
+import { 
+  CurrencyDollarIcon, 
+  ChatBubbleLeftRightIcon, 
+  UsersIcon, 
+  CommandLineIcon, 
+  Squares2X2Icon, 
+  SparklesIcon 
+} from '@heroicons/react/24/outline';
 import {
   Sidebar,
   SidebarContent,
@@ -14,11 +21,11 @@ import {
 } from '@/components/ui/sidebar';
 
 const items = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Strategy Builder', url: '/strategy-builder', icon: Wand2 },
-  { title: 'Bot Community', url: '/bot-community', icon: Users },
-  { title: 'My Bots', url: '/my-bots', icon: Bot },
-  { title: 'AI Chat', url: '/ai-chat', icon: MessageCircle },
+  { title: 'Dashboard', url: '/', icon: Squares2X2Icon },
+  { title: 'Strategy Builder', url: '/strategy-builder', icon: SparklesIcon },
+  { title: 'Bot Community', url: '/bot-community', icon: UsersIcon },
+  { title: 'My Bots', url: '/my-bots', icon: CommandLineIcon },
+  { title: 'AI Chat', url: '/ai-chat', icon: ChatBubbleLeftRightIcon },
 ];
 
 export function AppSidebar() {
@@ -33,7 +40,7 @@ export function AppSidebar() {
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
       <div className="flex items-center justify-between px-3 py-3">
         <div className="flex items-center gap-2">
-          <CircleDollarSign className="w-6 h-6 text-primary" />
+          <CurrencyDollarIcon className="w-6 h-6 text-primary" />
           <span className="font-semibold tracking-tight">BotForge</span>
         </div>
         {/* Fallback trigger visible in mini state */}
