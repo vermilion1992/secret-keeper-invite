@@ -36,8 +36,8 @@ export function AppSidebar() {
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive
-      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium rounded-md transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_24px_hsl(var(--primary)/0.35)] hover:ring-1 hover:ring-[hsl(var(--primary)/0.25)]'
-      : 'rounded-md transition-all duration-300 hover:scale-[1.02] hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground hover:shadow-[0_0_24px_hsl(var(--primary)/0.35)] hover:ring-1 hover:ring-[hsl(var(--primary)/0.25)]';
+      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium rounded-md transition-all duration-150 hover:scale-[1.005] hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)]'
+      : 'rounded-md transition-all duration-150 hover:scale-[1.005] hover:bg-sidebar-accent/25 hover:text-sidebar-accent-foreground hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)]';
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
