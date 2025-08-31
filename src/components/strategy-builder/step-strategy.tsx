@@ -604,7 +604,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         >
           {/* Constellation Background Effect */}
           <div className="absolute inset-0 overflow-hidden">
-            <svg className="absolute inset-0 w-full h-full opacity-55 pointer-events-none">
+            <svg className="absolute inset-0 w-full h-full opacity-45 pointer-events-none">
               {/* Generate constellation stars */}
               {[...Array(40)].map((_, i) => {
                 const x = Math.random() * 100;
