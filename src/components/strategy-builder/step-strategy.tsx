@@ -422,25 +422,9 @@ const ENHANCED_INDICATORS = [
 
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
   const [expandedItem, setExpandedItem] = useState<any>(null);
-  const [modalPosition, setModalPosition] = useState<{ left: number; top: number; width: number }>({ left: 0, top: 0, width: 600 });
 
-  // Position modal aligned under the sidebar logo and centered in the main content area
   const openModal = (item: any) => {
-    const logoEl = document.getElementById('app-logo');
-    const mainEl = document.getElementById('app-main');
-    const logoRect = logoEl?.getBoundingClientRect();
-    const mainRect = mainEl?.getBoundingClientRect();
-
-    const spacing = 16; // gap below logo
-    const top = (logoRect?.bottom ?? 0) + spacing;
-
-    const desiredWidth = 640;
-    const width = Math.min(desiredWidth, (mainRect?.width ?? window.innerWidth) - 32);
-    const left = (mainRect?.left ?? 0) + ((mainRect?.width ?? window.innerWidth) - width) / 2;
-
-    setModalPosition({ left, top, width });
     setExpandedItem(item);
-
     // Lock body scroll
     document.body.style.overflow = 'hidden';
   };
@@ -607,103 +591,93 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
 
-      {/* Modal using Portal with exact positioning */}
+      {/* Centered Modal with Animation and Blur */}
       {expandedItem && createPortal(
         <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
           style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            zIndex: '999999'
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(8px)'
           }}
           onClick={closeModal}
         >
           <div
-            style={{
-              position: 'absolute',
-              left: `${modalPosition.left}px`,
-              top: `${modalPosition.top}px`,
-              transform: 'translate(-50%, 0)',
-              backgroundColor: 'white',
-              borderRadius: '8px',
-              padding: '24px',
-              maxWidth: `${modalPosition.width}px`,
-              width: `${modalPosition.width}px`,
-              maxHeight: '80vh',
-              overflow: 'auto',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-            }}
+            className="bg-card border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', color: 'black' }}>
-                {expandedItem.name}
-              </h2>
-              <button
-                onClick={closeModal}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  color: 'black'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <p style={{ marginBottom: '16px', color: '#666', lineHeight: '1.5' }}>
-              {expandedItem.blurb}
-            </p>
-            
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-              <button
-                onClick={() => {
-                  if (expandedItem.type === 'strategy') {
-                    onSelect({ 
-                      id: expandedItem.id, 
-                      name: expandedItem.name, 
-                      description: expandedItem.tooltip,
-                      tier: expandedItem.tier,
-                      defaultIndicators: [],
-                      canAddFilters: expandedItem.tier !== 'basic'
-                    });
-                  }
-                  closeModal();
-                }}
-                style={{
-                  flex: '1',
-                  padding: '12px 24px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
-              </button>
-              <button
-                onClick={closeModal}
-                style={{
-                  flex: '1',
-                  padding: '12px 24px',
-                  backgroundColor: '#6c757d',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '16px'
-                }}
-              >
-                Go Back
-              </button>
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                    {expandedItem.name}
+                  </h2>
+                  <Badge variant="outline" className="text-xs">
+                    {expandedItem.tier} tier
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={closeModal}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </Button>
+              </div>
+              
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                {expandedItem.blurb}
+              </p>
+
+              {expandedItem.tags && (
+                <div className="mb-6">
+                  <h4 className="font-medium mb-2 text-sm">Tags:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {expandedItem.tags.map((tag: string) => (
+                      <Badge key={tag} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {expandedItem.advanced && (
+                <div className="mb-6">
+                  <h4 className="font-medium mb-2 text-sm">Advanced Settings:</h4>
+                  <div className="text-sm text-muted-foreground">
+                    {expandedItem.advanced.join(', ')}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => {
+                    if (expandedItem.type === 'strategy') {
+                      onSelect({ 
+                        id: expandedItem.id, 
+                        name: expandedItem.name, 
+                        description: expandedItem.tooltip,
+                        tier: expandedItem.tier,
+                        defaultIndicators: [],
+                        canAddFilters: expandedItem.tier !== 'basic'
+                      });
+                    }
+                    closeModal();
+                  }}
+                  className="flex-1"
+                >
+                  Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={closeModal}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           </div>
         </div>,
