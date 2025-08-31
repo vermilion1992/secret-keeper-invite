@@ -54,10 +54,13 @@ const monthlyReturns = [
   { month: 'Dec', return: -4.3, trades: 7 }
 ];
 
-// Mock trade distribution data for pie chart
+// Mock trade outcome distribution data for pie chart
 const tradeDistribution = [
-  { name: 'Winning Trades', value: 67.3, color: 'hsl(var(--chart-1))' },
-  { name: 'Losing Trades', value: 32.7, color: 'hsl(var(--chart-2))' }
+  { name: 'Big Wins (≥ +2R)', value: 23.1, color: 'hsl(var(--chart-1))' },
+  { name: 'Small Wins (< +2R)', value: 44.2, color: 'hsl(var(--chart-2))' },
+  { name: 'Break-even Trades', value: 5.8, color: 'hsl(var(--chart-3))' },
+  { name: 'Small Losses (< -2R)', value: 19.2, color: 'hsl(var(--chart-4))' },
+  { name: 'Big Losses (≥ -2R)', value: 7.7, color: 'hsl(var(--chart-5))' }
 ];
 
 // Mock drawdown data
@@ -449,8 +452,8 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             </button>
             <AnimatedPieChart
               data={tradeDistribution}
-              title="Win/Loss Breakdown"
-              subtitle="Win Rate Breakdown"
+              title="Trade Outcome Distribution"
+              subtitle="This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses."
               icon={PieChart}
             />
           </div>

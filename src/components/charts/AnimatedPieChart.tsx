@@ -26,7 +26,7 @@ export function AnimatedPieChart({ data, title, subtitle, icon: Icon }: Animated
         <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-3 shadow-lg">
           <p className="font-medium">{data.name}</p>
           <p className="text-sm text-muted-foreground">
-            {data.value}% of trades
+            {data.value.toFixed(1)}% of trades
           </p>
         </div>
       );
@@ -57,7 +57,7 @@ export function AnimatedPieChart({ data, title, subtitle, icon: Icon }: Animated
                       <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs">Breaks down how many trades were winners vs losers. Helps you understand if profitability comes from a high win rate or a few big wins.</p>
+                      <p className="max-w-xs">Shows the breakdown of trades by outcome size. Helps you see if the strategy wins with many small gains, a few big winners, or suffers from large losses.</p>
                     </TooltipContent>
                   </UITooltip>
                 </TooltipProvider>
@@ -69,10 +69,10 @@ export function AnimatedPieChart({ data, title, subtitle, icon: Icon }: Animated
           )}
           <div className="flex items-center justify-between mt-2 ml-13">
             <Badge variant="outline" className="text-xs">
-              {data[0]?.value.toFixed(1)}% wins
+              {(data[0]?.value + data[1]?.value || 0).toFixed(1)}% total wins
             </Badge>
             <p className="text-sm text-muted-foreground">
-              Win Rate
+              Overall Win Rate
             </p>
           </div>
         </CardHeader>
