@@ -81,7 +81,7 @@ export function AnimatedBarChart({ data, title, subtitle, icon: Icon }: Animated
                       <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs">Shows percentage profit or loss each month. A quick way to spot hot streaks, losing periods, and seasonal effects in your strategy.</p>
+                      <p className="max-w-xs">Profit and loss by month. Quickly spot strong vs weak periods.</p>
                     </TooltipContent>
                   </UITooltip>
                 </TooltipProvider>

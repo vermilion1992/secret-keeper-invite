@@ -46,11 +46,11 @@ All colors MUST be HSL.
     --success-foreground: 0 0% 100%;
 
     /* Enhanced chart colors for trading data */
-    --chart-1: 173 58% 39%;  /* Teal for neutral data */
-    --chart-2: 142 76% 36%;  /* Green for positive/profitable */
-    --chart-3: 197 37% 24%;  /* Dark teal for accents */
-    --chart-4: 43 74% 66%;   /* Orange for warnings */
-    --chart-5: 27 87% 67%;   /* Red-orange for risks */
+    --chart-1: 140 75% 35%;  /* Dark Green for Big Wins */
+    --chart-2: 142 76% 50%;  /* Light Green for Small Wins */
+    --chart-3: 215 15% 60%;  /* Grey for Break-even */
+    --chart-4: 35 85% 60%;   /* Orange for Small Losses */
+    --chart-5: 0 85% 55%;    /* Red for Big Losses */
 
     --radius: 0.75rem;
 
@@ -104,11 +104,11 @@ All colors MUST be HSL.
     --success-foreground: 0 0% 100%;
 
     /* Enhanced chart colors for dark mode */
-    --chart-1: 173 58% 50%;  /* Brighter teal for dark mode */
-    --chart-2: 142 69% 58%;  /* Brighter green for dark mode */
-    --chart-3: 197 37% 34%;  /* Adjusted dark teal */
-    --chart-4: 43 74% 70%;   /* Brighter orange for dark mode */
-    --chart-5: 27 87% 70%;   /* Brighter red-orange for dark mode */
+    --chart-1: 140 75% 40%;  /* Dark Green for Big Wins */
+    --chart-2: 142 76% 55%;  /* Light Green for Small Wins */
+    --chart-3: 215 15% 70%;  /* Grey for Break-even */
+    --chart-4: 35 85% 65%;   /* Orange for Small Losses */
+    --chart-5: 0 85% 60%;    /* Red for Big Losses */
 
     --border: 240 25% 18% / 0.3;
     --input: 240 25% 18% / 0.3;

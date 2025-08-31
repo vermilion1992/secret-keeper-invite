@@ -84,7 +84,7 @@ export function AnimatedLineChart({
                       <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs">Tracks how your capital grows over time under this strategy, compared to just holding the asset. Helps you see consistency and performance trends.</p>
+                      <p className="max-w-xs">Tracks cumulative performance of the strategy vs benchmark. Shows if growth is steady, volatile, or underperforming.</p>
                     </TooltipContent>
                   </UITooltip>
                 </TooltipProvider>

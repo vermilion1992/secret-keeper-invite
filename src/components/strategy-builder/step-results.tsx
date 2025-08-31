@@ -416,12 +416,19 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             </button>
             <AnimatedLineChart
               data={equityData}
-              title="ROI Over Time"
+              title="Return on Investment"
               subtitle="Strategy vs Benchmark Performance"
               icon={LineChart}
               showBenchmark={true}
               gradientId="equityGradient"
             />
+            {expandedChart === 'equity' && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Visualizes the long-term compounding effect of your strategy compared to a baseline. Helps you see whether gains are sustainable over time.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -435,10 +442,17 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             </button>
             <AnimatedBarChart
               data={monthlyReturns}
-              title="Monthly Profit/Loss"
+              title="Monthly Returns"
               subtitle="Profit/Loss Distribution by Month"
               icon={BarChart3}
             />
+            {expandedChart === 'returns' && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  This breakdown helps identify seasonal strengths, streaks of profitability, and risk of inconsistent months.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -453,9 +467,16 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedPieChart
               data={tradeDistribution}
               title="Trade Outcome Distribution"
-              subtitle="This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses."
+              subtitle={expandedChart === 'distribution' ? "This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses." : "Trade Outcome Breakdown"}
               icon={PieChart}
             />
+            {expandedChart === 'distribution' && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -473,6 +494,13 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
               subtitle="Risk Assessment Over Time"
               icon={DrawdownIcon}
             />
+            {expandedChart === 'drawdown' && (
+              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  This view highlights how deeply and how long the strategy suffers during losing streaks, helping you judge recovery potential and risk tolerance.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </motion.div>

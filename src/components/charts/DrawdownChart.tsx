@@ -55,7 +55,7 @@ export function DrawdownChart({ data, title, subtitle, icon: Icon }: DrawdownCha
                       <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="max-w-xs">Measures the worst peak-to-valley declines in equity. Shows how much your account could drop before recovering — a key risk metric.</p>
+                      <p className="max-w-xs">Shows largest dips from the peak equity. Critical for risk control.</p>
                     </TooltipContent>
                   </UITooltip>
                 </TooltipProvider>
