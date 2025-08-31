@@ -22,7 +22,7 @@ import {
   Settings,
   Info
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface StepStrategyProps {
   selected: Strategy | null;
@@ -422,6 +422,32 @@ const ENHANCED_INDICATORS = [
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
   const [expandedItem, setExpandedItem] = useState<any>(null);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (expandedItem) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
+  }, [expandedItem]);
+
   const accessibleStrategies = ENHANCED_STRATEGIES.filter((s) => {
     if (userTier === 'expert') return true;
     if (userTier === 'pro') return s.tier === 'basic' || s.tier === 'pro';
@@ -572,7 +598,18 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
       {/* Modal Overlay */}
       {expandedItem && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <div 
+          className="fixed z-[9999] flex items-center justify-center p-4"
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            margin: 0,
+            padding: '1rem'
+          }}
+        >
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-fade-in"
