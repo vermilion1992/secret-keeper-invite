@@ -7,10 +7,12 @@ const StrategyBuilder = () => {
   const credits = 10;
 
   return (
-    <StrategyBuilderWizard 
-      userTier={userTier}
-      credits={credits}
-    />
+    <div className="animate-fade-in">
+      <StrategyBuilderWizard 
+        userTier={userTier}
+        credits={credits}
+      />
+    </div>
   );
 };
 

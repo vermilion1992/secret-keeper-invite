@@ -9,6 +9,7 @@ import StrategyBuilder from "./pages/StrategyBuilder";
 import BotCommunity from "./pages/BotCommunity";
 import MyBots from "./pages/MyBots";
 import AIChat from "./pages/AIChat";
+import AppLayout from "./layouts/AppLayout";
 
 const queryClient = new QueryClient();
 
@@ -18,15 +19,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/strategy-builder" element={<StrategyBuilder />} />
-          <Route path="/bot-community" element={<BotCommunity />} />
-          <Route path="/my-bots" element={<MyBots />} />
-          <Route path="/ai-chat" element={<AIChat />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppLayout>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/strategy-builder" element={<StrategyBuilder />} />
+            <Route path="/bot-community" element={<BotCommunity />} />
+            <Route path="/my-bots" element={<MyBots />} />
+            <Route path="/ai-chat" element={<AIChat />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppLayout>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
