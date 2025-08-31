@@ -602,54 +602,54 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           }}
           onClick={closeModal}
         >
-          {/* Aurora Background Effect */}
+          {/* Constellation Background Effect */}
           <div className="absolute inset-0 overflow-hidden">
-            <div 
-              className="absolute inset-0 opacity-40"
-              style={{
-                background: `
-                  linear-gradient(45deg, 
-                    hsl(var(--primary) / 0.3) 0%, 
-                    transparent 20%, 
-                    hsl(var(--accent) / 0.2) 40%, 
-                    transparent 60%, 
-                    hsl(var(--primary) / 0.25) 80%, 
-                    transparent 100%
-                  )
-                `,
-                animation: 'aurora-wave-1 25s ease-in-out infinite',
-                transform: 'rotate(-10deg) scale(1.5)'
-              }}
-            />
-            <div 
-              className="absolute inset-0 opacity-35"
-              style={{
-                background: `
-                  linear-gradient(-45deg, 
-                    transparent 0%, 
-                    hsl(var(--accent) / 0.4) 25%, 
-                    transparent 50%, 
-                    hsl(var(--primary) / 0.3) 75%, 
-                    transparent 100%
-                  )
-                `,
-                animation: 'aurora-wave-2 30s ease-in-out infinite reverse',
-                transform: 'rotate(15deg) scale(1.3)'
-              }}
-            />
-            <div 
-              className="absolute inset-0 opacity-30"
-              style={{
-                background: `
-                  radial-gradient(ellipse at center, 
-                    hsl(var(--primary) / 0.2) 0%, 
-                    transparent 50%
-                  )
-                `,
-                animation: 'aurora-pulse 20s ease-in-out infinite',
-                transform: 'scale(1.2)'
-              }}
-            />
+            <svg className="absolute inset-0 w-full h-full opacity-40">
+              {/* Generate constellation stars */}
+              {[...Array(15)].map((_, i) => {
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const size = 1 + Math.random() * 2;
+                return (
+                  <circle
+                    key={`star-${i}`}
+                    cx={`${x}%`}
+                    cy={`${y}%`}
+                    r={size}
+                    fill="hsl(var(--primary))"
+                    className="animate-pulse"
+                    style={{
+                      animationDelay: `${Math.random() * 4}s`,
+                      animationDuration: `${3 + Math.random() * 2}s`
+                    }}
+                  />
+                );
+              })}
+              
+              {/* Generate connecting lines */}
+              {[...Array(8)].map((_, i) => {
+                const x1 = Math.random() * 100;
+                const y1 = Math.random() * 100;
+                const x2 = x1 + (Math.random() - 0.5) * 30;
+                const y2 = y1 + (Math.random() - 0.5) * 30;
+                return (
+                  <line
+                    key={`line-${i}`}
+                    x1={`${x1}%`}
+                    y1={`${y1}%`}
+                    x2={`${Math.max(0, Math.min(100, x2))}%`}
+                    y2={`${Math.max(0, Math.min(100, y2))}%`}
+                    stroke="hsl(var(--primary) / 0.3)"
+                    strokeWidth="1"
+                    className="opacity-60"
+                    style={{
+                      animation: 'constellation-pulse 8s ease-in-out infinite',
+                      animationDelay: `${Math.random() * 3}s`
+                    }}
+                  />
+                );
+              })}
+            </svg>
           </div>
           
           <div

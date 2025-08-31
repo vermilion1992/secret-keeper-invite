@@ -213,49 +213,15 @@ All colors MUST be HSL.
     }
   }
 
-  /* Aurora effect animations */
-  @keyframes aurora-wave-1 {
+  /* Constellation effect animations */
+  @keyframes constellation-pulse {
     0%, 100% { 
-      transform: rotate(-10deg) scale(1.5) translateX(-20px) translateY(-10px);
-      opacity: 0.2;
-    }
-    25% { 
-      transform: rotate(-5deg) scale(1.6) translateX(30px) translateY(-20px);
-      opacity: 0.4;
+      opacity: 0.3;
+      stroke-width: 1;
     }
     50% { 
-      transform: rotate(-15deg) scale(1.4) translateX(10px) translateY(15px);
-      opacity: 0.3;
-    }
-    75% { 
-      transform: rotate(-8deg) scale(1.7) translateX(-15px) translateY(-5px);
-      opacity: 0.35;
-    }
-  }
-
-  @keyframes aurora-wave-2 {
-    0%, 100% { 
-      transform: rotate(15deg) scale(1.3) translateX(25px) translateY(20px);
-      opacity: 0.15;
-    }
-    30% { 
-      transform: rotate(20deg) scale(1.4) translateX(-20px) translateY(-15px);
-      opacity: 0.3;
-    }
-    60% { 
-      transform: rotate(10deg) scale(1.2) translateX(40px) translateY(10px);
-      opacity: 0.25;
-    }
-  }
-
-  @keyframes aurora-pulse {
-    0%, 100% { 
-      transform: scale(1.2);
-      opacity: 0.1;
-    }
-    50% { 
-      transform: scale(1.5);
-      opacity: 0.3;
+      opacity: 0.8;
+      stroke-width: 1.5;
     }
   }
 }
