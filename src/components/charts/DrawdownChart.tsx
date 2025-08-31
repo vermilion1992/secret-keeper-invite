@@ -46,18 +46,20 @@ export function DrawdownChart({ data, title, subtitle, icon: Icon }: DrawdownCha
                 <Icon className="w-5 h-5 text-red-500" />
               </div>
             )}
-            <div className="flex-1 flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Measures the worst peak-to-valley declines in equity. Shows how much your account could drop before recovering — a key risk metric.</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Measures the worst peak-to-valley declines in equity. Shows how much your account could drop before recovering — a key risk metric.</p>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
           {subtitle && (

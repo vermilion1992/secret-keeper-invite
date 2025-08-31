@@ -48,18 +48,20 @@ export function AnimatedPieChart({ data, title, subtitle, icon: Icon }: Animated
                 <Icon className="w-5 h-5 text-white" />
               </div>
             )}
-            <div className="flex-1 flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Breaks down how many trades were winners vs losers. Helps you understand if profitability comes from a high win rate or a few big wins.</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Breaks down how many trades were winners vs losers. Helps you understand if profitability comes from a high win rate or a few big wins.</p>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
           {subtitle && (

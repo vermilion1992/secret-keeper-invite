@@ -75,18 +75,20 @@ export function AnimatedLineChart({
                 <Icon className="w-5 h-5 text-white" />
               </div>
             )}
-            <div className="flex-1 flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Tracks how your capital grows over time under this strategy, compared to just holding the asset. Helps you see consistency and performance trends.</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Tracks how your capital grows over time under this strategy, compared to just holding the asset. Helps you see consistency and performance trends.</p>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
           {subtitle && (
