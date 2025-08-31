@@ -23,7 +23,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               <img 
                 src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
                 alt="BotForge" 
-                className="h-8 w-auto object-contain opacity-60"
+                className="h-12 w-auto object-contain opacity-60"
               />
               <Avatar className="h-8 w-8">
                 <AvatarFallback>BF</AvatarFallback>
