@@ -95,15 +95,8 @@ export function AppSidebar() {
                   alt="BotForge Logo" 
                   className="h-24 w-auto drop-shadow-2xl"
                   initial={{ filter: "brightness(0.7)" }}
-                  animate={{ filter: "brightness(1) drop-shadow(0 0 20px rgba(138, 43, 226, 0.3))" }}
+                  animate={{ filter: "brightness(1)" }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                />
-                {/* Subtle glow effect */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 rounded-lg blur-xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.3 }}
                 />
               </motion.div>
             </motion.div>
