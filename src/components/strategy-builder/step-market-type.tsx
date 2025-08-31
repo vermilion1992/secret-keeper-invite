@@ -44,8 +44,8 @@ export function StepMarketType({ selected, onSelect, onNext }: StepMarketTypePro
             key={market.type}
             className={`cursor-pointer transition-all hover:shadow-lg ${
               selected === market.type
-                ? 'ring-2 ring-primary border-primary bg-primary/5'
-                : 'border-border hover:border-primary/50'
+                ? 'ring-2 ring-green-500 border-green-500 bg-green-500/10'
+                : 'border-border hover:border-purple-500 hover:bg-purple-500/10'
             }`}
             onClick={() => onSelect(market.type)}
           >

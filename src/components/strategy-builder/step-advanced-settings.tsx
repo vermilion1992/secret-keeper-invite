@@ -118,7 +118,7 @@ export function StepAdvancedSettings({
                         <button
                           key={filter.id}
                           onClick={() => addFilter(filter)}
-                          className="flex items-center justify-between p-3 rounded-lg border border-dashed hover:bg-muted/30 transition"
+                          className="flex items-center justify-between p-3 rounded-lg border border-dashed hover:border-purple-500 hover:bg-purple-500/10 transition"
                         >
                           <div className="text-left">
                             <span className="font-medium text-sm">{filter.name}</span>

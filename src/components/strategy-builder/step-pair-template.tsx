@@ -106,9 +106,9 @@ export function StepPairTemplate({ selected, onSelect, onNext, userTier }: StepP
                   <Card
                     className={`cursor-pointer transition-all relative ${
                       isSelected
-                        ? 'ring-2 ring-primary border-primary bg-primary/5'
+                        ? 'ring-2 ring-green-500 border-green-500 bg-green-500/10'
                         : isAccessible
-                        ? 'border-border hover:border-primary/50 hover:shadow-lg'
+                        ? 'border-border hover:border-purple-500 hover:bg-purple-500/10 hover:shadow-lg'
                         : 'border-border/50 opacity-60 cursor-not-allowed'
                     }`}
                     onClick={() => isAccessible && onSelect(template.template)}

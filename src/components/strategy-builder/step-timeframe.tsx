@@ -90,8 +90,8 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
                 onClick={() => updateTimeframe(tf.value)}
                 className={`p-4 rounded-lg border transition text-left ${
                   isSelected
-                    ? 'border-primary/50 bg-primary/10'
-                    : 'border-border/60 hover:bg-muted/30'
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-border/60 hover:border-purple-500 hover:bg-purple-500/10'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -120,8 +120,8 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
                 onClick={() => updatePeriod(period.days)}
                 className={`p-3 rounded-lg border transition text-center ${
                   isSelected
-                    ? 'border-primary/50 bg-primary/10'
-                    : 'border-border/60 hover:bg-muted/30'
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-border/60 hover:border-purple-500 hover:bg-purple-500/10'
                 }`}
               >
                 <div className="font-medium text-sm">{period.label}</div>
