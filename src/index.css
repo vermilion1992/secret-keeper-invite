@@ -8,39 +8,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Cloudy background inspired by Alter */
+    --background: 220 20% 96%;
+    --foreground: 240 15% 15%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Frosted glass cards */
+    --card: 0 0% 100% / 0.8;
+    --card-foreground: 240 15% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100% / 0.95;
+    --popover-foreground: 240 15% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Purple primary inspired by Alter */
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Subtle backgrounds */
+    --secondary: 240 20% 98%;
+    --secondary-foreground: 240 15% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 20% 94%;
+    --muted-foreground: 240 10% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 260 60% 95%;
+    --accent-foreground: 262 83% 58%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Subtle borders for frosted effect */
+    --border: 240 20% 90%;
+    --input: 240 20% 90%;
+    --ring: 262 83% 58%;
 
     /* Semantic status colors */
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -60,37 +65,40 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark cloudy background */
+    --background: 240 20% 8%;
+    --foreground: 240 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Dark frosted glass cards */
+    --card: 240 20% 12% / 0.8;
+    --card-foreground: 240 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 20% 12% / 0.95;
+    --popover-foreground: 240 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Bright purple for dark mode */
+    --primary: 262 83% 65%;
+    --primary-foreground: 240 20% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 20% 15%;
+    --secondary-foreground: 240 20% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 20% 15%;
+    --muted-foreground: 240 15% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 260 40% 20%;
+    --accent-foreground: 262 83% 65%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Semantic status colors */
-    --success: 142 70% 40%;
+    --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 240 20% 20%;
+    --input: 240 20% 20%;
+    --ring: 262 83% 65%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -109,6 +117,36 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Animated cloud background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    background: 
+      radial-gradient(ellipse 400px 300px at 20% 30%, hsl(var(--accent)) 0%, transparent 60%),
+      radial-gradient(ellipse 300px 200px at 80% 70%, hsl(var(--muted)) 0%, transparent 50%),
+      radial-gradient(ellipse 500px 400px at 60% 20%, hsl(var(--secondary)) 0%, transparent 70%),
+      radial-gradient(ellipse 200px 150px at 30% 80%, hsl(var(--accent)) 0%, transparent 40%),
+      hsl(var(--background));
+    animation: cloudFloat 20s ease-in-out infinite;
+  }
+
+  /* Frosted glass effect for cards */
+  .frosted {
+    backdrop-filter: blur(12px) saturate(180%);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 
+      0 8px 32px 0 hsl(var(--foreground) / 0.1),
+      inset 0 1px 0 0 hsl(var(--foreground) / 0.1);
   }
 }
 
@@ -121,5 +159,25 @@ All colors MUST be HSL.
   }
   .pulse {
     @apply animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite];
+  }
+
+  /* Cloud animation keyframes */
+  @keyframes cloudFloat {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.8;
+    }
+    25% {
+      transform: translate(-10px, -20px) scale(1.05);
+      opacity: 0.9;
+    }
+    50% {
+      transform: translate(20px, -10px) scale(0.95);
+      opacity: 0.7;
+    }
+    75% {
+      transform: translate(-5px, 15px) scale(1.02);
+      opacity: 0.85;
+    }
   }
 }
