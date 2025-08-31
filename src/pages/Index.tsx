@@ -139,15 +139,17 @@ const Index = () => {
                 </div>
                 
                 {/* Right side: Compact performance chart */}
-                <div className="h-[200px]">
-                  <AnimatedLineChart 
-                    data={topBotPerformanceData}
-                    title=""
-                    subtitle=""
-                    icon={ChartBarIcon}
-                    showBenchmark={false}
-                    gradientId="topBotGradient"
-                  />
+                <div className="h-[200px] bg-card/50 rounded-lg border p-4">
+                  <div className="h-full">
+                    <AnimatedLineChart 
+                      data={topBotPerformanceData}
+                      title=""
+                      subtitle=""
+                      icon={ChartBarIcon}
+                      showBenchmark={false}
+                      gradientId="topBotGradient"
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
