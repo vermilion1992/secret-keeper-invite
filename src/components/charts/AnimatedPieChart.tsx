@@ -78,38 +78,45 @@ export function AnimatedPieChart({ data, title, subtitle, icon: Icon }: Animated
         </CardHeader>
         <CardContent className="pt-2">
           <motion.div
-            className="h-[320px]"
+            className="h-[300px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  innerRadius={40}
-                  paddingAngle={2}
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={1000}
-                >
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={renderCustomTooltip} />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36}
-                  formatter={(value, entry: any) => (
-                    <span style={{ color: entry.color }}>{value}</span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+             <ResponsiveContainer width="100%" height="100%">
+               <PieChart>
+                 <Pie
+                   data={data}
+                   cx="50%"
+                   cy="45%"
+                   outerRadius={85}
+                   innerRadius={35}
+                   paddingAngle={2}
+                   dataKey="value"
+                   animationBegin={0}
+                   animationDuration={1000}
+                 >
+                   {data.map((entry, index) => (
+                     <Cell key={`cell-${index}`} fill={entry.color} />
+                   ))}
+                 </Pie>
+                 <Tooltip content={renderCustomTooltip} />
+                 <Legend 
+                   verticalAlign="bottom" 
+                   height={60}
+                   wrapperStyle={{
+                     paddingTop: '10px',
+                     fontSize: '12px',
+                     lineHeight: '1.2'
+                   }}
+                   formatter={(value, entry: any) => (
+                     <span style={{ color: entry.color, fontSize: '11px' }}>{value}</span>
+                   )}
+                   layout="horizontal"
+                   align="center"
+                 />
+               </PieChart>
+             </ResponsiveContainer>
           </motion.div>
         </CardContent>
       </Card>

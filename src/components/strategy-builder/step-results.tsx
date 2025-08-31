@@ -466,8 +466,8 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             </button>
             <AnimatedPieChart
               data={tradeDistribution}
-              title="Trade Outcome Distribution"
-              subtitle={expandedChart === 'distribution' ? "This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses." : "Trade Outcome Breakdown"}
+              title="Trade Outcome"
+              subtitle={expandedChart === 'distribution' ? "Trade Outcome Breakdown" : "Trade Outcome Breakdown"}
               icon={PieChart}
             />
             {expandedChart === 'distribution' && (
