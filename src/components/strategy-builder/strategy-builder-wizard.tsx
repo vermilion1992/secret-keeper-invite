@@ -218,12 +218,6 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                 />
               )}
 
-              {currentStep > 3 && (
-                <div className="text-center py-20">
-                  <h2 className="text-2xl font-bold mb-4">Step {currentStep} - {steps[currentStep - 1].title}</h2>
-                  <p className="text-muted-foreground">This step will be implemented next...</p>
-                </div>
-              )}
             </Card>
           </div>
         </div>
