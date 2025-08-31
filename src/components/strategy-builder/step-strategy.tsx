@@ -599,17 +599,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
       {/* Modal Overlay */}
       {expandedItem && (
         <div 
-          className="fixed z-[9999] flex justify-center p-4"
-          style={{ 
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            margin: 0,
-            padding: '1rem',
-            paddingTop: '120px' // Position at Dashboard button height
-          }}
+          className="fixed inset-0 z-[9999]"
         >
           {/* Backdrop */}
           <div 
@@ -618,7 +608,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           />
           
           {/* Modal Content */}
-          <div className="relative z-10 w-full max-w-2xl" style={{ maxHeight: '90vh' }}>
+          <div className="fixed left-1/2 top-1/2 z-[10000] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2" style={{ maxHeight: '90vh' }}>
             <Card className="animate-scale-in border-primary bg-card shadow-2xl overflow-y-auto" style={{ maxHeight: '90vh' }}>
               <CardHeader>
                 <div className="flex items-center justify-between">
