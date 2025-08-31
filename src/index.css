@@ -45,6 +45,13 @@ All colors MUST be HSL.
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
 
+    /* Enhanced chart colors for trading data */
+    --chart-1: 173 58% 39%;  /* Teal for neutral data */
+    --chart-2: 142 76% 36%;  /* Green for positive/profitable */
+    --chart-3: 197 37% 24%;  /* Dark teal for accents */
+    --chart-4: 43 74% 66%;   /* Orange for warnings */
+    --chart-5: 27 87% 67%;   /* Red-orange for risks */
+
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
@@ -95,6 +102,13 @@ All colors MUST be HSL.
     /* Semantic status colors */
     --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;
+
+    /* Enhanced chart colors for dark mode */
+    --chart-1: 173 58% 50%;  /* Brighter teal for dark mode */
+    --chart-2: 142 69% 58%;  /* Brighter green for dark mode */
+    --chart-3: 197 37% 34%;  /* Adjusted dark teal */
+    --chart-4: 43 74% 70%;   /* Brighter orange for dark mode */
+    --chart-5: 27 87% 70%;   /* Brighter red-orange for dark mode */
 
     --border: 240 25% 18% / 0.3;
     --input: 240 25% 18% / 0.3;

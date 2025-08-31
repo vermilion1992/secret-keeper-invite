@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { BacktestResult } from '@/types/botforge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart } from 'lucide-react';
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { AnimatedLineChart } from '@/components/charts/AnimatedLineChart';
+import { AnimatedBarChart } from '@/components/charts/AnimatedBarChart';
+import { MetricCard } from '@/components/charts/MetricCard';
 
 interface StepResultsProps {
   backtestResult: BacktestResult;
@@ -98,262 +100,263 @@ export function StepResults({ onExport, onShare }: StepResultsProps) {
   ];
 
   return (
-    <div className="space-y-8">
-      <header className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
+    <motion.div 
+      className="space-y-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.header 
+        className="text-center"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.h2 
+          className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2"
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           Backtest Results
-        </h2>
-        <p className="text-muted-foreground">
+        </motion.h2>
+        <motion.p 
+          className="text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
           Professional analysis of your strategy's historical performance
-        </p>
-      </header>
+        </motion.p>
+      </motion.header>
 
       {/* Enhanced Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metrics.map((metric) => (
-          <Card key={metric.label} className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow">
-            <div className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5`} />
-            <CardContent className="p-6 relative">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${metric.gradient} flex items-center justify-center shadow-lg`}>
-                  <metric.icon className="w-6 h-6 text-white" />
-                </div>
-                <Badge variant={metric.positive ? "default" : "destructive"} className="text-xs">
-                  {metric.positive ? "Good" : "Risk"}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground font-medium">{metric.label}</p>
-                <p className="text-2xl font-bold mb-1">{metric.value}</p>
-                <p className="text-xs text-muted-foreground">{metric.subtext}</p>
-              </div>
-            </CardContent>
-          </Card>
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+      >
+        {metrics.map((metric, index) => (
+          <MetricCard
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            subtext={metric.subtext}
+            icon={metric.icon}
+            positive={metric.positive}
+            gradient={metric.gradient}
+            index={index}
+          />
         ))}
-      </div>
+      </motion.div>
 
       {/* Chart Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Equity Curve Chart */}
-        <Card className="shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <LineChart className="w-5 h-5 text-primary" />
-              Portfolio Equity Curve
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Strategy vs Benchmark Performance</p>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsLineChart data={equityData}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false}
-                    tickLine={false}
-                    className="text-xs"
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    className="text-xs"
-                    tickFormatter={(value) => `$${(value/1000).toFixed(1)}k`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value: any, name: string) => [
-                      `$${value.toLocaleString()}`, 
-                      name === 'value' ? 'Strategy' : 'Benchmark'
-                    ]}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={3}
-                    dot={false}
-                    activeDot={{ r: 4, fill: 'hsl(var(--primary))' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="benchmark" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                  />
-                </RechartsLineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.0 }}
+      >
+        <AnimatedLineChart
+          data={equityData}
+          title="Portfolio Equity Curve"
+          subtitle="Strategy vs Benchmark Performance"
+          icon={LineChart}
+          showBenchmark={true}
+          gradientId="equityGradient"
+        />
 
-        {/* Monthly Returns Chart */}
-        <Card className="shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              Monthly Returns
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Profit/Loss Distribution by Month</p>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyReturns}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis 
-                    dataKey="month" 
-                    axisLine={false}
-                    tickLine={false}
-                    className="text-xs"
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    className="text-xs"
-                    tickFormatter={(value) => `${value}%`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value: any, name: string) => [
-                      `${value}%`, 
-                      name === 'return' ? 'Return' : 'Trades'
-                    ]}
-                  />
-                  <Bar dataKey="return" radius={[4, 4, 0, 0]}>
-                    {monthlyReturns.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.return >= 0 ? 'hsl(var(--chart-2))' : 'hsl(var(--destructive))'} 
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <AnimatedBarChart
+          data={monthlyReturns}
+          title="Monthly Returns"
+          subtitle="Profit/Loss Distribution by Month"
+          icon={BarChart3}
+        />
+      </motion.div>
 
       {/* Trade Summary */}
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Trade Analysis Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary">{result.avgTrades}</p>
-              <p className="text-sm text-muted-foreground">Total Trades</p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.2 }}
+      >
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50">
+          <CardHeader>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.3 }}
+            >
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-2 h-8 bg-gradient-to-b from-primary to-primary/60 rounded-full" />
+                Trade Analysis Summary
+              </CardTitle>
+            </motion.div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { value: result.avgTrades, label: "Total Trades", color: "text-primary", delay: 1.4 },
+                { value: Math.round(result.avgTrades * result.winrate / 100), label: "Winning Trades", color: "text-emerald-500", delay: 1.5 },
+                { value: result.avgTrades - Math.round(result.avgTrades * result.winrate / 100), label: "Losing Trades", color: "text-red-500", delay: 1.6 },
+                { value: "1.85", label: "Avg Win/Loss", color: "text-blue-500", delay: 1.7 }
+              ].map((stat, index) => (
+                <motion.div 
+                  key={stat.label}
+                  className="text-center group"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: stat.delay }}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <motion.p 
+                    className={`text-3xl font-bold ${stat.color} group-hover:scale-110 transition-transform duration-200`}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ 
+                      delay: stat.delay + 0.1,
+                      type: "spring",
+                      stiffness: 200
+                    }}
+                  >
+                    {stat.value}
+                  </motion.p>
+                  <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                </motion.div>
+              ))}
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-500">{Math.round(result.avgTrades * result.winrate / 100)}</p>
-              <p className="text-sm text-muted-foreground">Winning Trades</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-red-500">{result.avgTrades - Math.round(result.avgTrades * result.winrate / 100)}</p>
-              <p className="text-sm text-muted-foreground">Losing Trades</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-blue-500">1.85</p>
-              <p className="text-sm text-muted-foreground">Avg Win/Loss</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       <Separator className="my-8" />
 
       {/* Enhanced Export Section */}
-      <Card className="shadow-lg border-primary/20">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
-          <CardTitle className="flex items-center gap-2">
-            <Download className="w-5 h-5" />
-            Export Your Trading Bot
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Generate production-ready code and share with the community
-          </p>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div>
-              <Label htmlFor="botName" className="text-sm font-medium">Bot Name *</Label>
-              <Input
-                id="botName"
-                placeholder="Enter a memorable name for your trading bot"
-                value={botName}
-                onChange={(e) => setBotName(e.target.value)}
-                className="mt-2"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button 
-                onClick={() => onExport('python', botName || 'Untitled Bot')} 
-                disabled={!botName.trim()}
-                variant="default"
-                size="lg"
-                className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-              >
-                <Download className="w-5 h-5" />
-                <div className="text-center">
-                  <div className="font-semibold">Python Package</div>
-                  <div className="text-xs opacity-90">Complete .zip with docs</div>
-                </div>
-              </Button>
-              
-              <Button 
-                onClick={() => onExport('json', botName || 'Untitled Bot')} 
-                disabled={!botName.trim()}
-                variant="outline"
-                size="lg"
-                className="h-auto py-4 flex-col gap-2 border-2"
-              >
-                <Download className="w-5 h-5" />
-                <div className="text-center">
-                  <div className="font-semibold">JSON Config</div>
-                  <div className="text-xs text-muted-foreground">Configuration only</div>
-                </div>
-              </Button>
-              
-              <Button 
-                onClick={() => onShare(botName || 'Untitled Bot')} 
-                disabled={!botName.trim()}
-                variant="secondary"
-                size="lg"
-                className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-200 dark:border-green-800"
-              >
-                <Share2 className="w-5 h-5" />
-                <div className="text-center">
-                  <div className="font-semibold">Share & Earn</div>
-                  <div className="text-xs text-green-600 dark:text-green-400">+1 Credit Reward</div>
-                </div>
-              </Button>
-            </div>
-
-            <div className="bg-muted/30 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                <strong>Python Package</strong> includes strategy implementation, risk management, documentation, and setup instructions. 
-                <strong>JSON Config</strong> contains strategy parameters for integration. 
-                <strong>Share to Community</strong> makes your bot public and earns you 1 credit.
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.8 }}
+      >
+        <Card className="shadow-lg border-primary/20 hover:shadow-xl transition-shadow duration-300">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.9 }}
+          >
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
+              <CardTitle className="flex items-center gap-2">
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                  <Download className="w-5 h-5" />
+                </motion.div>
+                Export Your Trading Bot
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Generate production-ready code and share with the community
               </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            </CardHeader>
+          </motion.div>
+          <CardContent className="p-6">
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.0 }}
+            >
+              <div>
+                <Label htmlFor="botName" className="text-sm font-medium">Bot Name *</Label>
+                <motion.div
+                  whileFocus={{ scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Input
+                    id="botName"
+                    placeholder="Enter a memorable name for your trading bot"
+                    value={botName}
+                    onChange={(e) => setBotName(e.target.value)}
+                    className="mt-2"
+                  />
+                </motion.div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  {
+                    onClick: () => onExport('python', botName || 'Untitled Bot'),
+                    variant: "default" as const,
+                    gradient: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+                    title: "Python Package",
+                    subtitle: "Complete .zip with docs",
+                    delay: 2.1
+                  },
+                  {
+                    onClick: () => onExport('json', botName || 'Untitled Bot'),
+                    variant: "outline" as const,
+                    gradient: "border-2",
+                    title: "JSON Config",
+                    subtitle: "Configuration only",
+                    delay: 2.2
+                  },
+                  {
+                    onClick: () => onShare(botName || 'Untitled Bot'),
+                    variant: "secondary" as const,
+                    gradient: "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-200 dark:border-green-800",
+                    title: "Share & Earn",
+                    subtitle: "+1 Credit Reward",
+                    delay: 2.3
+                  }
+                ].map((button, index) => (
+                  <motion.div
+                    key={button.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: button.delay }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button 
+                      onClick={button.onClick}
+                      disabled={!botName.trim()}
+                      variant={button.variant}
+                      size="lg"
+                      className={`h-auto py-4 flex-col gap-2 ${button.gradient} transition-all duration-300`}
+                    >
+                      <motion.div
+                        animate={{ y: [0, -2, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
+                      >
+                        <Download className="w-5 h-5" />
+                      </motion.div>
+                      <div className="text-center">
+                        <div className="font-semibold">{button.title}</div>
+                        <div className={`text-xs ${button.title === "Share & Earn" ? "text-green-600 dark:text-green-400" : button.variant === "default" ? "opacity-90" : "text-muted-foreground"}`}>
+                          {button.subtitle}
+                        </div>
+                      </div>
+                    </Button>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div 
+                className="bg-muted/30 rounded-lg p-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2.4 }}
+              >
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  <strong>Python Package</strong> includes strategy implementation, risk management, documentation, and setup instructions. 
+                  <strong>JSON Config</strong> contains strategy parameters for integration. 
+                  <strong>Share to Community</strong> makes your bot public and earns you 1 credit.
+                </p>
+              </motion.div>
+            </motion.div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
