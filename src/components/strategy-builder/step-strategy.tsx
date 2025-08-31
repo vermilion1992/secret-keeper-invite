@@ -503,7 +503,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                     <TooltipTrigger>
                       <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs z-50" sideOffset={5}>
+                    <TooltipContent side="top" className="max-w-xs z-[1000] pointer-events-none" sideOffset={8}>
                       <p>{strategy.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -563,7 +563,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                     <TooltipTrigger>
                       <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs z-50" sideOffset={5}>
+                    <TooltipContent side="top" className="max-w-xs z-[1000] pointer-events-none" sideOffset={8}>
                       <p>{indicator.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -609,7 +609,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
-                    <expandedItem.icon className="h-6 w-6 text-primary" />
+                    {(() => { const Icon = expandedItem.icon; return <Icon className="h-6 w-6 text-primary" />; })()}
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
