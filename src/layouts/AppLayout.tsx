@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/app-sidebar';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function AppLayout({ children }: PropsWithChildren) {
   return (
@@ -18,6 +19,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <Avatar className="h-8 w-8">
                 <AvatarFallback>BF</AvatarFallback>
               </Avatar>

@@ -13,24 +13,28 @@ import AppLayout from "./layouts/AppLayout";
 
 const queryClient = new QueryClient();
 
+import { ThemeProvider } from "next-themes";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/strategy-builder" element={<StrategyBuilder />} />
-            <Route path="/bot-community" element={<BotCommunity />} />
-            <Route path="/my-bots" element={<MyBots />} />
-            <Route path="/ai-chat" element={<AIChat />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AppLayout>
-      </BrowserRouter>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <BrowserRouter>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/strategy-builder" element={<StrategyBuilder />} />
+              <Route path="/bot-community" element={<BotCommunity />} />
+              <Route path="/my-bots" element={<MyBots />} />
+              <Route path="/ai-chat" element={<AIChat />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
+        </BrowserRouter>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
