@@ -20,9 +20,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <div className="text-2xl font-bold text-primary opacity-80">
-                &lt;/&gt;
-              </div>
+              <img 
+                src="/src/assets/botforge-code-symbol.png" 
+                alt="BotForge Code Symbol" 
+                className="h-20 w-auto object-contain opacity-80"
+              />
               <Avatar className="h-8 w-8">
                 <AvatarFallback>BF</AvatarFallback>
               </Avatar>
