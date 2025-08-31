@@ -16,38 +16,11 @@ const Index = () => {
   const { prices } = useCryptoPrices(30000);
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
 
-  // Portfolio ROI data
-  const portfolioData = useMemo(() => (
-    Array.from({ length: 30 }).map((_, i) => ({
+  // Small performance chart data for top bot
+  const topBotPerformanceData = useMemo(() => (
+    Array.from({ length: 7 }).map((_, i) => ({
       date: `Day ${i + 1}`,
-      value: 10000 + (Math.sin(i / 5) * 2000) + (i * 150) + (Math.random() * 500 - 250),
-      benchmark: 10000 + (i * 50) + (Math.random() * 200 - 100),
-    }))
-  ), []);
-
-  // Monthly performance data
-  const monthlyData = useMemo(() => (
-    Array.from({ length: 12 }).map((_, i) => ({
-      month: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],
-      return: Math.round((Math.sin(i / 2) * 8 + Math.random() * 12 - 4) * 10) / 10,
-      trades: Math.round(15 + Math.random() * 20),
-    }))
-  ), []);
-
-  // Trade outcome distribution data
-  const tradeOutcomeData = useMemo(() => [
-    { name: 'Big Wins (≥ +2R)', value: 22.5, color: 'hsl(var(--chart-1))' },
-    { name: 'Small Wins (< +2R)', value: 43.8, color: 'hsl(var(--chart-2))' },
-    { name: 'Break-even', value: 8.2, color: 'hsl(var(--chart-3))' },
-    { name: 'Small Losses (< -2R)', value: 18.7, color: 'hsl(var(--chart-4))' },
-    { name: 'Big Losses (≥ -2R)', value: 6.8, color: 'hsl(var(--chart-5))' },
-  ], []);
-
-  // Drawdown data
-  const drawdownData = useMemo(() => (
-    Array.from({ length: 30 }).map((_, i) => ({
-      date: `Day ${i + 1}`,
-      drawdown: Math.min(0, -Math.abs(Math.sin(i / 7) * 5) - Math.random() * 3),
+      value: 10000 + (i * 450) + (Math.sin(i / 2) * 300) + (Math.random() * 200 - 100),
     }))
   ), []);
 
@@ -69,31 +42,6 @@ const Index = () => {
     </Card>
   );
 
-  const ChartCard = ({ children, title, isExpanded, onToggle }: { 
-    children: React.ReactNode; 
-    title: string; 
-    isExpanded: boolean; 
-    onToggle: () => void; 
-  }) => (
-    <div className={`transition-all duration-300 ${isExpanded ? 'col-span-full' : ''}`}>
-      <Card className="h-full hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)] transition-all duration-150">
-        <div className="p-6 h-full">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">{title}</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggle}
-              className="h-8 w-8 p-0"
-            >
-              {isExpanded ? '−' : '+'}
-            </Button>
-          </div>
-          {children}
-        </div>
-      </Card>
-    </div>
-  );
 
   return (
     <TooltipProvider>
@@ -192,166 +140,19 @@ const Index = () => {
                 
                 {/* Right side: Compact performance chart */}
                 <div className="h-[200px]">
-                  <div className="h-full w-full bg-muted/20 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <ArrowUpIcon className="h-8 w-8 text-success mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Performance Chart</p>
-                      <p className="text-xs text-muted-foreground">7-day equity curve</p>
-                    </div>
-                  </div>
+                  <AnimatedLineChart 
+                    data={topBotPerformanceData}
+                    title=""
+                    subtitle=""
+                    icon={ChartBarIcon}
+                    showBenchmark={false}
+                    gradientId="topBotGradient"
+                  />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Chart Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <ChartCard 
-              title="Portfolio ROI Curve"
-              isExpanded={expandedChart === 'roi'}
-              onToggle={() => setExpandedChart(expandedChart === 'roi' ? null : 'roi')}
-            >
-              {expandedChart === 'roi' ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">Portfolio ROI Curve</h3>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Shows the growth of your strategy's returns vs. initial capital.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">Visualizes how your portfolio value changes over time, benchmarked against starting capital.</p>
-                  <AnimatedLineChart 
-                    data={portfolioData}
-                    title=""
-                    icon={ChartBarIcon}
-                  />
-                </div>
-              ) : (
-                <div className="h-[200px] bg-muted/20 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <ChartBarIcon className="h-8 w-8 text-primary mx-auto mb-2" />
-                    <p className="text-sm font-medium">Portfolio ROI</p>
-                    <p className="text-xs text-muted-foreground">Click to expand</p>
-                  </div>
-                </div>
-              )}
-            </ChartCard>
-
-            <ChartCard 
-              title="Monthly Performance"
-              isExpanded={expandedChart === 'monthly'}
-              onToggle={() => setExpandedChart(expandedChart === 'monthly' ? null : 'monthly')}
-            >
-              {expandedChart === 'monthly' ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">Monthly Performance</h3>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Breakdown of profits and losses by month.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">Quickly compare performance across months to spot trends or streaks.</p>
-                  <AnimatedBarChart 
-                    data={monthlyData}
-                    title=""
-                    icon={ChartBarIcon}
-                  />
-                </div>
-              ) : (
-                <div className="h-[200px] bg-muted/20 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <ChartBarIcon className="h-8 w-8 text-primary mx-auto mb-2" />
-                    <p className="text-sm font-medium">Monthly Returns</p>
-                    <p className="text-xs text-muted-foreground">Click to expand</p>
-                  </div>
-                </div>
-              )}
-            </ChartCard>
-
-            <ChartCard 
-              title="Trade Outcome Distribution"
-              isExpanded={expandedChart === 'outcomes'}
-              onToggle={() => setExpandedChart(expandedChart === 'outcomes' ? null : 'outcomes')}
-            >
-              {expandedChart === 'outcomes' ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">Trade Outcome Distribution</h3>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Breakdown of trade results into winners, losers, and breakeven.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">Highlights whether your strategy relies on big wins, steady gains, or suffers large losses.</p>
-                  <AnimatedPieChart 
-                    data={tradeOutcomeData}
-                    title=""
-                    subtitle=""
-                    icon={ChartPieIcon}
-                  />
-                </div>
-              ) : (
-                <div className="h-[200px] bg-muted/20 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <ChartPieIcon className="h-8 w-8 text-primary mx-auto mb-2" />
-                    <p className="text-sm font-medium">Trade Outcomes</p>
-                    <p className="text-xs text-muted-foreground">Click to expand</p>
-                  </div>
-                </div>
-              )}
-            </ChartCard>
-
-            <ChartCard 
-              title="Drawdown Over Time"
-              isExpanded={expandedChart === 'drawdown'}
-              onToggle={() => setExpandedChart(expandedChart === 'drawdown' ? null : 'drawdown')}
-            >
-              {expandedChart === 'drawdown' ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold">Drawdown Over Time</h3>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Measures peak-to-trough equity decline.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">Shows the worst declines during the test, helping assess capital risk exposure.</p>
-                  <DrawdownChart 
-                    data={drawdownData}
-                    title=""
-                    subtitle=""
-                    icon={ArrowDownIcon}
-                  />
-                </div>
-              ) : (
-                <div className="h-[200px] bg-muted/20 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <ArrowDownIcon className="h-8 w-8 text-destructive mx-auto mb-2" />
-                    <p className="text-sm font-medium">Drawdown Risk</p>
-                    <p className="text-xs text-muted-foreground">Click to expand</p>
-                  </div>
-                </div>
-              )}
-            </ChartCard>
-          </div>
 
           {/* App Features */}
           <Card className="hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)] transition-all duration-150">
