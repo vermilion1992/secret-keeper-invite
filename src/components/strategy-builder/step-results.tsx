@@ -434,7 +434,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedLineChart
               data={equityData}
               title="Return on Investment"
-              subtitle="Portfolio value over time compared to benchmark performance"
+              subtitle="Strategy vs Benchmark Performance"
               icon={LineChart}
               showBenchmark={true}
               gradientId="equityGradient"
@@ -451,7 +451,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedBarChart
               data={monthlyReturns}
               title="Monthly Returns"
-              subtitle="Percentage returns and trade activity breakdown by month"
+              subtitle="Profit/Loss Distribution by Month"
               icon={BarChart3}
             />
           </div>
@@ -466,7 +466,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedPieChart
               data={tradeDistribution}
               title="Trade Outcome"
-              subtitle="Distribution of trade outcomes by win/loss magnitude"
+              subtitle="Trade Outcome Breakdown"
               icon={PieChart}
             />
           </div>
@@ -481,7 +481,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <DrawdownChart
               data={drawdownData}
               title="Drawdown Over Time"
-              subtitle="Peak-to-trough decline showing risk and recovery periods"
+              subtitle="Risk Assessment Over Time"
               icon={DrawdownIcon}
             />
           </div>
@@ -563,13 +563,30 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
                     {expandedChart === 'distribution' && <PieChart className="h-6 w-6 text-primary" />}
                     {expandedChart === 'drawdown' && <DrawdownIcon className="h-6 w-6 text-primary" />}
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">
-                      {expandedChart === 'equity' && 'Return on Investment'}
-                      {expandedChart === 'returns' && 'Monthly Returns'}
-                      {expandedChart === 'distribution' && 'Trade Outcome Distribution'}
-                      {expandedChart === 'drawdown' && 'Drawdown Analysis'}
-                    </h2>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h2 className="text-2xl font-bold text-foreground">
+                        {expandedChart === 'equity' && 'Return on Investment'}
+                        {expandedChart === 'returns' && 'Monthly Returns'}
+                        {expandedChart === 'distribution' && 'Trade Outcome Distribution'}
+                        {expandedChart === 'drawdown' && 'Drawdown Analysis'}
+                      </h2>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-muted-foreground hover:text-primary cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <p className="text-sm">
+                              {expandedChart === 'equity' && 'Portfolio value over time compared to benchmark performance. Shows long-term compounding effects and sustainability.'}
+                              {expandedChart === 'returns' && 'Percentage returns and trade activity breakdown by month. Identifies seasonal patterns and consistency.'}
+                              {expandedChart === 'distribution' && 'Distribution of trade outcomes by win/loss magnitude. Shows reliance on big wins vs steady gains.'}
+                              {expandedChart === 'drawdown' && 'Peak-to-trough decline showing risk and recovery periods. Measures worst-case scenarios and bounce-back ability.'}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {expandedChart === 'equity' && 'Strategy vs Benchmark Performance'}
                       {expandedChart === 'returns' && 'Profit/Loss Distribution by Month'}
@@ -625,14 +642,6 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
                 )}
               </div>
 
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {expandedChart === 'equity' && 'Visualizes the long-term compounding effect of your strategy compared to a baseline. Helps you see whether gains are sustainable over time.'}
-                  {expandedChart === 'returns' && 'This breakdown helps identify seasonal strengths, streaks of profitability, and risk of inconsistent months.'}
-                  {expandedChart === 'distribution' && 'This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses.'}
-                  {expandedChart === 'drawdown' && 'This view highlights how deeply and how long the strategy suffers during losing streaks, helping you judge recovery potential and risk tolerance.'}
-                </p>
-              </div>
             </div>
           </div>
         </div>,
