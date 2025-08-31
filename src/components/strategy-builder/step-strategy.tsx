@@ -482,12 +482,15 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
   const renderStrategyTile = (strategy: any, isLocked = false) => {
     const Icon = strategy.icon;
-    
+    const isSelected = selected?.id === strategy.id;
+
     return (
       <TooltipProvider key={strategy.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 hover-scale ${
-            isLocked ? 'opacity-60' : ''
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
+            isLocked ? 'opacity-60 cursor-not-allowed' : isSelected
+            ? 'ring-2 ring-success border-success bg-success/10'
+            : 'hover:border-primary hover:bg-primary/10'
           }`}
           onClick={() => !isLocked && openModal({...strategy, type: 'strategy'})}
         >
@@ -506,7 +509,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-primary flex-shrink-0" />
+              <Icon className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-success' : 'text-primary'}`} />
               <div className="flex-1 min-w-0 flex items-center justify-between">
                 <div className="flex items-center gap-1 min-w-0">
                   <h3 className="font-medium text-sm leading-tight truncate">
@@ -546,8 +549,8 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
     return (
       <TooltipProvider key={indicator.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 hover-scale ${
-            isLocked ? 'opacity-60' : ''
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
+            isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/10'
           }`}
           onClick={() => !isLocked && openModal({...indicator, type: 'indicator'})}
         >
