@@ -1,8 +1,13 @@
-import { BacktestParams, Timeframe, CANDLE_CAPS } from '@/types/botforge';
+import { BacktestParams, Timeframe } from '@/types/botforge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Clock, CalendarIcon } from 'lucide-react';
+import { format, subDays, addDays } from 'date-fns';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface StepTimeframeProps {
   backtestParams: BacktestParams;
@@ -11,6 +16,19 @@ interface StepTimeframeProps {
 }
 
 export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimeframeProps) {
+  const [selectedPeriod, setSelectedPeriod] = useState(365); // days
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 365));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [useCustomRange, setUseCustomRange] = useState(false);
+
+  const timePeriods = [
+    { days: 7, label: '7 Days', recommended: false },
+    { days: 30, label: '30 Days', recommended: true },
+    { days: 90, label: '90 Days', recommended: true },
+    { days: 365, label: '1 Year', recommended: true },
+    { days: 1095, label: '3 Years', recommended: false },
+  ];
+
   const timeframes: { value: Timeframe; label: string; recommended: boolean }[] = [
     { value: '1m', label: '1 Minute', recommended: false },
     { value: '5m', label: '5 Minutes', recommended: false },
@@ -21,21 +39,34 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
   ];
 
   const updateTimeframe = (timeframe: Timeframe) => {
-    const maxCandles = CANDLE_CAPS[timeframe];
     onUpdate({
       ...backtestParams,
       timeframe,
-      maxPeriod: maxCandles,
-      candleCount: Math.min(backtestParams.candleCount, maxCandles)
+      maxPeriod: selectedPeriod,
+      candleCount: selectedPeriod
     });
   };
 
-  const updateCandleCount = (count: number) => {
-    const maxCandles = CANDLE_CAPS[backtestParams.timeframe];
+  const updatePeriod = (days: number) => {
+    setSelectedPeriod(days);
     onUpdate({
       ...backtestParams,
-      candleCount: Math.min(count, maxCandles)
+      maxPeriod: days,
+      candleCount: days
     });
+  };
+
+  const updateDateRange = () => {
+    if (startDate && endDate) {
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setSelectedPeriod(diffDays);
+      onUpdate({
+        ...backtestParams,
+        maxPeriod: diffDays,
+        candleCount: diffDays
+      });
+    }
   };
 
   return (
@@ -71,7 +102,8 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Max: {CANDLE_CAPS[tf.value].toLocaleString()} candles
+                  Ideal for {tf.value === '1m' || tf.value === '5m' ? 'short-term' : 
+                    tf.value === '15m' || tf.value === '1h' ? 'medium-term' : 'long-term'} strategies
                 </p>
               </button>
             );
@@ -79,42 +111,157 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
         </div>
       </div>
 
-      {/* Candle Count */}
+      {/* Time Period Selection */}
+      <div>
+        <h3 className="font-medium mb-3">Backtest Period</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          {timePeriods.map((period) => {
+            const isSelected = selectedPeriod === period.days;
+            return (
+              <button
+                key={period.days}
+                onClick={() => updatePeriod(period.days)}
+                className={`p-3 rounded-lg border transition text-center ${
+                  isSelected
+                    ? 'border-primary/50 bg-primary/10'
+                    : 'border-border/60 hover:bg-muted/30'
+                }`}
+              >
+                <div className="font-medium text-sm">{period.label}</div>
+                {period.recommended && (
+                  <Badge variant="secondary" className="text-xs mt-1">Recommended</Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <Card className="p-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Custom Period</h4>
+              <Badge variant="outline" className="text-xs">
+                {selectedPeriod} days
+              </Badge>
+            </div>
+            
+            <div className="space-y-2">
+              <input
+                type="range"
+                min="7"
+                max="1095"
+                step="1"
+                value={selectedPeriod}
+                onChange={(e) => updatePeriod(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>7 days</span>
+                <span className="font-medium">{selectedPeriod} days</span>
+                <span>3 years</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Date Range Selection */}
       <Card className="p-4">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium">Backtest Period</h3>
-            <Badge variant="outline" className="text-xs">
-              {backtestParams.candleCount.toLocaleString()} / {CANDLE_CAPS[backtestParams.timeframe].toLocaleString()} candles
+            <h3 className="font-medium">Date Range (Optional)</h3>
+            <Badge variant={useCustomRange ? "default" : "outline"} className="text-xs">
+              {useCustomRange ? "Custom Range" : "Latest Data"}
             </Badge>
           </div>
           
-          <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-4">
             <input
-              type="range"
-              min="100"
-              max={CANDLE_CAPS[backtestParams.timeframe]}
-              step="100"
-              value={backtestParams.candleCount}
-              onChange={(e) => updateCandleCount(Number(e.target.value))}
-              className="w-full"
+              type="checkbox"
+              id="useCustomRange"
+              checked={useCustomRange}
+              onChange={(e) => setUseCustomRange(e.target.checked)}
+              className="rounded"
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>100</span>
-              <span className="font-medium">{backtestParams.candleCount.toLocaleString()}</span>
-              <span>{CANDLE_CAPS[backtestParams.timeframe].toLocaleString()}</span>
-            </div>
+            <label htmlFor="useCustomRange" className="text-sm">
+              Use custom date range instead of latest available data
+            </label>
           </div>
 
-          <div className="text-sm text-muted-foreground">
-            <p>
-              Approximately {Math.round(backtestParams.candleCount / (backtestParams.timeframe === '1m' ? 1440 : 
-                backtestParams.timeframe === '5m' ? 288 :
-                backtestParams.timeframe === '15m' ? 96 :
-                backtestParams.timeframe === '1h' ? 24 :
-                backtestParams.timeframe === '4h' ? 6 : 1))} days of data
-            </p>
-          </div>
+          {useCustomRange && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Start Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : <span>Pick start date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={(date) => {
+                        setStartDate(date);
+                        if (date && endDate) updateDateRange();
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">End Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : <span>Pick end date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      onSelect={(date) => {
+                        setEndDate(date);
+                        if (startDate && date) updateDateRange();
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
+
+          {useCustomRange && startDate && endDate && (
+            <div className="text-sm text-muted-foreground bg-muted/20 p-3 rounded-lg">
+              <p>
+                Selected range: {format(startDate, "MMM dd, yyyy")} to {format(endDate, "MMM dd, yyyy")}
+              </p>
+              <p>
+                Duration: {Math.ceil(Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
+              </p>
+            </div>
+          )}
         </div>
       </Card>
 
