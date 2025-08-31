@@ -65,62 +65,15 @@ const Index = () => {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Community Members</p>
-                <p className="text-2xl font-semibold">12,482</p>
+                <p className="text-sm text-muted-foreground">Backtests Performed</p>
+                <p className="text-2xl font-semibold">8,247</p>
               </div>
-              <div className="text-sm text-success">+3.2% WoW</div>
+              <div className="text-sm text-success">+15.8% this week</div>
             </div>
           </Card>
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Portfolio Equity</CardTitle>
-              <CardDescription>Simulated equity curve across the year</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{ pnl: { label: 'PnL', color: 'hsl(var(--primary))' }}}>
-                <AreaChart data={areaData}>
-                  <defs>
-                    <linearGradient id="fillEquity" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="10%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="4 4" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Area type="monotone" dataKey="equity" stroke="hsl(var(--primary))" fill="url(#fillEquity)" />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Weekly Profit</CardTitle>
-              <CardDescription>Sales vs revenue (mock)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{ sales: { label: 'Sales', color: 'hsl(var(--primary))' }, revenue: { label: 'Revenue', color: 'hsl(var(--success))' }}}>
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
-                  <Bar dataKey="revenue" fill="hsl(var(--success))" radius={[4,4,0,0]} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* App Features + Mini Chat */}
+        {/* App Features + Top Bot */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader>
@@ -176,26 +129,69 @@ const Index = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Quick Chat</CardTitle>
-              <CardDescription>Ask the AI anything</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-yellow-500">#1</span>
+                Top Community Bot
+              </CardTitle>
+              <CardDescription>Most profitable bot this week</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="text-sm text-muted-foreground">Try a prompt:</div>
-                <div className="rounded-md border p-3 text-sm">Suggest a momentum strategy for BTC on 1h</div>
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none"
-                    placeholder="Ask about a strategy..."
-                    value={miniChat}
-                    onChange={(e) => setMiniChat(e.target.value)}
-                  />
-                  <Button onClick={() => navigate('/ai-chat')} variant="secondary">Open Chat</Button>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">Momentum King</p>
+                    <p className="text-sm text-muted-foreground">by @cryptomaster</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-success">+127.3%</p>
+                    <p className="text-xs text-muted-foreground">7-day return</p>
+                  </div>
                 </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Pairs:</span>
+                    <span>BTC/USDT, ETH/USDT</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Timeframe:</span>
+                    <span>15m</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Win Rate:</span>
+                    <span>68.4%</span>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full" onClick={() => navigate('/bot-community')}>
+                  View Bot Details
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Chat - Full Width Bottom */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick AI Chat</CardTitle>
+            <CardDescription>Get instant strategy guidance and ideas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <input
+                  className="w-full rounded-md border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="Ask about strategies, market analysis, or get trading ideas..."
+                  value={miniChat}
+                  onChange={(e) => setMiniChat(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && navigate('/ai-chat')}
+                />
+              </div>
+              <Button onClick={() => navigate('/ai-chat')} className="gap-2">
+                Open Chat <MessageCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
