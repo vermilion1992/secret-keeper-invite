@@ -434,7 +434,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedLineChart
               data={equityData}
               title="Return on Investment"
-              subtitle="Strategy vs Benchmark Performance"
+              subtitle="Portfolio value over time compared to benchmark performance"
               icon={LineChart}
               showBenchmark={true}
               gradientId="equityGradient"
@@ -451,7 +451,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedBarChart
               data={monthlyReturns}
               title="Monthly Returns"
-              subtitle="Profit/Loss Distribution by Month"
+              subtitle="Percentage returns and trade activity breakdown by month"
               icon={BarChart3}
             />
           </div>
@@ -466,7 +466,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <AnimatedPieChart
               data={tradeDistribution}
               title="Trade Outcome"
-              subtitle="Trade Outcome Breakdown"
+              subtitle="Distribution of trade outcomes by win/loss magnitude"
               icon={PieChart}
             />
           </div>
@@ -481,7 +481,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             <DrawdownChart
               data={drawdownData}
               title="Drawdown Over Time"
-              subtitle="Risk Assessment Over Time"
+              subtitle="Peak-to-trough decline showing risk and recovery periods"
               icon={DrawdownIcon}
             />
           </div>
