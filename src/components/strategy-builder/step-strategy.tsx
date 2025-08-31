@@ -598,17 +598,25 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
       {/* Modal Overlay */}
       {expandedItem && (
-        <div 
-          className="fixed inset-0 z-[9999]"
-        >
+        <div className="fixed inset-0 z-[9999]">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-fade-in"
             onClick={() => setExpandedItem(null)}
           />
           
-          {/* Modal Content */}
-          <div className="fixed left-1/2 top-1/2 z-[10000] w-full max-w-2xl -translate-x-1/2 -translate-y-1/2" style={{ maxHeight: '90vh' }}>
+          {/* Modal Content - positioned relative to sidebar */}
+          <div 
+            className="fixed z-[10000] w-full max-w-2xl animate-scale-in"
+            style={{ 
+              left: '300px', // Account for sidebar width (256px + some margin)
+              top: '50%',
+              right: '2rem',
+              transform: 'translateY(-50%)',
+              maxHeight: '90vh',
+              width: 'calc(100vw - 340px)' // Full width minus sidebar and margins
+            }}
+          >
             <Card className="animate-scale-in border-primary bg-card shadow-2xl overflow-y-auto" style={{ maxHeight: '90vh' }}>
               <CardHeader>
                 <div className="flex items-center justify-between">
