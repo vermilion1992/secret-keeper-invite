@@ -41,7 +41,7 @@ const ENHANCED_STRATEGIES = [
     tier: 'basic' as UserTier,
     icon: TrendingUp,
     tags: ['EMA', 'Trend', 'Classic'],
-    advanced: ['Fast EMA', 'Slow EMA', 'Trend EMA', 'Risk/Reward']
+    advanced: ['Fast EMA length', 'Slow EMA length', 'Trend EMA length', 'Risk/Reward ratio']
   },
   {
     id: 'rsi-mean-reversion',
@@ -51,7 +51,7 @@ const ENHANCED_STRATEGIES = [
     tier: 'basic' as UserTier,
     icon: Activity,
     tags: ['RSI', 'Mean Reversion', 'ATR'],
-    advanced: ['RSI period', 'OB/OS levels', 'ATR threshold']
+    advanced: ['RSI period', 'Overbought/oversold levels', 'ATR threshold', 'Stop-loss method']
   },
   {
     id: 'macd-confirmation',
@@ -61,7 +61,7 @@ const ENHANCED_STRATEGIES = [
     tier: 'basic' as UserTier,
     icon: BarChart3,
     tags: ['MACD', 'EMA', 'Trend'],
-    advanced: ['MACD fast', 'MACD slow', 'Signal', 'EMA filter']
+    advanced: ['MACD fast', 'MACD slow', 'MACD signal', 'EMA filter']
   },
   {
     id: 'bollinger-bounce',
@@ -71,7 +71,7 @@ const ENHANCED_STRATEGIES = [
     tier: 'basic' as UserTier,
     icon: Waves,
     tags: ['Bollinger', 'RSI', 'Bounce'],
-    advanced: ['BB period', 'BB deviation', 'RSI filter']
+    advanced: ['BB period', 'BB deviation', 'RSI filter', 'Exit method']
   },
   {
     id: 'stochastic-swing',
@@ -81,7 +81,7 @@ const ENHANCED_STRATEGIES = [
     tier: 'basic' as UserTier,
     icon: LineChart,
     tags: ['Stochastic', 'SMA', 'Swing'],
-    advanced: ['Stoch length', 'OB/OS levels', 'SMA length']
+    advanced: ['Stoch length', 'Stoch OB/OS levels', 'SMA length']
   },
   {
     id: 'vwap-trend-rider',
@@ -91,7 +91,7 @@ const ENHANCED_STRATEGIES = [
     tier: 'pro' as UserTier,
     icon: Target,
     tags: ['VWAP', 'EMA', 'Intraday'],
-    advanced: ['VWAP lookback', 'EMA slope', 'Stop distance']
+    advanced: ['VWAP lookback', 'EMA slope length', 'Stop distance']
   },
   {
     id: 'atr-trailing-stops',
@@ -151,7 +151,87 @@ const ENHANCED_STRATEGIES = [
     tier: 'expert' as UserTier,
     icon: Zap,
     tags: ['Breakout', 'Volatility', 'Aggressive'],
-    advanced: ['Lookback', 'K value', 'Volatility target %']
+    advanced: ['Lookback', 'K value', 'Volatility target %', 'Exit rules']
+  },
+  {
+    id: 'echo-market-neutral',
+    name: 'Echo Market Neutral',
+    tooltip: 'Long leaders, short laggards.',
+    blurb: 'Pairs long positions in top momentum assets with shorts in weak assets. Market-neutral by design.',
+    tier: 'expert' as UserTier,
+    icon: Target,
+    tags: ['Market Neutral', 'Long/Short', 'Momentum'],
+    advanced: ['Ranking length', '# longs', '# shorts', 'Rebalance freq']
+  },
+  {
+    id: 'echo-hybrid',
+    name: 'Echo Hybrid',
+    tooltip: 'Blend of Turbo K6 + Market Neutral.',
+    blurb: 'Dynamically allocates between Turbo K6 and Market Neutral depending on market breadth.',
+    tier: 'expert' as UserTier,
+    icon: Settings,
+    tags: ['Hybrid', 'Dynamic', 'Allocation'],
+    advanced: ['Allocation %', 'Breadth triggers', 'Rebalance freq']
+  },
+  {
+    id: 'breakout-pullback',
+    name: 'Breakout Pullback',
+    tooltip: 'Entry on breakout + RSI pullback.',
+    blurb: 'Enters after breakout confirmation, but only after an RSI pullback avoids chasing.',
+    tier: 'pro' as UserTier,
+    icon: TrendingUp,
+    tags: ['Breakout', 'Pullback', 'RSI'],
+    advanced: ['Breakout length', 'RSI filter', 'ATR stop']
+  },
+  {
+    id: 'range-reversal',
+    name: 'Range Reversal',
+    tooltip: 'Fade extremes inside ranges.',
+    blurb: 'Looks for price reversals inside trading ranges using Bollinger + RSI.',
+    tier: 'basic' as UserTier,
+    icon: Waves,
+    tags: ['Range', 'Reversal', 'Bollinger'],
+    advanced: ['BB period', 'RSI filter', 'Stop method']
+  },
+  {
+    id: 'trend-following-core',
+    name: 'Trend Following Core',
+    tooltip: 'Simple EMA trend with MACD filter.',
+    blurb: 'Classic trend following. EMA slope + MACD confirmation keep trades aligned with strong moves.',
+    tier: 'basic' as UserTier,
+    icon: LineChart,
+    tags: ['Trend', 'EMA', 'MACD'],
+    advanced: ['EMA length', 'MACD fast/slow/signal', 'Exit method']
+  },
+  {
+    id: 'multi-confirm-swing',
+    name: 'Multi-Confirm Swing',
+    tooltip: 'RSI + MACD + Stoch triple filter.',
+    blurb: 'Requires alignment of three major oscillators before entry, reducing noise but fewer signals.',
+    tier: 'pro' as UserTier,
+    icon: Activity,
+    tags: ['Multi-confirm', 'Oscillators', 'Swing'],
+    advanced: ['RSI length', 'MACD settings', 'Stoch settings']
+  },
+  {
+    id: 'support-resistance-bounce',
+    name: 'Support/Resistance Bounce',
+    tooltip: 'Trades bounces at key levels.',
+    blurb: 'Enters trades when price respects S/R zones, confirmed with volume filters.',
+    tier: 'pro' as UserTier,
+    icon: BarChart3,
+    tags: ['S/R', 'Bounce', 'Volume'],
+    advanced: ['S/R lookback', 'Volume threshold', 'Stop size']
+  },
+  {
+    id: 'high-volatility-rider',
+    name: 'High Volatility Rider',
+    tooltip: 'Focus on high-volatility assets.',
+    blurb: 'Targets volatile coins, scaling size by ATR and volatility ranks to ride explosive trends.',
+    tier: 'expert' as UserTier,
+    icon: Zap,
+    tags: ['Volatility', 'ATR', 'Explosive'],
+    advanced: ['ATR length', 'Vol rank %', 'Position cap']
   }
 ];
 
@@ -228,12 +308,120 @@ const ENHANCED_INDICATORS = [
     icon: Target,
     tier: 'pro' as UserTier,
     advanced: ['Session length']
+  },
+  {
+    id: 'obv',
+    name: 'OBV',
+    tooltip: 'On Balance Volume.',
+    blurb: 'Uses volume flow to confirm price trends.',
+    icon: BarChart3,
+    tier: 'basic' as UserTier,
+    advanced: ['None (basic)']
+  },
+  {
+    id: 'cci',
+    name: 'CCI',
+    tooltip: 'Commodity Channel Index.',
+    blurb: 'Oscillator for cyclical market trends.',
+    icon: Activity,
+    tier: 'pro' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'momentum',
+    name: 'Momentum',
+    tooltip: 'Simple momentum measure.',
+    blurb: 'Compares recent price to past price for directional strength.',
+    icon: TrendingUp,
+    tier: 'basic' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'roc',
+    name: 'ROC',
+    tooltip: 'Rate of Change.',
+    blurb: 'Percentage change between current and past price.',
+    icon: LineChart,
+    tier: 'basic' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'adx',
+    name: 'ADX',
+    tooltip: 'Average Directional Index.',
+    blurb: 'Measures trend strength, not direction.',
+    icon: Gauge,
+    tier: 'pro' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'williams-r',
+    name: 'Williams %R',
+    tooltip: 'Momentum oscillator.',
+    blurb: 'Shows overbought/oversold relative to highs/lows.',
+    icon: Activity,
+    tier: 'pro' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'parabolic-sar',
+    name: 'Parabolic SAR',
+    tooltip: 'Stop-and-reverse system.',
+    blurb: 'Plots trailing stops that flip when trend reverses.',
+    icon: Target,
+    tier: 'expert' as UserTier,
+    advanced: ['Step', 'Max']
+  },
+  {
+    id: 'vw-macd',
+    name: 'VW-MACD',
+    tooltip: 'Volume-Weighted MACD.',
+    blurb: 'Adds volume weighting to MACD signals.',
+    icon: BarChart3,
+    tier: 'expert' as UserTier,
+    advanced: ['Fast', 'Slow', 'Signal']
+  },
+  {
+    id: 'chaikin-money-flow',
+    name: 'Chaikin Money Flow',
+    tooltip: 'Tracks buying/selling pressure.',
+    blurb: 'Volume-weighted oscillator to confirm accumulation/distribution.',
+    icon: Waves,
+    tier: 'pro' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'supertrend',
+    name: 'Supertrend',
+    tooltip: 'Trend-following overlay.',
+    blurb: 'Plots trailing stops based on ATR, flipping when trend reverses.',
+    icon: TrendingUp,
+    tier: 'expert' as UserTier,
+    advanced: ['ATR length', 'Multiplier']
+  },
+  {
+    id: 'dmi',
+    name: 'DMI',
+    tooltip: 'Directional Movement Index.',
+    blurb: 'Shows positive/negative directional trends.',
+    icon: LineChart,
+    tier: 'expert' as UserTier,
+    advanced: ['Period']
+  },
+  {
+    id: 'keltner-channels',
+    name: 'Keltner Channels',
+    tooltip: 'ATR-based volatility bands.',
+    blurb: 'Volatility channels built around EMA, good for trend detection.',
+    icon: Waves,
+    tier: 'expert' as UserTier,
+    advanced: ['EMA length', 'ATR multiplier']
   }
 ];
 
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
   const [advancedSettings, setAdvancedSettings] = useState<Record<string, boolean>>({});
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [expandedItem, setExpandedItem] = useState<any>(null);
 
   const accessibleStrategies = ENHANCED_STRATEGIES.filter((s) => {
     if (userTier === 'expert') return true;
@@ -261,22 +449,77 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
   const renderStrategyTile = (strategy: any, isLocked = false) => {
     const Icon = strategy.icon;
-    const isSelected = selected?.id === strategy.id;
+    const isExpanded = expandedItem?.id === strategy.id;
+    
+    if (isExpanded) {
+      return (
+        <TooltipProvider key={strategy.id}>
+          <Card className="col-span-full border-primary bg-primary/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Icon className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-lg">{strategy.name}</h3>
+                    <Badge variant="outline" className="text-xs">{strategy.tier}</Badge>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExpandedItem(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">{strategy.blurb}</p>
+              <div className="flex flex-wrap gap-2">
+                {strategy.tags.map((tag: string) => (
+                  <Badge key={tag} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    onSelect({ 
+                      id: strategy.id, 
+                      name: strategy.name, 
+                      description: strategy.tooltip,
+                      tier: strategy.tier,
+                      defaultIndicators: [],
+                      canAddFilters: strategy.tier !== 'basic'
+                    });
+                    setExpandedItem(null);
+                  }}
+                  className="flex-1"
+                >
+                  Select Strategy
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setExpandedItem(null)}
+                  className="flex-1"
+                >
+                  Go Back
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
+      );
+    }
     
     return (
       <TooltipProvider key={strategy.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border ${
-            isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
-          } ${isLocked ? 'opacity-60' : ''}`}
-          onClick={() => !isLocked && onSelect({ 
-            id: strategy.id, 
-            name: strategy.name, 
-            description: strategy.tooltip,
-            tier: strategy.tier,
-            defaultIndicators: [],
-            canAddFilters: strategy.tier !== 'basic'
-          })}
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 ${
+            isLocked ? 'opacity-60' : ''
+          }`}
+          onClick={() => !isLocked && setExpandedItem(strategy)}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
@@ -293,31 +536,33 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-primary" />
-              <div className="flex-1 min-w-0">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <h3 className="font-medium text-sm leading-tight truncate">
-                      {strategy.name}
-                      <Info className="inline h-3 w-3 ml-1 text-muted-foreground" />
-                    </h3>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-xs">
-                    <p>{strategy.tooltip}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Badge variant="outline" className="text-xs mt-1">{strategy.tier}</Badge>
+              <Icon className="h-5 w-5 text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0 flex items-center justify-between">
+                <div className="flex items-center gap-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-tight truncate">
+                    {strategy.name}
+                  </h3>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p>{strategy.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                {!isLocked && (
+                  <Checkbox
+                    checked={advancedSettings[strategy.id] || false}
+                    onCheckedChange={(checked) => 
+                      setAdvancedSettings(prev => ({ ...prev, [strategy.id]: !!checked }))
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
               </div>
-              {!isLocked && (
-                <Checkbox
-                  checked={advancedSettings[strategy.id] || false}
-                  onCheckedChange={(checked) => 
-                    setAdvancedSettings(prev => ({ ...prev, [strategy.id]: !!checked }))
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                />
-              )}
             </div>
+            <Badge variant="outline" className="text-xs w-fit">{strategy.tier}</Badge>
           </CardHeader>
           
           <CardContent className="pt-0 space-y-2">
@@ -328,12 +573,6 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 </Badge>
               ))}
             </div>
-            
-            {isSelected && (
-              <div className="mt-3 p-2 bg-muted/30 rounded text-xs text-muted-foreground">
-                {strategy.blurb}
-              </div>
-            )}
             
             {advancedSettings[strategy.id] && !isLocked && (
               <div className="mt-2 text-xs text-muted-foreground">
@@ -349,13 +588,63 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
   const renderIndicatorTile = (indicator: any, isLocked = false) => {
     const Icon = indicator.icon;
+    const isExpanded = expandedItem?.id === indicator.id;
+    
+    if (isExpanded) {
+      return (
+        <TooltipProvider key={indicator.id}>
+          <Card className="col-span-full border-primary bg-primary/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Icon className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-lg">{indicator.name}</h3>
+                    <Badge variant="outline" className="text-xs">{indicator.tier}</Badge>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExpandedItem(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">{indicator.blurb}</p>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    // Navigate to advanced settings for indicator
+                    setExpandedItem(null);
+                  }}
+                  className="flex-1"
+                >
+                  Select Indicator
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setExpandedItem(null)}
+                  className="flex-1"
+                >
+                  Go Back
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
+      );
+    }
     
     return (
       <TooltipProvider key={indicator.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border ${
-            'border-border hover:border-primary/30'
-          } ${isLocked ? 'opacity-60' : ''}`}
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 ${
+            isLocked ? 'opacity-60' : ''
+          }`}
+          onClick={() => !isLocked && setExpandedItem(indicator)}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
@@ -372,39 +661,38 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-primary" />
-              <div className="flex-1 min-w-0">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <h3 className="font-medium text-sm leading-tight truncate">
-                      {indicator.name}
-                      <Info className="inline h-3 w-3 ml-1 text-muted-foreground" />
-                    </h3>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-xs">
-                    <p>{indicator.tooltip}</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Badge variant="outline" className="text-xs mt-1">{indicator.tier}</Badge>
+              <Icon className="h-5 w-5 text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0 flex items-center justify-between">
+                <div className="flex items-center gap-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-tight truncate">
+                    {indicator.name}
+                  </h3>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p>{indicator.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                {!isLocked && (
+                  <Checkbox
+                    checked={advancedSettings[indicator.id] || false}
+                    onCheckedChange={(checked) => 
+                      setAdvancedSettings(prev => ({ ...prev, [indicator.id]: !!checked }))
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
               </div>
-              {!isLocked && (
-                <Checkbox
-                  checked={advancedSettings[indicator.id] || false}
-                  onCheckedChange={(checked) => 
-                    setAdvancedSettings(prev => ({ ...prev, [indicator.id]: !!checked }))
-                  }
-                />
-              )}
             </div>
+            <Badge variant="outline" className="text-xs w-fit">{indicator.tier}</Badge>
           </CardHeader>
           
           <CardContent className="pt-0 space-y-2">
-            <div className="text-xs text-muted-foreground">
-              {indicator.blurb}
-            </div>
-            
             {advancedSettings[indicator.id] && !isLocked && (
-              <div className="mt-2 text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 <p className="font-medium mb-1">Advanced:</p>
                 <p>{indicator.advanced.join(', ')}</p>
               </div>
