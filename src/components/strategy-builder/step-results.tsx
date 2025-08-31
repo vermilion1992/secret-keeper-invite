@@ -411,31 +411,14 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             >
               {expandedChart === 'equity' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <AnimatedLineChart
-                  data={equityData}
-                  title="ROI Over Time"
-                  subtitle="Strategy vs Benchmark Performance"
-                  icon={LineChart}
-                  showBenchmark={true}
-                  gradientId="equityGradient"
-                />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Tracks how your capital grows over time under this strategy, compared to just holding the asset. Helps you see consistency and performance trends.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <p className="text-sm text-muted-foreground px-4 pb-2">
-                This shows how the strategy performed overall. A rising line means steady growth, while dips show riskier periods.
-              </p>
-            </div>
+            <AnimatedLineChart
+              data={equityData}
+              title="ROI Over Time"
+              subtitle="Strategy vs Benchmark Performance"
+              icon={LineChart}
+              showBenchmark={true}
+              gradientId="equityGradient"
+            />
           </div>
         )}
 
@@ -447,29 +430,12 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             >
               {expandedChart === 'returns' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <AnimatedBarChart
-                  data={monthlyReturns}
-                  title="Monthly Profit/Loss"
-                  subtitle="Profit/Loss Distribution by Month"
-                  icon={BarChart3}
-                />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Shows percentage profit or loss each month. A quick way to spot hot streaks, losing periods, and seasonal effects in your strategy.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <p className="text-sm text-muted-foreground px-4 pb-2">
-                Gives you a month-by-month breakdown of results, making it easy to see when the strategy performs best or worst.
-              </p>
-            </div>
+            <AnimatedBarChart
+              data={monthlyReturns}
+              title="Monthly Profit/Loss"
+              subtitle="Profit/Loss Distribution by Month"
+              icon={BarChart3}
+            />
           </div>
         )}
 
@@ -481,29 +447,12 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             >
               {expandedChart === 'distribution' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <AnimatedPieChart
-                  data={tradeDistribution}
-                  title="Win/Loss Breakdown"
-                  subtitle="Win Rate Breakdown"
-                  icon={PieChart}
-                />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Breaks down how many trades were winners vs losers. Helps you understand if profitability comes from a high win rate or a few big wins.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <p className="text-sm text-muted-foreground px-4 pb-2">
-                Shows the balance between winning and losing trades, helping you see the style of this strategy.
-              </p>
-            </div>
+            <AnimatedPieChart
+              data={tradeDistribution}
+              title="Win/Loss Breakdown"
+              subtitle="Win Rate Breakdown"
+              icon={PieChart}
+            />
           </div>
         )}
 
@@ -515,29 +464,12 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
             >
               {expandedChart === 'drawdown' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <DrawdownChart
-                  data={drawdownData}
-                  title="Drawdown Over Time"
-                  subtitle="Risk Assessment Over Time"
-                  icon={DrawdownIcon}
-                />
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Measures the worst peak-to-valley declines in equity. Shows how much your account could drop before recovering — a key risk metric.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <p className="text-sm text-muted-foreground px-4 pb-2">
-                This chart highlights the biggest dips in performance, so you can understand the downside risk of running this strategy.
-              </p>
-            </div>
+            <DrawdownChart
+              data={drawdownData}
+              title="Drawdown Over Time"
+              subtitle="Risk Assessment Over Time"
+              icon={DrawdownIcon}
+            />
           </div>
         )}
       </motion.div>
