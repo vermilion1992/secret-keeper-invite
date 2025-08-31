@@ -92,10 +92,20 @@ export function AppSidebar() {
                 }}
                 className="relative"
               >
+                {/* Light mode logo */}
                 <motion.img 
                   src="/lovable-uploads/ded5f715-d507-4710-ac01-f02504f8268b.png" 
                   alt="BotForge Logo" 
-                  className="h-24 w-auto drop-shadow-2xl"
+                  className="h-24 w-auto drop-shadow-2xl dark:hidden"
+                  initial={{ filter: "brightness(0.7)" }}
+                  animate={{ filter: "brightness(1)" }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                />
+                {/* Dark mode logo */}
+                <motion.img 
+                  src="/lovable-uploads/1e7cee51-75d8-414e-91ff-154bbc5b3d14.png" 
+                  alt="BotForge Logo" 
+                  className="h-24 w-auto drop-shadow-2xl hidden dark:block"
                   initial={{ filter: "brightness(0.7)" }}
                   animate={{ filter: "brightness(1)" }}
                   transition={{ duration: 0.6, delay: 0.2 }}
