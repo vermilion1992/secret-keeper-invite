@@ -8,37 +8,37 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Cloudy background inspired by Alter */
-    --background: 220 20% 96%;
+    /* Enhanced cloudy background inspired by Alter */
+    --background: 220 30% 94%;
     --foreground: 240 15% 15%;
 
-    /* Frosted glass cards */
-    --card: 0 0% 100% / 0.8;
+    /* Enhanced frosted glass cards */
+    --card: 0 0% 100% / 0.7;
     --card-foreground: 240 15% 15%;
 
-    --popover: 0 0% 100% / 0.95;
+    --popover: 0 0% 100% / 0.9;
     --popover-foreground: 240 15% 15%;
 
-    /* Purple primary inspired by Alter */
+    /* Beautiful purple primary */
     --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
 
     /* Subtle backgrounds */
-    --secondary: 240 20% 98%;
+    --secondary: 240 30% 96%;
     --secondary-foreground: 240 15% 15%;
 
-    --muted: 240 20% 94%;
+    --muted: 240 25% 92%;
     --muted-foreground: 240 10% 50%;
 
-    --accent: 260 60% 95%;
+    --accent: 260 70% 92%;
     --accent-foreground: 262 83% 58%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Subtle borders for frosted effect */
-    --border: 240 20% 90%;
-    --input: 240 20% 90%;
+    /* Enhanced borders for better glass effect */
+    --border: 240 30% 85% / 0.3;
+    --input: 240 30% 85% / 0.3;
     --ring: 262 83% 58%;
 
     /* Semantic status colors */
@@ -65,28 +65,28 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark cloudy background */
-    --background: 240 20% 8%;
+    /* Enhanced dark cloudy background */
+    --background: 240 25% 6%;
     --foreground: 240 20% 95%;
 
-    /* Dark frosted glass cards */
-    --card: 240 20% 12% / 0.8;
+    /* Enhanced dark frosted glass cards */
+    --card: 240 20% 12% / 0.7;
     --card-foreground: 240 20% 95%;
 
-    --popover: 240 20% 12% / 0.95;
+    --popover: 240 20% 12% / 0.9;
     --popover-foreground: 240 20% 95%;
 
     /* Bright purple for dark mode */
     --primary: 262 83% 65%;
     --primary-foreground: 240 20% 8%;
 
-    --secondary: 240 20% 15%;
+    --secondary: 240 25% 12%;
     --secondary-foreground: 240 20% 95%;
 
-    --muted: 240 20% 15%;
+    --muted: 240 25% 10%;
     --muted-foreground: 240 15% 65%;
 
-    --accent: 260 40% 20%;
+    --accent: 260 50% 15%;
     --accent-foreground: 262 83% 65%;
 
     --destructive: 0 62.8% 50%;
@@ -96,8 +96,8 @@ All colors MUST be HSL.
     --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;
 
-    --border: 240 20% 20%;
-    --input: 240 20% 20%;
+    --border: 240 25% 18% / 0.3;
+    --input: 240 25% 18% / 0.3;
     --ring: 262 83% 65%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -121,7 +121,7 @@ All colors MUST be HSL.
     overflow-x: hidden;
   }
 
-  /* Animated cloud background */
+  /* Enhanced animated cloud background like Alter */
   body::before {
     content: '';
     position: fixed;
@@ -131,22 +131,34 @@ All colors MUST be HSL.
     bottom: 0;
     z-index: -1;
     background: 
-      radial-gradient(ellipse 400px 300px at 20% 30%, hsl(var(--accent)) 0%, transparent 60%),
-      radial-gradient(ellipse 300px 200px at 80% 70%, hsl(var(--muted)) 0%, transparent 50%),
-      radial-gradient(ellipse 500px 400px at 60% 20%, hsl(var(--secondary)) 0%, transparent 70%),
-      radial-gradient(ellipse 200px 150px at 30% 80%, hsl(var(--accent)) 0%, transparent 40%),
-      hsl(var(--background));
-    animation: cloudFloat 20s ease-in-out infinite;
+      radial-gradient(ellipse 800px 600px at 20% 30%, hsl(260 60% 90% / 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse 600px 400px at 80% 70%, hsl(240 50% 95% / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse 1000px 800px at 60% 20%, hsl(220 40% 92% / 0.5) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 30% 80%, hsl(280 60% 88% / 0.3) 0%, transparent 40%),
+      radial-gradient(ellipse 700px 500px at 70% 40%, hsl(250 50% 94% / 0.4) 0%, transparent 60%),
+      linear-gradient(135deg, hsl(220 60% 95%) 0%, hsl(240 40% 96%) 50%, hsl(260 50% 94%) 100%);
+    animation: cloudFloat 25s ease-in-out infinite;
   }
 
-  /* Frosted glass effect for cards */
+  .dark body::before {
+    background: 
+      radial-gradient(ellipse 800px 600px at 20% 30%, hsl(260 40% 20% / 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse 600px 400px at 80% 70%, hsl(240 30% 15% / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse 1000px 800px at 60% 20%, hsl(220 20% 18% / 0.5) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 30% 80%, hsl(280 40% 12% / 0.3) 0%, transparent 40%),
+      radial-gradient(ellipse 700px 500px at 70% 40%, hsl(250 30% 16% / 0.4) 0%, transparent 60%),
+      linear-gradient(135deg, hsl(220 40% 8%) 0%, hsl(240 20% 10%) 50%, hsl(260 30% 12%) 100%);
+  }
+
+  /* Enhanced frosted glass effect */
   .frosted {
-    backdrop-filter: blur(12px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
+    border: 1px solid hsl(var(--border) / 0.2);
     box-shadow: 
       0 8px 32px 0 hsl(var(--foreground) / 0.1),
-      inset 0 1px 0 0 hsl(var(--foreground) / 0.1);
+      0 2px 16px 0 hsl(var(--primary) / 0.1),
+      inset 0 1px 0 0 hsl(255 255 255 / 0.1);
   }
 }
 
@@ -161,22 +173,26 @@ All colors MUST be HSL.
     @apply animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite];
   }
 
-  /* Cloud animation keyframes */
+  /* Enhanced cloud animation keyframes */
   @keyframes cloudFloat {
     0%, 100% {
       transform: translate(0, 0) scale(1);
-      opacity: 0.8;
-    }
-    25% {
-      transform: translate(-10px, -20px) scale(1.05);
       opacity: 0.9;
     }
-    50% {
-      transform: translate(20px, -10px) scale(0.95);
-      opacity: 0.7;
+    20% {
+      transform: translate(-20px, -30px) scale(1.1);
+      opacity: 1;
     }
-    75% {
-      transform: translate(-5px, 15px) scale(1.02);
+    40% {
+      transform: translate(30px, -20px) scale(0.9);
+      opacity: 0.8;
+    }
+    60% {
+      transform: translate(-10px, 25px) scale(1.05);
+      opacity: 0.95;
+    }
+    80% {
+      transform: translate(15px, -15px) scale(0.95);
       opacity: 0.85;
     }
   }
