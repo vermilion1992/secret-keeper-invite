@@ -422,16 +422,23 @@ const ENHANCED_INDICATORS = [
 
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
   const [expandedItem, setExpandedItem] = useState<any>(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   const openModal = (item: any) => {
     setExpandedItem(item);
+    setIsClosing(false);
     // Lock body scroll
     document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
-    setExpandedItem(null);
-    document.body.style.overflow = '';
+    setIsClosing(true);
+    // Wait for animation to complete before actually closing
+    setTimeout(() => {
+      setExpandedItem(null);
+      setIsClosing(false);
+      document.body.style.overflow = '';
+    }, 200); // Match animation duration
   };
 
   useEffect(() => {
@@ -594,7 +601,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
       {/* Centered Modal with Animation, Blur and Particles */}
       {expandedItem && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
           style={{
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
             backdropFilter: 'blur(8px)',
@@ -654,7 +661,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           </div>
           
           <div
-            className="bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in relative z-10"
+            className={`bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto relative z-10 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
