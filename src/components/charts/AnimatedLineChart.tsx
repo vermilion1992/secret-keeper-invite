@@ -2,7 +2,8 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 
 interface AnimatedLineChartProps {
   data: Array<{
@@ -74,8 +75,18 @@ export function AnimatedLineChart({
                 <Icon className="w-5 h-5 text-white" />
               </div>
             )}
-            <div className="flex-1">
+            <div className="flex-1 flex items-center justify-between">
               <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Tracks how your capital grows over time under this strategy, compared to just holding the asset. Helps you see consistency and performance trends.</p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
             </div>
           </div>
           {subtitle && (

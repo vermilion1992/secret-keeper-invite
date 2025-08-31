@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface AnimatedBarChartProps {
   data: Array<{
@@ -70,8 +72,18 @@ export function AnimatedBarChart({ data, title, subtitle, icon: Icon }: Animated
                 <Icon className="w-5 h-5 text-white" />
               </div>
             )}
-            <div className="flex-1">
+            <div className="flex-1 flex items-center justify-between">
               <CardTitle className="text-lg font-semibold leading-none">{title}</CardTitle>
+              <TooltipProvider>
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Shows percentage profit or loss each month. A quick way to spot hot streaks, losing periods, and seasonal effects in your strategy.</p>
+                  </TooltipContent>
+                </UITooltip>
+              </TooltipProvider>
             </div>
           </div>
           {subtitle && (
