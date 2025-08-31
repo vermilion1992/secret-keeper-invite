@@ -422,32 +422,30 @@ const ENHANCED_INDICATORS = [
 
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
   const [expandedItem, setExpandedItem] = useState<any>(null);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+
+  // Calculate exact center of viewport when modal opens
+  const openModal = (item: any) => {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    setModalPosition({ x: centerX, y: centerY });
+    setExpandedItem(item);
+    
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setExpandedItem(null);
+    document.body.style.overflow = '';
+  };
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (expandedItem) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.top = `-${window.scrollY}px`;
-    } else {
-      const scrollY = document.body.style.top;
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      }
-    }
-    
     return () => {
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.top = '';
     };
-  }, [expandedItem]);
+  }, []);
 
   const accessibleStrategies = ENHANCED_STRATEGIES.filter((s) => {
     if (userTier === 'expert') return true;
@@ -482,7 +480,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 hover-scale ${
             isLocked ? 'opacity-60' : ''
           }`}
-          onClick={() => !isLocked && setExpandedItem({...strategy, type: 'strategy'})}
+          onClick={() => !isLocked && openModal({...strategy, type: 'strategy'})}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
@@ -542,7 +540,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 hover-scale ${
             isLocked ? 'opacity-60' : ''
           }`}
-          onClick={() => !isLocked && setExpandedItem({...indicator, type: 'indicator'})}
+          onClick={() => !isLocked && openModal({...indicator, type: 'indicator'})}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
@@ -597,56 +595,57 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
 
-      {/* Modal using Portal */}
+      {/* Modal using Portal with exact positioning */}
       {expandedItem && createPortal(
         <div 
           style={{
             position: 'fixed',
             top: '0',
             left: '0',
-            right: '0',
-            bottom: '0',
+            width: '100vw',
+            height: '100vh',
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: '999999',
-            padding: '20px'
+            zIndex: '999999'
           }}
-          onClick={() => setExpandedItem(null)}
+          onClick={closeModal}
         >
           <div
             style={{
+              position: 'absolute',
+              left: `${modalPosition.x}px`,
+              top: `${modalPosition.y}px`,
+              transform: 'translate(-50%, -50%)',
               backgroundColor: 'white',
               borderRadius: '8px',
               padding: '24px',
               maxWidth: '600px',
-              width: '100%',
+              width: '90vw',
               maxHeight: '80vh',
               overflow: 'auto',
-              position: 'relative'
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', color: 'black' }}>
                 {expandedItem.name}
               </h2>
               <button
-                onClick={() => setExpandedItem(null)}
+                onClick={closeModal}
                 style={{
                   background: 'none',
                   border: 'none',
                   fontSize: '24px',
                   cursor: 'pointer',
-                  padding: '4px'
+                  padding: '4px',
+                  color: 'black'
                 }}
               >
                 ✕
               </button>
             </div>
             
-            <p style={{ marginBottom: '16px', color: '#666' }}>
+            <p style={{ marginBottom: '16px', color: '#666', lineHeight: '1.5' }}>
               {expandedItem.blurb}
             </p>
             
@@ -663,7 +662,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                       canAddFilters: expandedItem.tier !== 'basic'
                     });
                   }
-                  setExpandedItem(null);
+                  closeModal();
                 }}
                 style={{
                   flex: '1',
@@ -679,7 +678,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
               </button>
               <button
-                onClick={() => setExpandedItem(null)}
+                onClick={closeModal}
                 style={{
                   flex: '1',
                   padding: '12px 24px',
