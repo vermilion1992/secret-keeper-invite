@@ -35,7 +35,9 @@ export function AppSidebar() {
   const currentPath = location.pathname;
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : '';
+    isActive 
+      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+      : 'hover:bg-sidebar-accent/10 hover:text-sidebar-accent-foreground hover:shadow-[0_0_20px_rgba(var(--sidebar-accent-rgb),0.3)] transition-all duration-300';
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
