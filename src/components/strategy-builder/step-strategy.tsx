@@ -602,25 +602,55 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           }}
           onClick={closeModal}
         >
-          {/* Floating Particles */}
-          {[...Array(12)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute opacity-30"
+          {/* Aurora Background Effect */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div 
+              className="absolute inset-0 opacity-30"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                width: `${8 + Math.random() * 12}px`,
-                height: `${8 + Math.random() * 12}px`,
-                background: `radial-gradient(circle, hsl(var(--primary) / 0.8), hsl(var(--accent) / 0.6))`,
-                borderRadius: '50%',
-                boxShadow: `0 0 ${6 + Math.random() * 8}px hsl(var(--primary) / 0.4)`,
-                animation: `float-particle-${i % 3} 30s infinite ease-in-out`,
-                animationDelay: `${Math.random() * 3}s`,
-                zIndex: 1
+                background: `
+                  linear-gradient(45deg, 
+                    hsl(var(--primary) / 0.3) 0%, 
+                    transparent 20%, 
+                    hsl(var(--accent) / 0.2) 40%, 
+                    transparent 60%, 
+                    hsl(var(--primary) / 0.25) 80%, 
+                    transparent 100%
+                  )
+                `,
+                animation: 'aurora-wave-1 25s ease-in-out infinite',
+                transform: 'rotate(-10deg) scale(1.5)'
               }}
             />
-          ))}
+            <div 
+              className="absolute inset-0 opacity-25"
+              style={{
+                background: `
+                  linear-gradient(-45deg, 
+                    transparent 0%, 
+                    hsl(var(--accent) / 0.4) 25%, 
+                    transparent 50%, 
+                    hsl(var(--primary) / 0.3) 75%, 
+                    transparent 100%
+                  )
+                `,
+                animation: 'aurora-wave-2 30s ease-in-out infinite reverse',
+                transform: 'rotate(15deg) scale(1.3)'
+              }}
+            />
+            <div 
+              className="absolute inset-0 opacity-20"
+              style={{
+                background: `
+                  radial-gradient(ellipse at center, 
+                    hsl(var(--primary) / 0.2) 0%, 
+                    transparent 50%
+                  )
+                `,
+                animation: 'aurora-pulse 20s ease-in-out infinite',
+                transform: 'scale(1.2)'
+              }}
+            />
+          </div>
           
           <div
             className="bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in relative z-10"
