@@ -6,7 +6,12 @@ import { WizardNavigation } from './wizard-navigation';
 import { StepMarketType } from './step-market-type';
 import { StepPairTemplate } from './step-pair-template';
 import { StepStrategy } from './step-strategy';
-import { MarketType, PairTemplate, UserTier, WizardStep, Strategy } from '@/types/botforge';
+import { StepAdvancedSettings } from './step-advanced-settings';
+import { StepRiskManagement } from './step-risk-management';
+import { StepTimeframe } from './step-timeframe';
+import { StepBacktest } from './step-backtest';
+import { StepResults } from './step-results';
+import { MarketType, PairTemplate, UserTier, WizardStep, Strategy, IndicatorConfig, RiskManagement, BacktestParams } from '@/types/botforge';
 
 interface StrategyBuilderWizardProps {
   userTier: UserTier;
@@ -18,6 +23,20 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
   const [selectedMarketType, setSelectedMarketType] = useState<MarketType | null>(null);
   const [selectedPairTemplate, setSelectedPairTemplate] = useState<PairTemplate | null>(null);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
+  const [filterIndicators, setFilterIndicators] = useState<IndicatorConfig[]>([]);
+  const [riskManagement, setRiskManagement] = useState<RiskManagement>({
+    capitalAllocation: 100,
+    stopLoss: 5.0,
+    takeProfit: 10.0,
+    trailingTakeProfit: 2.0,
+    leverageMultiplier: 1,
+    percentPerTrade: 2.0
+  });
+  const [backtestParams, setBacktestParams] = useState<BacktestParams>({
+    timeframe: '1h',
+    maxPeriod: 8760,
+    candleCount: 2000
+  });
 
   const [steps, setSteps] = useState<WizardStep[]>([
     { step: 1, title: 'Market Type', description: 'Choose Spot or Perpetual Futures', isComplete: false, isActive: true },
@@ -25,8 +44,8 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
     { step: 3, title: 'Strategy', description: 'Choose trading strategy', isComplete: false, isActive: false },
     { step: 4, title: 'Advanced Settings', description: 'Configure parameters', isComplete: false, isActive: false },
     { step: 5, title: 'Risk Management', description: 'Set risk parameters', isComplete: false, isActive: false },
-    { step: 6, title: 'Backtest', description: 'Set timeframe and period', isComplete: false, isActive: false },
-    { step: 7, title: 'Summary', description: 'Review and execute', isComplete: false, isActive: false },
+    { step: 6, title: 'Timeframe', description: 'Set timeframe and period', isComplete: false, isActive: false },
+    { step: 7, title: 'Backtest', description: 'Review and execute', isComplete: false, isActive: false },
     { step: 8, title: 'Results', description: 'Save and export bot', isComplete: false, isActive: false }
   ]);
 
@@ -65,6 +84,21 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
 
   const handleStrategySelect = (strategy: Strategy) => {
     setSelectedStrategy(strategy);
+  };
+
+  const handleExport = (format: 'python' | 'json', botName: string) => {
+    // Implementation for bot export
+    console.log(`Exporting ${botName} as ${format}`);
+  };
+
+  const handleShare = (botName: string) => {
+    // Implementation for community sharing
+    console.log(`Sharing ${botName} to community`);
+  };
+
+  const handleRunBacktest = () => {
+    // Implementation for running backtest
+    console.log('Running backtest...');
   };
 
   const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
@@ -138,6 +172,49 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   onSelect={handleStrategySelect}
                   onNext={handleNext}
                   userTier={userTier}
+                />
+              )}
+
+              {currentStep === 4 && (
+                <StepAdvancedSettings
+                  strategy={selectedStrategy}
+                  filterIndicators={filterIndicators}
+                  onUpdateFilters={setFilterIndicators}
+                  onNext={handleNext}
+                  userTier={userTier}
+                />
+              )}
+
+              {currentStep === 5 && (
+                <StepRiskManagement
+                  riskManagement={riskManagement}
+                  onUpdate={setRiskManagement}
+                  onNext={handleNext}
+                  userTier={userTier}
+                  marketType={selectedMarketType}
+                />
+              )}
+
+              {currentStep === 6 && (
+                <StepTimeframe
+                  backtestParams={backtestParams}
+                  onUpdate={setBacktestParams}
+                  onNext={handleNext}
+                />
+              )}
+
+              {currentStep === 7 && (
+                <StepBacktest
+                  onNext={handleNext}
+                  onRunBacktest={handleRunBacktest}
+                />
+              )}
+
+              {currentStep === 8 && (
+                <StepResults
+                  backtestResult={{} as any}
+                  onExport={handleExport}
+                  onShare={handleShare}
                 />
               )}
 
