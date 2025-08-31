@@ -41,7 +41,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
-      <div className="flex items-center justify-center px-3 py-6 min-h-[96px]">
+      <div className="flex items-end justify-center px-3 pt-2 pb-4 min-h-[96px]">
         <AnimatePresence mode="wait">
           {state !== 'collapsed' && (
             <motion.div
