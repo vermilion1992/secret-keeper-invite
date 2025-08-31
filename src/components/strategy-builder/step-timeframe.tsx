@@ -22,20 +22,20 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
   const [useCustomRange, setUseCustomRange] = useState(false);
 
   const timePeriods = [
-    { days: 7, label: '7 Days', recommended: false },
-    { days: 30, label: '30 Days', recommended: true },
-    { days: 90, label: '90 Days', recommended: true },
-    { days: 365, label: '1 Year', recommended: true },
-    { days: 1095, label: '3 Years', recommended: false },
+    { days: 7, label: '7 Days' },
+    { days: 30, label: '30 Days' },
+    { days: 90, label: '90 Days' },
+    { days: 365, label: '1 Year' },
+    { days: 1095, label: '3 Years' },
   ];
 
-  const timeframes: { value: Timeframe; label: string; recommended: boolean }[] = [
-    { value: '1m', label: '1 Minute', recommended: false },
-    { value: '5m', label: '5 Minutes', recommended: false },
-    { value: '15m', label: '15 Minutes', recommended: true },
-    { value: '1h', label: '1 Hour', recommended: true },
-    { value: '4h', label: '4 Hours', recommended: true },
-    { value: '1d', label: '1 Day', recommended: false },
+  const timeframes: { value: Timeframe; label: string }[] = [
+    { value: '1m', label: '1 Minute' },
+    { value: '5m', label: '5 Minutes' },
+    { value: '15m', label: '15 Minutes' },
+    { value: '1h', label: '1 Hour' },
+    { value: '4h', label: '4 Hours' },
+    { value: '1d', label: '1 Day' },
   ];
 
   const updateTimeframe = (timeframe: Timeframe) => {
@@ -97,9 +97,6 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="w-4 h-4" />
                   <span className="font-medium">{tf.label}</span>
-                  {tf.recommended && (
-                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Ideal for {tf.value === '1m' || tf.value === '5m' ? 'short-term' : 
@@ -128,9 +125,6 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
                 }`}
               >
                 <div className="font-medium text-sm">{period.label}</div>
-                {period.recommended && (
-                  <Badge variant="secondary" className="text-xs mt-1">Recommended</Badge>
-                )}
               </button>
             );
           })}

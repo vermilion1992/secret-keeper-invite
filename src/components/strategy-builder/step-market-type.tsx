@@ -17,8 +17,7 @@ export function StepMarketType({ selected, onSelect, onNext }: StepMarketTypePro
       title: 'Spot Trading',
       description: 'Traditional buy and sell cryptocurrency trading',
       icon: <TrendingUp className="w-8 h-8" />,
-      features: ['Direct ownership', 'Lower risk', 'No funding fees', 'Perfect for beginners'],
-      badge: 'Popular'
+      features: ['Direct ownership', 'Lower risk', 'No funding fees', 'Perfect for beginners']
     },
     {
       type: 'perps' as MarketType,
@@ -58,11 +57,8 @@ export function StepMarketType({ selected, onSelect, onNext }: StepMarketTypePro
                   {market.icon}
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex items-center justify-center mb-2">
                 <CardTitle className="text-xl">{market.title}</CardTitle>
-                <Badge variant={market.badge === 'Popular' ? 'default' : 'secondary'}>
-                  {market.badge}
-                </Badge>
               </div>
               <CardDescription className="text-center">
                 {market.description}

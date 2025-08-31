@@ -23,7 +23,6 @@ export function StepPairTemplate({ selected, onSelect, onNext, userTier }: StepP
       description: 'Most liquid and stable cryptocurrency pairs',
       icon: <Crown className="w-8 h-8" />,
       pairs: ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'ADA/USDT'],
-      badge: 'Recommended',
       tierRequired: 'basic' as UserTier,
       count: '10 pairs'
     },
@@ -133,15 +132,9 @@ export function StepPairTemplate({ selected, onSelect, onNext, userTier }: StepP
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center">
                           <CardTitle className="text-lg">{template.title}</CardTitle>
                         </div>
-                        <Badge 
-                          variant={template.badge === 'Recommended' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {template.badge}
-                        </Badge>
                         <p className="text-xs text-muted-foreground">{template.count}</p>
                       </div>
                     </CardHeader>
