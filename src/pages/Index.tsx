@@ -2,20 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowTrendingUpIcon, UsersIcon, CommandLineIcon, ChatBubbleLeftRightIcon, ArrowRightIcon, InformationCircleIcon, ChartBarIcon, ArrowUpIcon, ChartPieIcon, ArrowDownIcon } from "@heroicons/react/24/outline";
+import { ArrowTrendingUpIcon, UsersIcon, CommandLineIcon, ChatBubbleLeftRightIcon, ArrowRightIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
-import { AnimatedLineChart } from "@/components/charts/AnimatedLineChart";
-import { AnimatedBarChart } from "@/components/charts/AnimatedBarChart";
-import { AnimatedPieChart } from "@/components/charts/AnimatedPieChart";
-import { DrawdownChart } from "@/components/charts/DrawdownChart";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip, CartesianGrid, ReferenceLine } from "recharts";
 
 const Index = () => {
   const navigate = useNavigate();
   const { prices } = useCryptoPrices(30000);
-  const [expandedChart, setExpandedChart] = useState<string | null>(null);
-
   // Small performance chart data for top bot
   const topBotPerformanceData = useMemo(() => (
     Array.from({ length: 7 }).map((_, i) => ({
@@ -141,14 +136,22 @@ const Index = () => {
                 {/* Right side: Compact performance chart */}
                 <div className="h-[200px] bg-card/50 rounded-lg border p-4">
                   <div className="h-full">
-                    <AnimatedLineChart 
-                      data={topBotPerformanceData}
-                      title=""
-                      subtitle=""
-                      icon={ChartBarIcon}
-                      showBenchmark={false}
-                      gradientId="topBotGradient"
-                    />
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={topBotPerformanceData} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
+                        <defs>
+                          <linearGradient id="topBotGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
+                        <XAxis dataKey="date" hide />
+                        <YAxis hide />
+                        <ReferenceLine y={topBotPerformanceData[0]?.value || 0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
+                        <RechartsTooltip />
+                        <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
