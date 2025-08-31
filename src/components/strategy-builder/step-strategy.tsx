@@ -551,15 +551,6 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                {!isLocked && (
-                  <Checkbox
-                    checked={advancedSettings[strategy.id] || false}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings(prev => ({ ...prev, [strategy.id]: !!checked }))
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                )}
               </div>
             </div>
             <Badge variant="outline" className="text-xs w-fit">{strategy.tier}</Badge>
@@ -676,15 +667,6 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                {!isLocked && (
-                  <Checkbox
-                    checked={advancedSettings[indicator.id] || false}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings(prev => ({ ...prev, [indicator.id]: !!checked }))
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                )}
               </div>
             </div>
             <Badge variant="outline" className="text-xs w-fit">{indicator.tier}</Badge>
