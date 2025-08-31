@@ -602,7 +602,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           onClick={closeModal}
         >
           <div
-            className="bg-card border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in"
+            className="bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
