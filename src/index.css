@@ -215,23 +215,23 @@ All colors MUST be HSL.
 
   /* Floating particle animations */
   @keyframes float-particle-0 {
-    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
-    25% { transform: translate(30px, -20px) scale(1.2); opacity: 0.3; }
-    50% { transform: translate(-20px, -40px) scale(0.8); opacity: 0.2; }
-    75% { transform: translate(20px, -10px) scale(1.1); opacity: 0.25; }
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+    25% { transform: translate(40px, -30px) scale(1.3); opacity: 0.8; }
+    50% { transform: translate(-30px, -50px) scale(0.7); opacity: 0.6; }
+    75% { transform: translate(30px, -15px) scale(1.1); opacity: 0.7; }
   }
 
   @keyframes float-particle-1 {
-    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.15; }
-    33% { transform: translate(-25px, 30px) scale(0.9); opacity: 0.3; }
-    66% { transform: translate(40px, 15px) scale(1.3); opacity: 0.2; }
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+    33% { transform: translate(-35px, 40px) scale(0.8); opacity: 0.9; }
+    66% { transform: translate(50px, 20px) scale(1.4); opacity: 0.6; }
   }
 
   @keyframes float-particle-2 {
-    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
-    20% { transform: translate(15px, -30px) scale(1.1); opacity: 0.25; }
-    40% { transform: translate(-35px, 20px) scale(0.7); opacity: 0.3; }
-    60% { transform: translate(25px, -15px) scale(1.2); opacity: 0.2; }
-    80% { transform: translate(-15px, 35px) scale(0.9); opacity: 0.15; }
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+    20% { transform: translate(20px, -40px) scale(1.2); opacity: 0.8; }
+    40% { transform: translate(-45px, 30px) scale(0.6); opacity: 0.9; }
+    60% { transform: translate(35px, -20px) scale(1.3); opacity: 0.7; }
+    80% { transform: translate(-20px, 45px) scale(0.9); opacity: 0.5; }
   }
 }

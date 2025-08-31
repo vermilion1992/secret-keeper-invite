@@ -603,19 +603,21 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           onClick={closeModal}
         >
           {/* Floating Particles */}
-          {[...Array(8)].map((_, i) => (
+          {[...Array(12)].map((_, i) => (
             <div
               key={i}
-              className="absolute opacity-20"
+              className="absolute opacity-60"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                width: `${4 + Math.random() * 8}px`,
-                height: `${4 + Math.random() * 8}px`,
-                background: 'linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)))',
+                width: `${8 + Math.random() * 12}px`,
+                height: `${8 + Math.random() * 12}px`,
+                background: `radial-gradient(circle, hsl(var(--primary) / 0.8), hsl(var(--accent) / 0.6))`,
                 borderRadius: '50%',
-                animation: `float-particle-${i % 3} ${8 + Math.random() * 6}s infinite ease-in-out`,
-                animationDelay: `${Math.random() * 4}s`
+                boxShadow: `0 0 ${6 + Math.random() * 8}px hsl(var(--primary) / 0.4)`,
+                animation: `float-particle-${i % 3} ${6 + Math.random() * 4}s infinite ease-in-out`,
+                animationDelay: `${Math.random() * 3}s`,
+                zIndex: 1
               }}
             />
           ))}
