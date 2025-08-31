@@ -420,7 +420,6 @@ const ENHANCED_INDICATORS = [
 ];
 
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
-  const [advancedSettings, setAdvancedSettings] = useState<Record<string, boolean>>({});
   const [expandedItem, setExpandedItem] = useState<any>(null);
 
   const accessibleStrategies = ENHANCED_STRATEGIES.filter((s) => {
@@ -449,77 +448,14 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
   const renderStrategyTile = (strategy: any, isLocked = false) => {
     const Icon = strategy.icon;
-    const isExpanded = expandedItem?.id === strategy.id;
-    
-    if (isExpanded) {
-      return (
-        <TooltipProvider key={strategy.id}>
-          <Card className="col-span-full border-primary bg-primary/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Icon className="h-6 w-6 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-lg">{strategy.name}</h3>
-                    <Badge variant="outline" className="text-xs">{strategy.tier}</Badge>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpandedItem(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">{strategy.blurb}</p>
-              <div className="flex flex-wrap gap-2">
-                {strategy.tags.map((tag: string) => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={() => {
-                    onSelect({ 
-                      id: strategy.id, 
-                      name: strategy.name, 
-                      description: strategy.tooltip,
-                      tier: strategy.tier,
-                      defaultIndicators: [],
-                      canAddFilters: strategy.tier !== 'basic'
-                    });
-                    setExpandedItem(null);
-                  }}
-                  className="flex-1"
-                >
-                  Select Strategy
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setExpandedItem(null)}
-                  className="flex-1"
-                >
-                  Go Back
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TooltipProvider>
-      );
-    }
     
     return (
       <TooltipProvider key={strategy.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 ${
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 hover-scale ${
             isLocked ? 'opacity-60' : ''
           }`}
-          onClick={() => !isLocked && setExpandedItem(strategy)}
+          onClick={() => !isLocked && setExpandedItem({...strategy, type: 'strategy'})}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
@@ -564,13 +500,6 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
                 </Badge>
               ))}
             </div>
-            
-            {advancedSettings[strategy.id] && !isLocked && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                <p className="font-medium mb-1">Advanced Settings:</p>
-                <p>{strategy.advanced.join(', ')}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </TooltipProvider>
@@ -579,63 +508,14 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
   const renderIndicatorTile = (indicator: any, isLocked = false) => {
     const Icon = indicator.icon;
-    const isExpanded = expandedItem?.id === indicator.id;
-    
-    if (isExpanded) {
-      return (
-        <TooltipProvider key={indicator.id}>
-          <Card className="col-span-full border-primary bg-primary/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Icon className="h-6 w-6 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-lg">{indicator.name}</h3>
-                    <Badge variant="outline" className="text-xs">{indicator.tier}</Badge>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpandedItem(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-muted-foreground">{indicator.blurb}</p>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={() => {
-                    // Navigate to advanced settings for indicator
-                    setExpandedItem(null);
-                  }}
-                  className="flex-1"
-                >
-                  Select Indicator
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setExpandedItem(null)}
-                  className="flex-1"
-                >
-                  Go Back
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TooltipProvider>
-      );
-    }
     
     return (
       <TooltipProvider key={indicator.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 ${
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover:border-primary/30 hover-scale ${
             isLocked ? 'opacity-60' : ''
           }`}
-          onClick={() => !isLocked && setExpandedItem(indicator)}
+          onClick={() => !isLocked && setExpandedItem({...indicator, type: 'indicator'})}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
@@ -673,12 +553,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           </CardHeader>
           
           <CardContent className="pt-0 space-y-2">
-            {advancedSettings[indicator.id] && !isLocked && (
-              <div className="text-xs text-muted-foreground">
-                <p className="font-medium mb-1">Advanced:</p>
-                <p>{indicator.advanced.join(', ')}</p>
-              </div>
-            )}
+            {/* No content for indicators for now */}
           </CardContent>
         </Card>
       </TooltipProvider>
@@ -694,6 +569,90 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         </div>
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
+
+      {/* Modal Overlay */}
+      {expandedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-fade-in"
+            onClick={() => setExpandedItem(null)}
+          />
+          
+          {/* Modal Content */}
+          <Card className="relative z-10 w-full max-w-2xl animate-scale-in border-primary bg-card">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <expandedItem.icon className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-2xl">{expandedItem.name}</h3>
+                    <Badge variant="outline" className="text-sm">{expandedItem.tier}</Badge>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExpandedItem(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-muted-foreground text-lg leading-relaxed">{expandedItem.blurb}</p>
+              
+              {expandedItem.tags && (
+                <div className="flex flex-wrap gap-2">
+                  {expandedItem.tags.map((tag: string) => (
+                    <Badge key={tag} variant="secondary" className="text-sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {expandedItem.advanced && (
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="font-medium mb-2">Advanced Settings Available:</p>
+                  <p className="text-sm text-muted-foreground">{expandedItem.advanced.join(', ')}</p>
+                </div>
+              )}
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => {
+                    if (expandedItem.type === 'strategy') {
+                      onSelect({ 
+                        id: expandedItem.id, 
+                        name: expandedItem.name, 
+                        description: expandedItem.tooltip,
+                        tier: expandedItem.tier,
+                        defaultIndicators: [],
+                        canAddFilters: expandedItem.tier !== 'basic'
+                      });
+                    }
+                    setExpandedItem(null);
+                  }}
+                  className="flex-1"
+                  size="lg"
+                >
+                  Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setExpandedItem(null)}
+                  className="flex-1"
+                  size="lg"
+                >
+                  Go Back
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Tabs defaultValue="strategies" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
