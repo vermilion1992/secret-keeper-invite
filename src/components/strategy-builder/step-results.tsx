@@ -426,8 +426,8 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
         transition={{ duration: 0.6, delay: 1.6 }}
       >
         {/* Equity Chart */}
-        <Card 
-          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+        <div 
+          className="cursor-pointer hover-scale"
           onClick={() => openModal('equity')}
         >
           <div className="relative">
@@ -440,11 +440,11 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
               gradientId="equityGradient"
             />
           </div>
-        </Card>
+        </div>
 
         {/* Monthly Returns Chart */}
-        <Card 
-          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+        <div 
+          className="cursor-pointer hover-scale"
           onClick={() => openModal('returns')}
         >
           <div className="relative">
@@ -455,11 +455,11 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
               icon={BarChart3}
             />
           </div>
-        </Card>
+        </div>
 
         {/* Trade Distribution Chart */}
-        <Card 
-          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+        <div 
+          className="cursor-pointer hover-scale"
           onClick={() => openModal('distribution')}
         >
           <div className="relative">
@@ -470,11 +470,11 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
               icon={PieChart}
             />
           </div>
-        </Card>
+        </div>
 
         {/* Drawdown Chart */}
-        <Card 
-          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+        <div 
+          className="cursor-pointer hover-scale"
           onClick={() => openModal('drawdown')}
         >
           <div className="relative">
@@ -485,7 +485,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
               icon={DrawdownIcon}
             />
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Chart Modal with Constellation Background */}
