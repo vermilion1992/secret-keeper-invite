@@ -357,6 +357,11 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
                           label: "Average Risk:Reward Ratio",
                           value: "1:1.9",
                           tooltip: "Average ratio of risk taken to potential reward per trade"
+                        },
+                        {
+                          label: "Average Position Size",
+                          value: "8.5%",
+                          tooltip: "Average proportion of your capital allocated per trade. Higher values = more aggressive sizing."
                         }
                       ].map((stat, index) => (
                         <motion.div
