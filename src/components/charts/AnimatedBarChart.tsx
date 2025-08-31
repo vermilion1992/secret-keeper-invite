@@ -63,7 +63,7 @@ export function AnimatedBarChart({ data, title, subtitle, icon: Icon }: Animated
       transition={{ duration: 0.5, delay: 0.2 }}
     >
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50 h-full">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4 min-h-[76px]">
           <div className="flex items-center gap-3">
             {Icon && (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
@@ -89,7 +89,7 @@ export function AnimatedBarChart({ data, title, subtitle, icon: Icon }: Animated
         <CardContent className="pt-0">
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <defs>
                   <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>

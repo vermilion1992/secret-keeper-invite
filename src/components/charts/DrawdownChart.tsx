@@ -38,7 +38,7 @@ export function DrawdownChart({ data, title, subtitle, icon: Icon }: DrawdownCha
       transition={{ duration: 0.6 }}
     >
       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50 h-full">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4 min-h-[76px]">
           <div className="flex items-center gap-3">
             {Icon && (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/10 to-orange-500/20 flex items-center justify-center shadow-lg">
