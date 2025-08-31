@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart, PieChart, TrendingDown as DrawdownIcon, GitCompare } from 'lucide-react';
+import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart, PieChart, TrendingDown as DrawdownIcon, GitCompare, Maximize2, Minimize2 } from 'lucide-react';
 import { AnimatedLineChart } from '@/components/charts/AnimatedLineChart';
 import { AnimatedBarChart } from '@/components/charts/AnimatedBarChart';
 import { AnimatedPieChart } from '@/components/charts/AnimatedPieChart';
@@ -85,8 +85,9 @@ const mockResult: BacktestResult = {
   tradeDistribution: []
 };
 
-export function StepResults({ onExport, onShare, onCompare }: StepResultsProps) {
+export function StepResults({ onExport, onShare, onCompare = () => console.log('Compare backtests') }: StepResultsProps) {
   const [botName, setBotName] = useState('');
+  const [expandedChart, setExpandedChart] = useState<string | null>(null);
   const result = mockResult;
 
   const metrics = [
@@ -123,6 +124,10 @@ export function StepResults({ onExport, onShare, onCompare }: StepResultsProps) 
       gradient: 'from-purple-500 to-purple-600'
     },
   ];
+
+  const toggleChart = (chartId: string) => {
+    setExpandedChart(expandedChart === chartId ? null : chartId);
+  };
 
   return (
     <motion.div 
@@ -183,7 +188,7 @@ export function StepResults({ onExport, onShare, onCompare }: StepResultsProps) 
         transition={{ duration: 0.6, delay: 0.8 }}
       >
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -194,23 +199,21 @@ export function StepResults({ onExport, onShare, onCompare }: StepResultsProps) 
                 Trade Analysis Summary
               </CardTitle>
             </motion.div>
-            {onCompare && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.0 }}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.0 }}
+            >
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onCompare?.()}
+                className="gap-2"
               >
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={onCompare}
-                  className="gap-2"
-                >
-                  <GitCompare className="w-4 h-4" />
-                  Compare Previous
-                </Button>
-              </motion.div>
-            )}
+                <GitCompare className="w-4 h-4" />
+                Compare Previous
+              </Button>
+            </motion.div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -250,170 +253,211 @@ export function StepResults({ onExport, onShare, onCompare }: StepResultsProps) 
 
       {/* Chart Section */}
       <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+        className={`transition-all duration-500 ${expandedChart ? 'fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-8 overflow-auto' : 'grid grid-cols-1 lg:grid-cols-2 gap-8'}`}
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.6 }}
       >
-        <AnimatedLineChart
-          data={equityData}
-          title="Portfolio Equity Curve"
-          subtitle="Strategy vs Benchmark Performance"
-          icon={LineChart}
-          showBenchmark={true}
-          gradientId="equityGradient"
-        />
+        {(!expandedChart || expandedChart === 'equity') && (
+          <div className={`${expandedChart === 'equity' ? 'w-full h-[80vh]' : ''} relative`}>
+            <button
+              onClick={() => toggleChart('equity')}
+              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
+            >
+              {expandedChart === 'equity' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+            <AnimatedLineChart
+              data={equityData}
+              title="Portfolio Equity Curve"
+              subtitle="Strategy vs Benchmark Performance"
+              icon={LineChart}
+              showBenchmark={true}
+              gradientId="equityGradient"
+            />
+          </div>
+        )}
 
-        <AnimatedBarChart
-          data={monthlyReturns}
-          title="Monthly Returns"
-          subtitle="Profit/Loss Distribution by Month"
-          icon={BarChart3}
-        />
+        {(!expandedChart || expandedChart === 'returns') && (
+          <div className={`${expandedChart === 'returns' ? 'w-full h-[80vh]' : ''} relative`}>
+            <button
+              onClick={() => toggleChart('returns')}
+              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
+            >
+              {expandedChart === 'returns' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+            <AnimatedBarChart
+              data={monthlyReturns}
+              title="Monthly Returns"
+              subtitle="Profit/Loss Distribution by Month"
+              icon={BarChart3}
+            />
+          </div>
+        )}
 
-        <AnimatedPieChart
-          data={tradeDistribution}
-          title="Trade Distribution"
-          subtitle="Win Rate Breakdown"
-          icon={PieChart}
-        />
+        {(!expandedChart || expandedChart === 'distribution') && (
+          <div className={`${expandedChart === 'distribution' ? 'w-full h-[80vh]' : ''} relative`}>
+            <button
+              onClick={() => toggleChart('distribution')}
+              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
+            >
+              {expandedChart === 'distribution' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+            <AnimatedPieChart
+              data={tradeDistribution}
+              title="Trade Distribution"
+              subtitle="Win Rate Breakdown"
+              icon={PieChart}
+            />
+          </div>
+        )}
 
-        <DrawdownChart
-          data={drawdownData}
-          title="Drawdown Analysis"
-          subtitle="Risk Assessment Over Time"
-          icon={DrawdownIcon}
-        />
+        {(!expandedChart || expandedChart === 'drawdown') && (
+          <div className={`${expandedChart === 'drawdown' ? 'w-full h-[80vh]' : ''} relative`}>
+            <button
+              onClick={() => toggleChart('drawdown')}
+              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
+            >
+              {expandedChart === 'drawdown' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+            <DrawdownChart
+              data={drawdownData}
+              title="Drawdown Analysis"
+              subtitle="Risk Assessment Over Time"
+              icon={DrawdownIcon}
+            />
+          </div>
+        )}
       </motion.div>
 
-
-      <Separator className="my-8" />
+      {!expandedChart && <Separator className="my-8" />}
 
       {/* Enhanced Export Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 2.0 }}
-      >
-        <Card className="shadow-lg border-primary/20 hover:shadow-xl transition-shadow duration-300">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2.1 }}
-          >
-            <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
-              <CardTitle className="flex items-center gap-2">
-                <motion.div
-                  animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                >
-                  <Download className="w-5 h-5" />
-                </motion.div>
-                Export Your Trading Bot
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Generate production-ready code and share with the community
-              </p>
-            </CardHeader>
-          </motion.div>
-          <CardContent className="p-6">
-            <motion.div 
-              className="space-y-6"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 2.2 }}
+      {!expandedChart && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 2.0 }}
+        >
+          <Card className="shadow-lg border-primary/20 hover:shadow-xl transition-shadow duration-300">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2.1 }}
             >
-              <div>
-                <Label htmlFor="botName" className="text-sm font-medium">Bot Name *</Label>
-                <motion.div
-                  whileFocus={{ scale: 1.01 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <Input
-                    id="botName"
-                    placeholder="Enter a memorable name for your trading bot"
-                    value={botName}
-                    onChange={(e) => setBotName(e.target.value)}
-                    className="mt-2"
-                  />
-                </motion.div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  {
-                    onClick: () => onExport('python', botName || 'Untitled Bot'),
-                    variant: "default" as const,
-                    gradient: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-                    title: "Python Package",
-                    subtitle: "Complete .zip with docs",
-                    delay: 2.1
-                  },
-                  {
-                    onClick: () => onExport('json', botName || 'Untitled Bot'),
-                    variant: "outline" as const,
-                    gradient: "border-2",
-                    title: "JSON Config",
-                    subtitle: "Configuration only",
-                    delay: 2.2
-                  },
-                  {
-                    onClick: () => onShare(botName || 'Untitled Bot'),
-                    variant: "secondary" as const,
-                    gradient: "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-200 dark:border-green-800",
-                    title: "Share & Earn",
-                    subtitle: "+1 Credit Reward",
-                    delay: 2.3
-                  }
-                ].map((button, index) => (
+              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
+                <CardTitle className="flex items-center gap-2">
                   <motion.div
-                    key={button.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: button.delay }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                   >
-                    <Button 
-                      onClick={button.onClick}
-                      disabled={!botName.trim()}
-                      variant={button.variant}
-                      size="lg"
-                      className={`h-auto py-4 flex-col gap-2 ${button.gradient} transition-all duration-300`}
-                    >
-                      <motion.div
-                        animate={{ y: [0, -2, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
-                      >
-                        <Download className="w-5 h-5" />
-                      </motion.div>
-                      <div className="text-center">
-                        <div className="font-semibold">{button.title}</div>
-                        <div className={`text-xs ${button.title === "Share & Earn" ? "text-green-600 dark:text-green-400" : button.variant === "default" ? "opacity-90" : "text-muted-foreground"}`}>
-                          {button.subtitle}
-                        </div>
-                      </div>
-                    </Button>
+                    <Download className="w-5 h-5" />
                   </motion.div>
-                ))}
-              </div>
-
-              <motion.div 
-                className="bg-muted/30 rounded-lg p-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2.4 }}
-              >
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  <strong>Python Package</strong> includes strategy implementation, risk management, documentation, and setup instructions. 
-                  <strong>JSON Config</strong> contains strategy parameters for integration. 
-                  <strong>Share to Community</strong> makes your bot public and earns you 1 credit.
+                  Export Your Trading Bot
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Generate production-ready code and share with the community
                 </p>
-              </motion.div>
+              </CardHeader>
             </motion.div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            <CardContent className="p-6">
+              <motion.div 
+                className="space-y-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.2 }}
+              >
+                <div>
+                  <Label htmlFor="botName" className="text-sm font-medium">Bot Name *</Label>
+                  <motion.div
+                    whileFocus={{ scale: 1.01 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Input
+                      id="botName"
+                      placeholder="Enter a memorable name for your trading bot"
+                      value={botName}
+                      onChange={(e) => setBotName(e.target.value)}
+                      className="mt-2"
+                    />
+                  </motion.div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    {
+                      onClick: () => onExport('python', botName || 'Untitled Bot'),
+                      variant: "default" as const,
+                      gradient: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+                      title: "Python Package",
+                      subtitle: "Complete .zip with docs",
+                      delay: 2.1
+                    },
+                    {
+                      onClick: () => onExport('json', botName || 'Untitled Bot'),
+                      variant: "outline" as const,
+                      gradient: "border-2",
+                      title: "JSON Config",
+                      subtitle: "Configuration only",
+                      delay: 2.2
+                    },
+                    {
+                      onClick: () => onShare(botName || 'Untitled Bot'),
+                      variant: "secondary" as const,
+                      gradient: "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-200 dark:border-green-800",
+                      title: "Share & Earn",
+                      subtitle: "+1 Credit Reward",
+                      delay: 2.3
+                    }
+                  ].map((button, index) => (
+                    <motion.div
+                      key={button.title}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: button.delay }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button 
+                        onClick={button.onClick}
+                        disabled={!botName.trim()}
+                        variant={button.variant}
+                        size="lg"
+                        className={`h-auto py-4 flex-col gap-2 ${button.gradient} transition-all duration-300`}
+                      >
+                        <motion.div
+                          animate={{ y: [0, -2, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
+                        >
+                          <Download className="w-5 h-5" />
+                        </motion.div>
+                        <div className="text-center">
+                          <div className="font-semibold">{button.title}</div>
+                          <div className={`text-xs ${button.title === "Share & Earn" ? "text-green-600 dark:text-green-400" : button.variant === "default" ? "opacity-90" : "text-muted-foreground"}`}>
+                            {button.subtitle}
+                          </div>
+                        </div>
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <motion.div 
+                  className="bg-muted/30 rounded-lg p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 2.4 }}
+                >
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    <strong>Python Package</strong> includes strategy implementation, risk management, documentation, and setup instructions. 
+                    <strong>JSON Config</strong> contains strategy parameters for integration. 
+                    <strong>Share to Community</strong> makes your bot public and earns you 1 credit.
+                  </p>
+                </motion.div>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
