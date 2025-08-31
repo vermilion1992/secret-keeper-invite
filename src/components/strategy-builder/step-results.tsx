@@ -551,7 +551,7 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
           </div>
           
           <div
-            className={`bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-auto relative z-10 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+            className={`bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] relative z-10 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
@@ -571,28 +571,21 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
                         {expandedChart === 'distribution' && 'Trade Outcome Distribution'}
                         {expandedChart === 'drawdown' && 'Drawdown Analysis'}
                       </h2>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-muted-foreground hover:text-primary cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-xs">
-                            <p className="text-sm">
-                              {expandedChart === 'equity' && 'Portfolio value over time compared to benchmark performance. Shows long-term compounding effects and sustainability.'}
-                              {expandedChart === 'returns' && 'Percentage returns and trade activity breakdown by month. Identifies seasonal patterns and consistency.'}
-                              {expandedChart === 'distribution' && 'Distribution of trade outcomes by win/loss magnitude. Shows reliance on big wins vs steady gains.'}
-                              {expandedChart === 'drawdown' && 'Peak-to-trough decline showing risk and recovery periods. Measures worst-case scenarios and bounce-back ability.'}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-3">
                       {expandedChart === 'equity' && 'Strategy vs Benchmark Performance'}
                       {expandedChart === 'returns' && 'Profit/Loss Distribution by Month'}
                       {expandedChart === 'distribution' && 'Trade Outcome Breakdown'}
                       {expandedChart === 'drawdown' && 'Risk Assessment Over Time'}
                     </p>
+                    <div className="bg-muted/30 p-3 rounded-lg border-l-4 border-primary">
+                      <p className="text-sm text-foreground">
+                        {expandedChart === 'equity' && 'Portfolio value over time compared to benchmark performance. Shows long-term compounding effects and sustainability of your strategy gains.'}
+                        {expandedChart === 'returns' && 'Percentage returns and trade activity breakdown by month. Identifies seasonal patterns, consistency, and peak performance periods.'}
+                        {expandedChart === 'distribution' && 'Distribution of trade outcomes by win/loss magnitude. Shows whether strategy relies on big wins vs steady gains and risk exposure.'}
+                        {expandedChart === 'drawdown' && 'Peak-to-trough decline showing risk and recovery periods. Measures worst-case scenarios and your strategy\'s bounce-back ability.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <Button
