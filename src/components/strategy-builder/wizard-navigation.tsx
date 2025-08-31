@@ -11,47 +11,62 @@ interface WizardNavigationProps {
 
 export function WizardNavigation({ steps, currentStep, onStepClick }: WizardNavigationProps) {
   return (
-    <Card className="p-6 bg-card/50 border-border/50">
-      <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-foreground mb-2">Strategy Builder Steps</h2>
+        <p className="text-muted-foreground">Click on any step to begin or continue your strategy configuration</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {steps.map((step, index) => (
-          <div key={step.step} className="flex items-center gap-3">
+          <Card key={step.step} className="overflow-hidden">
             <button
               onClick={() => onStepClick(step.step)}
-              className={`flex items-center gap-3 w-full p-3 rounded-lg transition-all hover:bg-accent/50 ${
+              className={`w-full p-6 text-left transition-all hover:bg-accent/50 ${
                 step.isActive
-                  ? 'bg-primary/20 border border-primary/30'
+                  ? 'bg-primary/10 border-primary/30'
                   : step.isComplete
-                  ? 'bg-success/10 border border-success/20 hover:bg-success/20'
-                  : 'bg-muted/20 border border-muted/30'
+                  ? 'bg-success/5 border-success/20'
+                  : 'bg-card border-border'
               }`}
             >
-              <div className="flex-shrink-0">
-                {step.isComplete ? (
-                  <CheckCircle className="w-5 h-5 text-success" />
-                ) : (
-                  <Circle className={`w-5 h-5 ${step.isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                )}
-              </div>
-              
-              <div className="flex-1 text-left">
-                <div className="flex items-center gap-2">
-                  <span className={`font-medium ${step.isActive ? 'text-primary' : 'text-foreground'}`}>
-                    {step.title}
-                  </span>
-                  <Badge variant={step.isActive ? 'default' : 'secondary'} className="text-xs">
-                    {step.step}
-                  </Badge>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 mt-1">
+                  {step.isComplete ? (
+                    <CheckCircle className="w-6 h-6 text-success" />
+                  ) : (
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-medium ${
+                      step.isActive 
+                        ? 'border-primary text-primary bg-primary/10' 
+                        : 'border-muted-foreground text-muted-foreground'
+                    }`}>
+                      {step.step}
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className={`font-semibold ${step.isActive ? 'text-primary' : 'text-foreground'}`}>
+                      {step.title}
+                    </h3>
+                    {step.isComplete && (
+                      <Badge variant="secondary" className="text-xs bg-success/20 text-success border-success/30">
+                        Complete
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                </div>
+                
+                <ArrowRight className={`w-4 h-4 flex-shrink-0 mt-1 ${
+                  step.isActive ? 'text-primary' : 'text-muted-foreground'
+                }`} />
               </div>
-              
-              {step.isActive && (
-                <ArrowRight className="w-4 h-4 text-primary flex-shrink-0" />
-              )}
             </button>
-          </div>
+          </Card>
         ))}
       </div>
-    </Card>
+    </div>
   );
 }

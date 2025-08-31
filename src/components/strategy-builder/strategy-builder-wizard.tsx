@@ -19,7 +19,7 @@ interface StrategyBuilderWizardProps {
 }
 
 export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWizardProps) {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // 0 = overview page
   const [selectedMarketType, setSelectedMarketType] = useState<MarketType | null>(null);
   const [selectedPairTemplate, setSelectedPairTemplate] = useState<PairTemplate | null>(null);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
@@ -58,7 +58,10 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
   };
 
   const handleNext = () => {
-    if (currentStep < steps.length) {
+    if (currentStep === 0) {
+      setCurrentStep(1);
+      updateSteps(1);
+    } else if (currentStep < steps.length) {
       updateSteps(currentStep, true);
       setCurrentStep(currentStep + 1);
       updateSteps(currentStep + 1);
@@ -66,12 +69,12 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
   };
 
   const handleStepClick = (stepNumber: number) => {
-    // Only allow clicking on completed steps or current step
-    const targetStep = steps.find(s => s.step === stepNumber);
-    if (targetStep && (targetStep.isComplete || targetStep.isActive)) {
-      setCurrentStep(stepNumber);
-      updateSteps(stepNumber);
-    }
+    setCurrentStep(stepNumber);
+    updateSteps(stepNumber);
+  };
+
+  const handleBackToOverview = () => {
+    setCurrentStep(0);
   };
 
   const handleMarketTypeSelect = (type: MarketType) => {
@@ -123,31 +126,40 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
             </div>
           </div>
           
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-              <span>Step {currentStep} of {steps.length}</span>
-              <span>{Math.round(progress)}% Complete</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
+          {currentStep > 0 && (
+            <>
+              {/* Progress Bar */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                  <span>Step {currentStep} of {steps.length}</span>
+                  <span>{Math.round(progress)}% Complete</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <WizardNavigation
-              steps={steps}
-              currentStep={currentStep}
-              onStepClick={handleStepClick}
-            />
-          </div>
-
-          {/* Step Content */}
-          <div className="lg:col-span-3">
+        {currentStep === 0 ? (
+          <WizardNavigation
+            steps={steps}
+            currentStep={currentStep}
+            onStepClick={handleStepClick}
+          />
+        ) : (
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+              <button 
+                onClick={handleBackToOverview}
+                className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-2"
+              >
+                ← Back to Overview
+              </button>
+            </div>
+            
             <Card className="p-8 min-h-[600px]">
               {currentStep === 1 && (
                 <StepMarketType
@@ -220,7 +232,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
 
             </Card>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
