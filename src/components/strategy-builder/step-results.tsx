@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BacktestResult } from '@/types/botforge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { AnimatedBarChart } from '@/components/charts/AnimatedBarChart';
 import { AnimatedPieChart } from '@/components/charts/AnimatedPieChart';
 import { DrawdownChart } from '@/components/charts/DrawdownChart';
 import { MetricCard } from '@/components/charts/MetricCard';
+import { createPortal } from 'react-dom';
 
 interface StepResultsProps {
   backtestResult: BacktestResult;
@@ -93,6 +94,7 @@ const mockResult: BacktestResult = {
 export function StepResults({ onExport, onShare, onCompare = () => console.log('Compare backtests') }: StepResultsProps) {
   const [botName, setBotName] = useState('');
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const result = mockResult;
 
   const metrics = [
@@ -130,9 +132,26 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
     },
   ];
 
-  const toggleChart = (chartId: string) => {
-    setExpandedChart(expandedChart === chartId ? null : chartId);
+  const openModal = (chartId: string) => {
+    setExpandedChart(chartId);
+    setIsClosing(false);
+    document.body.style.overflow = 'hidden';
   };
+
+  const closeModal = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setExpandedChart(null);
+      setIsClosing(false);
+      document.body.style.overflow = '';
+    }, 200);
+  };
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   return (
     <motion.div 
@@ -401,19 +420,17 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
 
       {/* Chart Section */}
       <motion.div 
-        className={`transition-all duration-500 ${expandedChart ? 'fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-8 overflow-auto' : 'grid grid-cols-1 lg:grid-cols-2 gap-8'}`}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.6 }}
       >
-        {(!expandedChart || expandedChart === 'equity') && (
-          <div className={`${expandedChart === 'equity' ? 'w-full h-[80vh]' : ''} relative`}>
-            <button
-              onClick={() => toggleChart('equity')}
-              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
-            >
-              {expandedChart === 'equity' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
+        {/* Equity Chart */}
+        <Card 
+          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+          onClick={() => openModal('equity')}
+        >
+          <div className="relative">
             <AnimatedLineChart
               data={equityData}
               title="Return on Investment"
@@ -422,88 +439,205 @@ export function StepResults({ onExport, onShare, onCompare = () => console.log('
               showBenchmark={true}
               gradientId="equityGradient"
             />
-            {expandedChart === 'equity' && (
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Visualizes the long-term compounding effect of your strategy compared to a baseline. Helps you see whether gains are sustainable over time.
-                </p>
-              </div>
-            )}
           </div>
-        )}
+        </Card>
 
-        {(!expandedChart || expandedChart === 'returns') && (
-          <div className={`${expandedChart === 'returns' ? 'w-full h-[80vh]' : ''} relative`}>
-            <button
-              onClick={() => toggleChart('returns')}
-              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
-            >
-              {expandedChart === 'returns' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
+        {/* Monthly Returns Chart */}
+        <Card 
+          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+          onClick={() => openModal('returns')}
+        >
+          <div className="relative">
             <AnimatedBarChart
               data={monthlyReturns}
               title="Monthly Returns"
               subtitle="Profit/Loss Distribution by Month"
               icon={BarChart3}
             />
-            {expandedChart === 'returns' && (
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  This breakdown helps identify seasonal strengths, streaks of profitability, and risk of inconsistent months.
-                </p>
-              </div>
-            )}
           </div>
-        )}
+        </Card>
 
-        {(!expandedChart || expandedChart === 'distribution') && (
-          <div className={`${expandedChart === 'distribution' ? 'w-full h-[80vh]' : ''} relative`}>
-            <button
-              onClick={() => toggleChart('distribution')}
-              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
-            >
-              {expandedChart === 'distribution' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
+        {/* Trade Distribution Chart */}
+        <Card 
+          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+          onClick={() => openModal('distribution')}
+        >
+          <div className="relative">
             <AnimatedPieChart
               data={tradeDistribution}
               title="Trade Outcome"
-              subtitle={expandedChart === 'distribution' ? "Trade Outcome Breakdown" : "Trade Outcome Breakdown"}
+              subtitle="Trade Outcome Breakdown"
               icon={PieChart}
             />
-            {expandedChart === 'distribution' && (
-              <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses.
-                </p>
-              </div>
-            )}
           </div>
-        )}
+        </Card>
 
-        {(!expandedChart || expandedChart === 'drawdown') && (
-          <div className={`${expandedChart === 'drawdown' ? 'w-full h-[80vh]' : ''} relative`}>
-            <button
-              onClick={() => toggleChart('drawdown')}
-              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-background/80 hover:bg-background transition-colors"
-            >
-              {expandedChart === 'drawdown' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
+        {/* Drawdown Chart */}
+        <Card 
+          className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary hover:bg-primary/5 hover-scale"
+          onClick={() => openModal('drawdown')}
+        >
+          <div className="relative">
             <DrawdownChart
               data={drawdownData}
               title="Drawdown Over Time"
               subtitle="Risk Assessment Over Time"
               icon={DrawdownIcon}
             />
-            {expandedChart === 'drawdown' && (
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Chart Modal with Constellation Background */}
+      {expandedChart && createPortal(
+        <div 
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(8px)',
+            overflow: 'hidden'
+          }}
+          onClick={closeModal}
+        >
+          {/* Constellation Background Effect */}
+          <div className="absolute inset-0 overflow-hidden">
+            <svg className="absolute inset-0 w-full h-full opacity-45 pointer-events-none">
+              {/* Generate constellation stars */}
+              {[...Array(40)].map((_, i) => {
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const size = 1.5 + Math.random() * 2.5;
+                return (
+                  <circle
+                    key={`star-${i}`}
+                    cx={`${x}%`}
+                    cy={`${y}%`}
+                    r={size}
+                    fill="hsl(0 0% 100% / 0.9)"
+                    className="animate-pulse"
+                    style={{
+                      animationDelay: `${Math.random() * 4}s`,
+                      animationDuration: `${2 + Math.random() * 2}s`,
+                      filter: 'drop-shadow(0 0 6px hsl(var(--primary)))'
+                    }}
+                  />
+                );
+              })}
+              
+              {/* Generate connecting lines */}
+              {[...Array(15)].map((_, i) => {
+                const x1 = Math.random() * 100;
+                const y1 = Math.random() * 100;
+                const x2 = x1 + (Math.random() - 0.5) * 30;
+                const y2 = y1 + (Math.random() - 0.5) * 30;
+                return (
+                  <line
+                    key={`line-${i}`}
+                    x1={`${x1}%`}
+                    y1={`${y1}%`}
+                    x2={`${Math.max(0, Math.min(100, x2))}%`}
+                    y2={`${Math.max(0, Math.min(100, y2))}%`}
+                    stroke="hsl(var(--primary) / 0.3)"
+                    strokeWidth="1"
+                    className="opacity-60"
+                    style={{
+                      animation: 'constellation-pulse 8s ease-in-out infinite',
+                      animationDelay: `${Math.random() * 3}s`
+                    }}
+                  />
+                );
+              })}
+            </svg>
+          </div>
+          
+          <div
+            className={`bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-auto relative z-10 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    {expandedChart === 'equity' && <LineChart className="h-6 w-6 text-primary" />}
+                    {expandedChart === 'returns' && <BarChart3 className="h-6 w-6 text-primary" />}
+                    {expandedChart === 'distribution' && <PieChart className="h-6 w-6 text-primary" />}
+                    {expandedChart === 'drawdown' && <DrawdownIcon className="h-6 w-6 text-primary" />}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground mb-2">
+                      {expandedChart === 'equity' && 'Return on Investment'}
+                      {expandedChart === 'returns' && 'Monthly Returns'}
+                      {expandedChart === 'distribution' && 'Trade Outcome Distribution'}
+                      {expandedChart === 'drawdown' && 'Drawdown Analysis'}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {expandedChart === 'equity' && 'Strategy vs Benchmark Performance'}
+                      {expandedChart === 'returns' && 'Profit/Loss Distribution by Month'}
+                      {expandedChart === 'distribution' && 'Trade Outcome Breakdown'}
+                      {expandedChart === 'drawdown' && 'Risk Assessment Over Time'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={closeModal}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </Button>
+              </div>
+              
+              <div className="h-[60vh]">
+                {expandedChart === 'equity' && (
+                  <AnimatedLineChart
+                    data={equityData}
+                    title=""
+                    subtitle=""
+                    icon={LineChart}
+                    showBenchmark={true}
+                    gradientId="equityGradient"
+                  />
+                )}
+                {expandedChart === 'returns' && (
+                  <AnimatedBarChart
+                    data={monthlyReturns}
+                    title=""
+                    subtitle=""
+                    icon={BarChart3}
+                  />
+                )}
+                {expandedChart === 'distribution' && (
+                  <AnimatedPieChart
+                    data={tradeDistribution}
+                    title=""
+                    subtitle=""
+                    icon={PieChart}
+                  />
+                )}
+                {expandedChart === 'drawdown' && (
+                  <DrawdownChart
+                    data={drawdownData}
+                    title=""
+                    subtitle=""
+                    icon={DrawdownIcon}
+                  />
+                )}
+              </div>
+
               <div className="mt-4 p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  This view highlights how deeply and how long the strategy suffers during losing streaks, helping you judge recovery potential and risk tolerance.
+                  {expandedChart === 'equity' && 'Visualizes the long-term compounding effect of your strategy compared to a baseline. Helps you see whether gains are sustainable over time.'}
+                  {expandedChart === 'returns' && 'This breakdown helps identify seasonal strengths, streaks of profitability, and risk of inconsistent months.'}
+                  {expandedChart === 'distribution' && 'This chart highlights whether the strategy grinds out steady gains, relies on big winners, or risks giving back too much in large losses.'}
+                  {expandedChart === 'drawdown' && 'This view highlights how deeply and how long the strategy suffers during losing streaks, helping you judge recovery potential and risk tolerance.'}
                 </p>
               </div>
-            )}
+            </div>
           </div>
-        )}
-      </motion.div>
+        </div>,
+        document.body
+      )}
 
       {!expandedChart && <Separator className="my-8" />}
 
