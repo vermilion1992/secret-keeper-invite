@@ -572,7 +572,7 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
 
       {/* Modal Overlay */}
       {expandedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ position: 'fixed' }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-fade-in"
@@ -580,77 +580,79 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           />
           
           {/* Modal Content */}
-          <Card className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in border-primary bg-card shadow-2xl">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <expandedItem.icon className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-2xl">{expandedItem.name}</h3>
-                    <Badge variant="outline" className="text-sm">{expandedItem.tier}</Badge>
+          <div className="relative z-10 w-full max-w-2xl" style={{ maxHeight: '90vh' }}>
+            <Card className="animate-scale-in border-primary bg-card shadow-2xl overflow-y-auto" style={{ maxHeight: '90vh' }}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <expandedItem.icon className="h-8 w-8 text-primary" />
+                    <div>
+                      <h3 className="font-semibold text-2xl">{expandedItem.name}</h3>
+                      <Badge variant="outline" className="text-sm">{expandedItem.tier}</Badge>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedItem(null)}
+                    className="h-8 w-8 p-0"
+                  >
+                    ✕
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpandedItem(null)}
-                  className="h-8 w-8 p-0"
-                >
-                  ✕
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <p className="text-muted-foreground text-lg leading-relaxed">{expandedItem.blurb}</p>
-              
-              {expandedItem.tags && (
-                <div className="flex flex-wrap gap-2">
-                  {expandedItem.tags.map((tag: string) => (
-                    <Badge key={tag} variant="secondary" className="text-sm">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <p className="text-muted-foreground text-lg leading-relaxed">{expandedItem.blurb}</p>
+                
+                {expandedItem.tags && (
+                  <div className="flex flex-wrap gap-2">
+                    {expandedItem.tags.map((tag: string) => (
+                      <Badge key={tag} variant="secondary" className="text-sm">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
 
-              {expandedItem.advanced && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <p className="font-medium mb-2">Advanced Settings Available:</p>
-                  <p className="text-sm text-muted-foreground">{expandedItem.advanced.join(', ')}</p>
+                {expandedItem.advanced && (
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="font-medium mb-2">Advanced Settings Available:</p>
+                    <p className="text-sm text-muted-foreground">{expandedItem.advanced.join(', ')}</p>
+                  </div>
+                )}
+                
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      if (expandedItem.type === 'strategy') {
+                        onSelect({ 
+                          id: expandedItem.id, 
+                          name: expandedItem.name, 
+                          description: expandedItem.tooltip,
+                          tier: expandedItem.tier,
+                          defaultIndicators: [],
+                          canAddFilters: expandedItem.tier !== 'basic'
+                        });
+                      }
+                      setExpandedItem(null);
+                    }}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setExpandedItem(null)}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    Go Back
+                  </Button>
                 </div>
-              )}
-              
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={() => {
-                    if (expandedItem.type === 'strategy') {
-                      onSelect({ 
-                        id: expandedItem.id, 
-                        name: expandedItem.name, 
-                        description: expandedItem.tooltip,
-                        tier: expandedItem.tier,
-                        defaultIndicators: [],
-                        canAddFilters: expandedItem.tier !== 'basic'
-                      });
-                    }
-                    setExpandedItem(null);
-                  }}
-                  className="flex-1"
-                  size="lg"
-                >
-                  Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setExpandedItem(null)}
-                  className="flex-1"
-                  size="lg"
-                >
-                  Go Back
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
