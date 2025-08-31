@@ -41,7 +41,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
-      <div className="flex items-end justify-center px-3 pt-2 pb-4 min-h-[96px]">
+      {/* Logo container positioned to align BOT FORGE text with Dashboard heading baseline */}
+      <div className="flex items-end justify-center px-3 pb-6" style={{ marginTop: "32px" }}>
         <AnimatePresence mode="wait">
           {state !== 'collapsed' && (
             <motion.div
@@ -117,7 +118,9 @@ export function AppSidebar() {
       </div>
 
       <SidebarContent>
-        <SidebarGroup>
+        {/* Navigation menu positioned with maintained spacing from logo */}
+        <div style={{ marginTop: "32px" }}>
+          <SidebarGroup>
           <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -134,6 +137,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
