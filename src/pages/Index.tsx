@@ -72,27 +72,28 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* Top Community Bot - Full Width */}
-          <Card className="hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)] transition-all duration-150">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-yellow-500">#1</span>
-                  Top Community Bot
-                </CardTitle>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">This highlights the most profitable community-shared bot of the week. Copy its settings or view details to see how it trades.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <CardDescription>Most profitable bot this week</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          {/* Top Community Bot + Performance Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Top Community Bot details */}
+            <Card className="hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)] transition-all duration-150">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="text-yellow-500">#1</span>
+                    Top Community Bot
+                  </CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">This highlights the most profitable community-shared bot of the week. Copy its settings or view details to see how it trades.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <CardDescription>Most profitable bot this week</CardDescription>
+              </CardHeader>
+              <CardContent>
                 {/* Left side: Bot details */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -132,31 +133,41 @@ const Index = () => {
                     </Button>
                   </div>
                 </div>
-                
-                {/* Right side: Compact performance chart */}
-                <Card className="h-[200px]">
-                  <CardContent className="h-full p-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={topBotPerformanceData} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
-                        <defs>
-                          <linearGradient id="topBotGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
-                        <XAxis dataKey="date" hide />
-                        <YAxis hide />
-                        <ReferenceLine y={topBotPerformanceData[0]?.value || 0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
-                        <RechartsTooltip />
-                        <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Right: Performance Chart */}
+            <Card className="hover:shadow-[0_0_8px_hsl(var(--primary)/0.18)] transition-all duration-150">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Top Bot Performance
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <InformationCircleIcon className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">7-day equity curve based on simulated performance.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
+                <CardDescription>7-day equity curve</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={topBotPerformanceData} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.3} />
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `$${(v/1000).toFixed(1)}k`} />
+                      <ReferenceLine y={topBotPerformanceData[0]?.value || 0} stroke="hsl(var(--muted-foreground))" strokeDasharray="2 2" />
+                      <RechartsTooltip />
+                      <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
 
           {/* App Features */}
