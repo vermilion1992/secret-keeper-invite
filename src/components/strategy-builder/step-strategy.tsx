@@ -422,15 +422,25 @@ const ENHANCED_INDICATORS = [
 
 export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
   const [expandedItem, setExpandedItem] = useState<any>(null);
-  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [modalPosition, setModalPosition] = useState<{ left: number; top: number; width: number }>({ left: 0, top: 0, width: 600 });
 
-  // Calculate exact center of viewport when modal opens
+  // Position modal aligned under the sidebar logo and centered in the main content area
   const openModal = (item: any) => {
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    setModalPosition({ x: centerX, y: centerY });
+    const logoEl = document.getElementById('app-logo');
+    const mainEl = document.getElementById('app-main');
+    const logoRect = logoEl?.getBoundingClientRect();
+    const mainRect = mainEl?.getBoundingClientRect();
+
+    const spacing = 16; // gap below logo
+    const top = (logoRect?.bottom ?? 0) + spacing;
+
+    const desiredWidth = 640;
+    const width = Math.min(desiredWidth, (mainRect?.width ?? window.innerWidth) - 32);
+    const left = (mainRect?.left ?? 0) + ((mainRect?.width ?? window.innerWidth) - width) / 2;
+
+    setModalPosition({ left, top, width });
     setExpandedItem(item);
-    
+
     // Lock body scroll
     document.body.style.overflow = 'hidden';
   };
@@ -440,7 +450,6 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
     document.body.style.overflow = '';
   };
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     return () => {
       document.body.style.overflow = '';
@@ -612,14 +621,14 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
           <div
             style={{
               position: 'absolute',
-              left: `${modalPosition.x}px`,
-              top: `${modalPosition.y}px`,
-              transform: 'translate(-50%, -50%)',
+              left: `${modalPosition.left}px`,
+              top: `${modalPosition.top}px`,
+              transform: 'translate(-50%, 0)',
               backgroundColor: 'white',
               borderRadius: '8px',
               padding: '24px',
-              maxWidth: '600px',
-              width: '90vw',
+              maxWidth: `${modalPosition.width}px`,
+              width: `${modalPosition.width}px`,
               maxHeight: '80vh',
               overflow: 'auto',
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)'

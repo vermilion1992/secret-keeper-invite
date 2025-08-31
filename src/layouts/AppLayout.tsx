@@ -25,7 +25,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </Avatar>
             </div>
           </header>
-          <main className="flex-1 p-4 animate-fade-in">
+          <main id="app-main" className="flex-1 p-4 animate-fade-in">
             {children}
           </main>
         </SidebarInset>

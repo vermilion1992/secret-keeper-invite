@@ -42,7 +42,7 @@ export function AppSidebar() {
   return (
     <Sidebar className={state === 'collapsed' ? 'w-14' : 'w-60'} collapsible="icon">
       {/* Logo container positioned to align BOT FORGE text with Dashboard heading baseline */}
-      <div className="flex items-end justify-center px-3 pb-6" style={{ marginTop: "54px" }}>
+      <div id="app-logo" className="flex items-end justify-center px-3 pb-6" style={{ marginTop: "54px" }}>
         <AnimatePresence mode="wait">
           {state !== 'collapsed' && (
             <motion.div
