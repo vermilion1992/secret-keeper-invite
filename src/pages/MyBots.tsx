@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Share, TrendingUp, Calendar, Settings } from 'lucide-react';
+import { CommandLineIcon, ArrowDownTrayIcon, ShareIcon, ArrowTrendingUpIcon, CalendarIcon, CogIcon } from '@heroicons/react/24/outline';
 
 const MyBots = () => {
   // Mock user bots data
@@ -55,7 +55,7 @@ const MyBots = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-3">
-                <Bot className="w-8 h-8 text-primary" />
+                <CommandLineIcon className="w-8 h-8 text-primary" />
                 My Bots
               </h1>
               <p className="text-muted-foreground mt-2">
@@ -63,7 +63,7 @@ const MyBots = () => {
               </p>
             </div>
             <Button size="lg" className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
+              <ArrowTrendingUpIcon className="w-5 h-5" />
               Create New Bot
             </Button>
           </div>
@@ -77,7 +77,7 @@ const MyBots = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/20 rounded-full">
-                  <Bot className="w-6 h-6 text-primary" />
+                  <CommandLineIcon className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{userBots.length}</p>
@@ -91,7 +91,7 @@ const MyBots = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-success/20 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-success" />
+                  <ArrowTrendingUpIcon className="w-6 h-6 text-success" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">+34.5%</p>
@@ -105,7 +105,7 @@ const MyBots = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-500/20 rounded-full">
-                  <Share className="w-6 h-6 text-blue-500" />
+                  <ShareIcon className="w-6 h-6 text-blue-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">1</p>
@@ -119,7 +119,7 @@ const MyBots = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-purple-500/20 rounded-full">
-                  <Download className="w-6 h-6 text-purple-500" />
+                  <ArrowDownTrayIcon className="w-6 h-6 text-purple-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">2</p>
@@ -141,7 +141,7 @@ const MyBots = () => {
           <CardContent>
             {userBots.length === 0 ? (
               <div className="text-center py-12">
-                <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <CommandLineIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No bots yet</h3>
                 <p className="text-muted-foreground mb-4">
                   Create your first trading bot to get started
@@ -159,7 +159,7 @@ const MyBots = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 bg-primary/20 rounded-lg">
-                          <Bot className="w-5 h-5 text-primary" />
+                          <CommandLineIcon className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg">{bot.name}</h3>
@@ -185,7 +185,7 @@ const MyBots = () => {
                           </Badge>
                         )}
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
+                          <CalendarIcon className="w-4 h-4" />
                           {new Date(bot.createdAt).toLocaleDateString()}
                         </div>
                       </div>
@@ -215,7 +215,7 @@ const MyBots = () => {
                         onClick={() => handleEditBot(bot.id)}
                         className="flex items-center gap-1"
                       >
-                        <Settings className="w-4 h-4" />
+                        <CogIcon className="w-4 h-4" />
                         Edit
                       </Button>
                       
@@ -227,7 +227,7 @@ const MyBots = () => {
                             onClick={() => handleDownloadBot(bot.id)}
                             className="flex items-center gap-1"
                           >
-                            <Download className="w-4 h-4" />
+                            <ArrowDownTrayIcon className="w-4 h-4" />
                             Download .py
                           </Button>
                           
@@ -238,7 +238,7 @@ const MyBots = () => {
                               onClick={() => handleShareBot(bot.id)}
                               className="flex items-center gap-1"
                             >
-                              <Share className="w-4 h-4" />
+                              <ShareIcon className="w-4 h-4" />
                               Share (+1 Credit)
                             </Button>
                           )}

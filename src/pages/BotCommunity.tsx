@@ -2,7 +2,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Trophy, Star, Download, Share, TrendingUp, Users } from 'lucide-react';
+import { TrophyIcon, StarIcon, ArrowDownTrayIcon, ShareIcon, ArrowTrendingUpIcon, UsersIcon } from '@heroicons/react/24/outline';
 
 const BotCommunity = () => {
   // Mock leaderboard data
@@ -55,7 +55,7 @@ const BotCommunity = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-3">
-                <Users className="w-8 h-8 text-primary" />
+                <UsersIcon className="w-8 h-8 text-primary" />
                 Bot Community
               </h1>
               <p className="text-muted-foreground mt-2">
@@ -77,7 +77,7 @@ const BotCommunity = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/20 rounded-full">
-                  <Trophy className="w-6 h-6 text-primary" />
+                  <TrophyIcon className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">1,247</p>
@@ -91,7 +91,7 @@ const BotCommunity = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-success/20 rounded-full">
-                  <TrendingUp className="w-6 h-6 text-success" />
+                  <ArrowTrendingUpIcon className="w-6 h-6 text-success" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">+127%</p>
@@ -105,7 +105,7 @@ const BotCommunity = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-500/20 rounded-full">
-                  <Download className="w-6 h-6 text-blue-500" />
+                  <ArrowDownTrayIcon className="w-6 h-6 text-blue-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">25.3K</p>
@@ -119,7 +119,7 @@ const BotCommunity = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-purple-500/20 rounded-full">
-                  <Star className="w-6 h-6 text-purple-500" />
+                  <StarIcon className="w-6 h-6 text-purple-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">4.6</p>
@@ -134,7 +134,7 @@ const BotCommunity = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
+              <TrophyIcon className="w-5 h-5 text-yellow-500" />
               Top Performing Bots
             </CardTitle>
             <CardDescription>
@@ -150,9 +150,9 @@ const BotCommunity = () => {
                 >
                   {/* Rank */}
                   <div className="flex-shrink-0 w-8 text-center">
-                    {index === 0 && <Trophy className="w-6 h-6 text-yellow-500 mx-auto" />}
-                    {index === 1 && <Trophy className="w-6 h-6 text-gray-400 mx-auto" />}
-                    {index === 2 && <Trophy className="w-6 h-6 text-amber-600 mx-auto" />}
+                    {index === 0 && <TrophyIcon className="w-6 h-6 text-yellow-500 mx-auto" />}
+                    {index === 1 && <TrophyIcon className="w-6 h-6 text-gray-400 mx-auto" />}
+                    {index === 2 && <TrophyIcon className="w-6 h-6 text-amber-600 mx-auto" />}
                     {index > 2 && <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>}
                   </div>
 
@@ -177,7 +177,7 @@ const BotCommunity = () => {
                       <span>{bot.strategy}</span>
                       <span>•</span>
                       <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <StarIcon className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                         <span>{bot.rating}</span>
                       </div>
                     </div>
@@ -207,7 +207,7 @@ const BotCommunity = () => {
                       onClick={() => handleCopyBot(bot.id)}
                       className="flex items-center gap-1"
                     >
-                      <Download className="w-4 h-4" />
+                      <ArrowDownTrayIcon className="w-4 h-4" />
                       Copy
                     </Button>
                     <Button
@@ -215,7 +215,7 @@ const BotCommunity = () => {
                       size="sm"
                       className="flex items-center gap-1"
                     >
-                      <Share className="w-4 h-4" />
+                      <ShareIcon className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>

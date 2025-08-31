@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
-import { TrendingUp, Users, Bot, MessageCircle, ArrowRight } from "lucide-react";
+import { ArrowTrendingUpIcon, UsersIcon, CommandLineIcon, ChatBubbleLeftRightIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useCryptoPrices } from "@/hooks/use-crypto-prices";
@@ -53,7 +53,7 @@ const Index = () => {
             <p className="text-muted-foreground">Overview of your bots and the market</p>
           </div>
           <Button onClick={() => navigate('/strategy-builder')} className="gap-2">
-            Start Building Now <ArrowRight className="h-4 w-4" />
+            Start Building Now <ArrowRightIcon className="h-4 w-4" />
           </Button>
         </div>
 
@@ -84,7 +84,7 @@ const Index = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Link to="/strategy-builder" className="hover-scale">
                   <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                    <TrendingUp className="h-5 w-5 text-primary mt-1" />
+                    <ArrowTrendingUpIcon className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">Strategy Builder</p>
                       <p className="text-sm text-muted-foreground">Wizard-driven creation with risk controls and backtesting.</p>
@@ -93,7 +93,7 @@ const Index = () => {
                 </Link>
                 <Link to="/bot-community" className="hover-scale">
                   <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                    <Users className="h-5 w-5 text-primary mt-1" />
+                    <UsersIcon className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">Bot Community</p>
                       <p className="text-sm text-muted-foreground">Share bots, discover top performers and collaborate.</p>
@@ -102,7 +102,7 @@ const Index = () => {
                 </Link>
                 <Link to="/my-bots" className="hover-scale">
                   <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                    <Bot className="h-5 w-5 text-primary mt-1" />
+                    <CommandLineIcon className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">My Bots</p>
                       <p className="text-sm text-muted-foreground">Manage, export and deploy your personal bots.</p>
@@ -111,7 +111,7 @@ const Index = () => {
                 </Link>
                 <Link to="/ai-chat" className="hover-scale">
                   <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                    <MessageCircle className="h-5 w-5 text-primary mt-1" />
+                    <ChatBubbleLeftRightIcon className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">AI Strategy Chat</p>
                       <p className="text-sm text-muted-foreground">Get instant guidance and iterate on ideas faster.</p>
@@ -121,7 +121,7 @@ const Index = () => {
               </div>
               <div className="mt-6">
                 <Button onClick={() => navigate('/strategy-builder')} className="gap-2">
-                  Start Building Now <ArrowRight className="h-4 w-4" />
+                  Start Building Now <ArrowRightIcon className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
@@ -187,7 +187,7 @@ const Index = () => {
                 />
               </div>
               <Button onClick={() => navigate('/ai-chat')} className="gap-2">
-                Open Chat <MessageCircle className="h-4 w-4" />
+                Open Chat <ChatBubbleLeftRightIcon className="h-4 w-4" />
               </Button>
             </div>
           </CardContent>
