@@ -6,15 +6,18 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart } from 'lucide-react';
+import { Download, Share2, TrendingUp, TrendingDown, Percent, Target, BarChart3, LineChart, PieChart, TrendingDown as DrawdownIcon, GitCompare } from 'lucide-react';
 import { AnimatedLineChart } from '@/components/charts/AnimatedLineChart';
 import { AnimatedBarChart } from '@/components/charts/AnimatedBarChart';
+import { AnimatedPieChart } from '@/components/charts/AnimatedPieChart';
+import { DrawdownChart } from '@/components/charts/DrawdownChart';
 import { MetricCard } from '@/components/charts/MetricCard';
 
 interface StepResultsProps {
   backtestResult: BacktestResult;
   onExport: (format: 'python' | 'json', botName: string) => void;
   onShare: (botName: string) => void;
+  onCompare?: () => void;
 }
 
 // Mock equity curve data (portfolio value over time)
@@ -49,6 +52,28 @@ const monthlyReturns = [
   { month: 'Dec', return: -4.3, trades: 7 }
 ];
 
+// Mock trade distribution data for pie chart
+const tradeDistribution = [
+  { name: 'Winning Trades', value: 67.3, color: 'hsl(var(--chart-1))' },
+  { name: 'Losing Trades', value: 32.7, color: 'hsl(var(--chart-2))' }
+];
+
+// Mock drawdown data
+const drawdownData = [
+  { date: 'Jan', drawdown: 0 },
+  { date: 'Feb', drawdown: -1.2 },
+  { date: 'Mar', drawdown: -0.8 },
+  { date: 'Apr', drawdown: -2.1 },
+  { date: 'May', drawdown: -1.5 },
+  { date: 'Jun', drawdown: -3.2 },
+  { date: 'Jul', drawdown: -2.8 },
+  { date: 'Aug', drawdown: -4.1 },
+  { date: 'Sep', drawdown: -3.5 },
+  { date: 'Oct', drawdown: -8.2 },
+  { date: 'Nov', drawdown: -6.1 },
+  { date: 'Dec', drawdown: -4.8 }
+];
+
 // Mock backtest result
 const mockResult: BacktestResult = {
   roi: 23.5,
@@ -60,7 +85,7 @@ const mockResult: BacktestResult = {
   tradeDistribution: []
 };
 
-export function StepResults({ onExport, onShare }: StepResultsProps) {
+export function StepResults({ onExport, onShare, onCompare }: StepResultsProps) {
   const [botName, setBotName] = useState('');
   const result = mockResult;
 
@@ -151,56 +176,49 @@ export function StepResults({ onExport, onShare }: StepResultsProps) {
         ))}
       </motion.div>
 
-      {/* Chart Section */}
-      <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.0 }}
-      >
-        <AnimatedLineChart
-          data={equityData}
-          title="Portfolio Equity Curve"
-          subtitle="Strategy vs Benchmark Performance"
-          icon={LineChart}
-          showBenchmark={true}
-          gradientId="equityGradient"
-        />
-
-        <AnimatedBarChart
-          data={monthlyReturns}
-          title="Monthly Returns"
-          subtitle="Profit/Loss Distribution by Month"
-          icon={BarChart3}
-        />
-      </motion.div>
-
       {/* Trade Summary */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.2 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
       >
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-0 bg-gradient-to-br from-card via-card to-card/50">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1.3 }}
+              transition={{ delay: 0.9 }}
             >
               <CardTitle className="flex items-center gap-2">
                 <div className="w-2 h-8 bg-gradient-to-b from-primary to-primary/60 rounded-full" />
                 Trade Analysis Summary
               </CardTitle>
             </motion.div>
+            {onCompare && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.0 }}
+              >
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={onCompare}
+                  className="gap-2"
+                >
+                  <GitCompare className="w-4 h-4" />
+                  Compare Previous
+                </Button>
+              </motion.div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { value: result.avgTrades, label: "Total Trades", color: "text-primary", delay: 1.4 },
-                { value: Math.round(result.avgTrades * result.winrate / 100), label: "Winning Trades", color: "text-emerald-500", delay: 1.5 },
-                { value: result.avgTrades - Math.round(result.avgTrades * result.winrate / 100), label: "Losing Trades", color: "text-red-500", delay: 1.6 },
-                { value: "1.85", label: "Avg Win/Loss", color: "text-blue-500", delay: 1.7 }
+                { value: result.avgTrades, label: "Total Trades", color: "text-primary", delay: 1.1 },
+                { value: Math.round(result.avgTrades * result.winrate / 100), label: "Winning Trades", color: "text-emerald-500", delay: 1.2 },
+                { value: result.avgTrades - Math.round(result.avgTrades * result.winrate / 100), label: "Losing Trades", color: "text-red-500", delay: 1.3 },
+                { value: "1.85", label: "Avg Win/Loss", color: "text-blue-500", delay: 1.4 }
               ].map((stat, index) => (
                 <motion.div 
                   key={stat.label}
@@ -230,19 +248,58 @@ export function StepResults({ onExport, onShare }: StepResultsProps) {
         </Card>
       </motion.div>
 
+      {/* Chart Section */}
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.6 }}
+      >
+        <AnimatedLineChart
+          data={equityData}
+          title="Portfolio Equity Curve"
+          subtitle="Strategy vs Benchmark Performance"
+          icon={LineChart}
+          showBenchmark={true}
+          gradientId="equityGradient"
+        />
+
+        <AnimatedBarChart
+          data={monthlyReturns}
+          title="Monthly Returns"
+          subtitle="Profit/Loss Distribution by Month"
+          icon={BarChart3}
+        />
+
+        <AnimatedPieChart
+          data={tradeDistribution}
+          title="Trade Distribution"
+          subtitle="Win Rate Breakdown"
+          icon={PieChart}
+        />
+
+        <DrawdownChart
+          data={drawdownData}
+          title="Drawdown Analysis"
+          subtitle="Risk Assessment Over Time"
+          icon={DrawdownIcon}
+        />
+      </motion.div>
+
+
       <Separator className="my-8" />
 
       {/* Enhanced Export Section */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.8 }}
+        transition={{ duration: 0.6, delay: 2.0 }}
       >
         <Card className="shadow-lg border-primary/20 hover:shadow-xl transition-shadow duration-300">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.9 }}
+            transition={{ delay: 2.1 }}
           >
             <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10">
               <CardTitle className="flex items-center gap-2">
@@ -264,7 +321,7 @@ export function StepResults({ onExport, onShare }: StepResultsProps) {
               className="space-y-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 2.0 }}
+              transition={{ delay: 2.2 }}
             >
               <div>
                 <Label htmlFor="botName" className="text-sm font-medium">Bot Name *</Label>
