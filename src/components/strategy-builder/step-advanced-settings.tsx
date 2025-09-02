@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, RotateCcw, X, Plus } from 'lucide-react';
+import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, RotateCcw, X, Plus, Filter, DollarSign, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface StepAdvancedSettingsProps {
@@ -32,6 +32,59 @@ interface EntryCondition {
   rhs: string | number;
 }
 
+interface FilterSettings {
+  htfTrendFilter: {
+    enabled: boolean;
+    asset: string;
+    timeframe: string;
+    maType: string;
+    period: number;
+    useOwnPair: boolean;
+  };
+  volumeGate: {
+    enabled: boolean;
+    period: number;
+    multiplier: number;
+  };
+  atrActivityGate: {
+    enabled: boolean;
+    period: number;
+    threshold: number;
+  };
+}
+
+interface ExitSettings {
+  // Basic exits
+  stopLossEnabled: boolean;
+  stopLossPercent: number;
+  takeProfitEnabled: boolean;
+  takeProfitPercent: number;
+
+  // Smart exits
+  tp1: { enabled: boolean; percent: number; allocation: number; trailAfterHit: boolean };
+  tp2: { enabled: boolean; percent: number; allocation: number; trailAfterHit: boolean };
+  tp3: { enabled: boolean; percent: number; allocation: number; trailAfterHit: boolean };
+  
+  breakEven: { enabled: boolean; triggerPercent: number; offset: number };
+  
+  trailingStop: { 
+    enabled: boolean; 
+    mode: 'fixed' | 'atr' | 'hybrid'; 
+    fixedPercent: number; 
+    atrMultiplier: number; 
+    atrLength: number;
+  };
+  
+  atrStopLoss: { enabled: boolean; multiplier: number; atrLength: number };
+  timeBasedExit: { 
+    enabled: boolean; 
+    mode: 'candles' | 'daily_close' | 'weekly_close'; 
+    candleCount: number; 
+  };
+  
+  exitPriority: string[];
+}
+
 export function StepAdvancedSettings({ 
   strategy, 
   selectedStrategyKey,
@@ -41,6 +94,8 @@ export function StepAdvancedSettings({
   onPrevious,
   userTier 
 }: StepAdvancedSettingsProps) {
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isDefaultExitOpen, setIsDefaultExitOpen] = useState(false);
   const [isAdvancedExitOpen, setIsAdvancedExitOpen] = useState(false);
   
   // Entry conditions from BF_CONFIG
@@ -62,21 +117,59 @@ export function StepAdvancedSettings({
     vwap: {},
   });
 
+  // Filter settings
+  const [filterSettings, setFilterSettings] = useState<FilterSettings>({
+    htfTrendFilter: {
+      enabled: false,
+      asset: 'BTC/USDT',
+      timeframe: 'Daily',
+      maType: 'EMA',
+      period: 200,
+      useOwnPair: false
+    },
+    volumeGate: {
+      enabled: false,
+      period: 20,
+      multiplier: 1.5
+    },
+    atrActivityGate: {
+      enabled: false,
+      period: 14,
+      threshold: 0.002
+    }
+  });
+
   // Exit settings  
-  const [exitSettings, setExitSettings] = useState({
+  const [exitSettings, setExitSettings] = useState<ExitSettings>({
+    // Basic exits
     stopLossEnabled: true,
-    stopLossType: 'percentage',
-    stopLossValue: 5.0,
-    trailingStopEnabled: false,
-    trailingStopType: 'percentage',
-    trailingStopValue: 2.0,
+    stopLossPercent: 5.0,
     takeProfitEnabled: true,
-    takeProfitType: 'percentage', 
-    takeProfitValue: 10.0,
-    atrStopEnabled: false,
-    atrTrailingEnabled: false,
-    atrLength: 14,
-    atrMultiplier: 2.0
+    takeProfitPercent: 10.0,
+
+    // Smart exits
+    tp1: { enabled: false, percent: 5.0, allocation: 33, trailAfterHit: false },
+    tp2: { enabled: false, percent: 10.0, allocation: 33, trailAfterHit: false },
+    tp3: { enabled: false, percent: 20.0, allocation: 34, trailAfterHit: false },
+    
+    breakEven: { enabled: false, triggerPercent: 3.0, offset: 0.1 },
+    
+    trailingStop: { 
+      enabled: false, 
+      mode: 'fixed', 
+      fixedPercent: 2.0, 
+      atrMultiplier: 2.0, 
+      atrLength: 14
+    },
+    
+    atrStopLoss: { enabled: false, multiplier: 2.0, atrLength: 14 },
+    timeBasedExit: { 
+      enabled: false, 
+      mode: 'candles', 
+      candleCount: 10
+    },
+    
+    exitPriority: ['Trailing', 'TP', 'Time', 'Stop Loss']
   });
 
   // Load strategy config when selectedStrategyKey changes
@@ -203,6 +296,63 @@ export function StepAdvancedSettings({
     }
   };
 
+  const resetFiltersToDefault = () => {
+    setFilterSettings({
+      htfTrendFilter: {
+        enabled: false,
+        asset: 'BTC/USDT',
+        timeframe: 'Daily',
+        maType: 'EMA',
+        period: 200,
+        useOwnPair: false
+      },
+      volumeGate: {
+        enabled: false,
+        period: 20,
+        multiplier: 1.5
+      },
+      atrActivityGate: {
+        enabled: false,
+        period: 14,
+        threshold: 0.002
+      }
+    });
+  };
+
+  const resetDefaultExitsToDefault = () => {
+    setExitSettings(prev => ({
+      ...prev,
+      stopLossEnabled: true,
+      stopLossPercent: 5.0,
+      takeProfitEnabled: true,
+      takeProfitPercent: 10.0
+    }));
+  };
+
+  const resetAdvancedExitsToDefault = () => {
+    setExitSettings(prev => ({
+      ...prev,
+      tp1: { enabled: false, percent: 5.0, allocation: 33, trailAfterHit: false },
+      tp2: { enabled: false, percent: 10.0, allocation: 33, trailAfterHit: false },
+      tp3: { enabled: false, percent: 20.0, allocation: 34, trailAfterHit: false },
+      breakEven: { enabled: false, triggerPercent: 3.0, offset: 0.1 },
+      trailingStop: { 
+        enabled: false, 
+        mode: 'fixed', 
+        fixedPercent: 2.0, 
+        atrMultiplier: 2.0, 
+        atrLength: 14
+      },
+      atrStopLoss: { enabled: false, multiplier: 2.0, atrLength: 14 },
+      timeBasedExit: { 
+        enabled: false, 
+        mode: 'candles', 
+        candleCount: 10
+      },
+      exitPriority: ['Trailing', 'TP', 'Time', 'Stop Loss']
+    }));
+  };
+
   if (!selectedStrategyKey) {
     return (
       <div className="space-y-6">
@@ -257,6 +407,10 @@ export function StepAdvancedSettings({
     return preview;
   };
 
+  // Check for conflicts
+  const hasStopLossConflict = exitSettings.stopLossEnabled && exitSettings.atrStopLoss.enabled;
+  const showATRLength = exitSettings.trailingStop.enabled && exitSettings.trailingStop.mode !== 'fixed' || exitSettings.atrStopLoss.enabled;
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -293,7 +447,14 @@ export function StepAdvancedSettings({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {config.fields.map((field) => (
                     <div key={field} className="space-y-2">
-                      <Label className="capitalize">{field}</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Label className="capitalize">{field}</Label>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Configure the {field} parameter for {getBFConfig().indicatorLabels[indicator] || indicator}</p>
+                        </TooltipContent>
+                      </Tooltip>
                       {field.includes('length') || field.includes('period') || field.includes('fast') || field.includes('slow') || field.includes('signal') ? (
                         <Input
                           type="number"
@@ -589,18 +750,224 @@ export function StepAdvancedSettings({
           </CardContent>
         </Card>
 
-        {/* Advanced Exit Settings */}
-        <Collapsible open={isAdvancedExitOpen} onOpenChange={setIsAdvancedExitOpen}>
+        {/* Filters */}
+        <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
           <Card>
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    <CardTitle>Advanced Exit Settings</CardTitle>
+                    <Filter className="h-5 w-5" />
+                    <CardTitle>Filters</CardTitle>
                     <Badge variant="secondary">Optional</Badge>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Additional filters are AND-gated with entry conditions for extra confirmation</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedExitOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* HTF Trend Filter */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={filterSettings.htfTrendFilter.enabled}
+                        onCheckedChange={(checked) => setFilterSettings(prev => ({
+                          ...prev,
+                          htfTrendFilter: { ...prev.htfTrendFilter, enabled: checked }
+                        }))}
+                      />
+                      <Label>HTF Trend Filter</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Only take longs if BTC is above its daily EMA 200; shorts if below</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    {filterSettings.htfTrendFilter.enabled && (
+                      <div className="space-y-2 ml-6">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={filterSettings.htfTrendFilter.useOwnPair}
+                            onCheckedChange={(checked) => setFilterSettings(prev => ({
+                              ...prev,
+                              htfTrendFilter: { ...prev.htfTrendFilter, useOwnPair: checked }
+                            }))}
+                          />
+                          <Label className="text-sm">Use own pair instead</Label>
+                        </div>
+                        {!filterSettings.htfTrendFilter.useOwnPair && (
+                          <Input
+                            placeholder="BTC/USDT"
+                            value={filterSettings.htfTrendFilter.asset}
+                            onChange={(e) => setFilterSettings(prev => ({
+                              ...prev,
+                              htfTrendFilter: { ...prev.htfTrendFilter, asset: e.target.value }
+                            }))}
+                          />
+                        )}
+                        <Select
+                          value={filterSettings.htfTrendFilter.timeframe}
+                          onValueChange={(value) => setFilterSettings(prev => ({
+                            ...prev,
+                            htfTrendFilter: { ...prev.htfTrendFilter, timeframe: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="4h">4H</SelectItem>
+                            <SelectItem value="Daily">Daily</SelectItem>
+                            <SelectItem value="Weekly">Weekly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="number"
+                          placeholder="200"
+                          value={filterSettings.htfTrendFilter.period}
+                          onChange={(e) => setFilterSettings(prev => ({
+                            ...prev,
+                            htfTrendFilter: { ...prev.htfTrendFilter, period: Number(e.target.value) }
+                          }))}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Volume Gate */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={filterSettings.volumeGate.enabled}
+                        onCheckedChange={(checked) => setFilterSettings(prev => ({
+                          ...prev,
+                          volumeGate: { ...prev.volumeGate, enabled: checked }
+                        }))}
+                      />
+                      <Label>Volume Gate</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Only trade when volume is above its moving average</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    {filterSettings.volumeGate.enabled && (
+                      <div className="space-y-2 ml-6">
+                        <Label className="text-sm">SMA Period</Label>
+                        <Input
+                          type="number"
+                          value={filterSettings.volumeGate.period}
+                          onChange={(e) => setFilterSettings(prev => ({
+                            ...prev,
+                            volumeGate: { ...prev.volumeGate, period: Number(e.target.value) }
+                          }))}
+                        />
+                        <Label className="text-sm">Multiplier</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={filterSettings.volumeGate.multiplier}
+                          onChange={(e) => setFilterSettings(prev => ({
+                            ...prev,
+                            volumeGate: { ...prev.volumeGate, multiplier: Number(e.target.value) }
+                          }))}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ATR Activity Gate */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={filterSettings.atrActivityGate.enabled}
+                        onCheckedChange={(checked) => setFilterSettings(prev => ({
+                          ...prev,
+                          atrActivityGate: { ...prev.atrActivityGate, enabled: checked }
+                        }))}
+                      />
+                      <Label>ATR Activity Gate</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Only trade when ATR is above threshold (market is volatile enough)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    {filterSettings.atrActivityGate.enabled && (
+                      <div className="space-y-2 ml-6">
+                        <Label className="text-sm">ATR Period</Label>
+                        <Input
+                          type="number"
+                          value={filterSettings.atrActivityGate.period}
+                          onChange={(e) => setFilterSettings(prev => ({
+                            ...prev,
+                            atrActivityGate: { ...prev.atrActivityGate, period: Number(e.target.value) }
+                          }))}
+                        />
+                        <Label className="text-sm">Threshold</Label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={filterSettings.atrActivityGate.threshold}
+                          onChange={(e) => setFilterSettings(prev => ({
+                            ...prev,
+                            atrActivityGate: { ...prev.atrActivityGate, threshold: Number(e.target.value) }
+                          }))}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={resetFiltersToDefault}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Return to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Default Exit */}
+        <Collapsible open={isDefaultExitOpen} onOpenChange={setIsDefaultExitOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    <CardTitle>Default Exit</CardTitle>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Basic stop loss and take profit settings</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isDefaultExitOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
             </CollapsibleTrigger>
@@ -614,27 +981,23 @@ export function StepAdvancedSettings({
                         checked={exitSettings.stopLossEnabled}
                         onCheckedChange={(checked) => setExitSettings(prev => ({ ...prev, stopLossEnabled: checked }))}
                       />
-                      <Label>Stop Loss</Label>
+                      <Label>Stop Loss %</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Maximum loss percentage before exiting the trade</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                     {exitSettings.stopLossEnabled && (
-                      <div className="space-y-2 ml-6">
-                        <Select
-                          value={exitSettings.stopLossType}
-                          onValueChange={(value) => setExitSettings(prev => ({ ...prev, stopLossType: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="percentage">Percentage</SelectItem>
-                            <SelectItem value="fixed">Fixed Price</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="ml-6">
                         <Input
                           type="number"
                           step="0.1"
-                          value={exitSettings.stopLossValue}
-                          onChange={(e) => setExitSettings(prev => ({ ...prev, stopLossValue: Number(e.target.value) }))}
+                          value={exitSettings.stopLossPercent}
+                          onChange={(e) => setExitSettings(prev => ({ ...prev, stopLossPercent: Number(e.target.value) }))}
                         />
                       </div>
                     )}
@@ -647,87 +1010,379 @@ export function StepAdvancedSettings({
                         checked={exitSettings.takeProfitEnabled}
                         onCheckedChange={(checked) => setExitSettings(prev => ({ ...prev, takeProfitEnabled: checked }))}
                       />
-                      <Label>Take Profit</Label>
+                      <Label>Take Profit %</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Target profit percentage to exit the trade</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                     {exitSettings.takeProfitEnabled && (
-                      <div className="space-y-2 ml-6">
-                        <Select
-                          value={exitSettings.takeProfitType}
-                          onValueChange={(value) => setExitSettings(prev => ({ ...prev, takeProfitType: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="percentage">Percentage</SelectItem>
-                            <SelectItem value="fixed">Fixed Price</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="ml-6">
                         <Input
                           type="number"
                           step="0.1"
-                          value={exitSettings.takeProfitValue}
-                          onChange={(e) => setExitSettings(prev => ({ ...prev, takeProfitValue: Number(e.target.value) }))}
+                          value={exitSettings.takeProfitPercent}
+                          onChange={(e) => setExitSettings(prev => ({ ...prev, takeProfitPercent: Number(e.target.value) }))}
                         />
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* ATR Stop */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={exitSettings.atrStopEnabled}
-                        onCheckedChange={(checked) => setExitSettings(prev => ({ ...prev, atrStopEnabled: checked }))}
-                      />
-                      <Label>ATR Stop</Label>
-                    </div>
-                    {exitSettings.atrStopEnabled && (
-                      <div className="space-y-2 ml-6">
-                        <Label>ATR Length</Label>
-                        <Input
-                          type="number"
-                          value={exitSettings.atrLength}
-                          onChange={(e) => setExitSettings(prev => ({ ...prev, atrLength: Number(e.target.value) }))}
-                        />
-                        <Label>ATR Multiplier</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={exitSettings.atrMultiplier}
-                          onChange={(e) => setExitSettings(prev => ({ ...prev, atrMultiplier: Number(e.target.value) }))}
-                        />
-                      </div>
-                    )}
-                  </div>
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={resetDefaultExitsToDefault}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Return to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
-                  {/* ATR Trailing */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={exitSettings.atrTrailingEnabled}
-                        onCheckedChange={(checked) => setExitSettings(prev => ({ ...prev, atrTrailingEnabled: checked }))}
-                      />
-                      <Label>ATR Trailing</Label>
-                    </div>
-                    {exitSettings.atrTrailingEnabled && (
-                      <div className="space-y-2 ml-6">
-                        <Label>ATR Length</Label>
-                        <Input
-                          type="number"
-                          value={exitSettings.atrLength}
-                          onChange={(e) => setExitSettings(prev => ({ ...prev, atrLength: Number(e.target.value) }))}
-                        />
-                        <Label>ATR Multiplier</Label>
+        {/* Advanced Exit Settings (Smart Exits) */}
+        <Collapsible open={isAdvancedExitOpen} onOpenChange={setIsAdvancedExitOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    <CardTitle>Advanced Exit (Smart Exits)</CardTitle>
+                    <Badge variant="secondary">Optional</Badge>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedExitOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-6">
+                {/* Conflict Warning */}
+                {hasStopLossConflict && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      ATR Stop conflicts with Fixed Stop. Disable one to continue.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* TP Ladders */}
+                <div className="space-y-4">
+                  <h4 className="font-medium">Take Profit Ladders</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {['tp1', 'tp2', 'tp3'].map((tp, index) => (
+                      <div key={tp} className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={(exitSettings as any)[tp].enabled}
+                            onCheckedChange={(checked) => setExitSettings(prev => ({
+                              ...prev,
+                              [tp]: { ...(prev as any)[tp], enabled: checked }
+                            }))}
+                          />
+                          <Label>TP{index + 1}</Label>
+                        </div>
+                        {(exitSettings as any)[tp].enabled && (
+                          <div className="space-y-2 ml-6">
+                            <Label className="text-sm">% Target</Label>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={(exitSettings as any)[tp].percent}
+                              onChange={(e) => setExitSettings(prev => ({
+                                ...prev,
+                                [tp]: { ...(prev as any)[tp], percent: Number(e.target.value) }
+                              }))}
+                            />
+                            <Label className="text-sm">Allocation %</Label>
+                            <Input
+                              type="number"
+                              value={(exitSettings as any)[tp].allocation}
+                              onChange={(e) => setExitSettings(prev => ({
+                                ...prev,
+                                [tp]: { ...(prev as any)[tp], allocation: Number(e.target.value) }
+                              }))}
+                            />
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={(exitSettings as any)[tp].trailAfterHit}
+                                onCheckedChange={(checked) => setExitSettings(prev => ({
+                                  ...prev,
+                                  [tp]: { ...(prev as any)[tp], trailAfterHit: checked }
+                                }))}
+                              />
+                              <Label className="text-sm">Trail after hit</Label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Break-even */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={exitSettings.breakEven.enabled}
+                      onCheckedChange={(checked) => setExitSettings(prev => ({
+                        ...prev,
+                        breakEven: { ...prev.breakEven, enabled: checked }
+                      }))}
+                    />
+                    <Label>Break-even</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Move stop loss to break-even when profit reaches trigger percentage</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {exitSettings.breakEven.enabled && (
+                    <div className="grid grid-cols-2 gap-4 ml-6">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Trigger %</Label>
                         <Input
                           type="number"
                           step="0.1"
-                          value={exitSettings.atrMultiplier}
-                          onChange={(e) => setExitSettings(prev => ({ ...prev, atrMultiplier: Number(e.target.value) }))}
+                          value={exitSettings.breakEven.triggerPercent}
+                          onChange={(e) => setExitSettings(prev => ({
+                            ...prev,
+                            breakEven: { ...prev.breakEven, triggerPercent: Number(e.target.value) }
+                          }))}
                         />
                       </div>
-                    )}
+                      <div className="space-y-2">
+                        <Label className="text-sm">Offset %</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={exitSettings.breakEven.offset}
+                          onChange={(e) => setExitSettings(prev => ({
+                            ...prev,
+                            breakEven: { ...prev.breakEven, offset: Number(e.target.value) }
+                          }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Trailing Stop */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={exitSettings.trailingStop.enabled}
+                      onCheckedChange={(checked) => setExitSettings(prev => ({
+                        ...prev,
+                        trailingStop: { ...prev.trailingStop, enabled: checked }
+                      }))}
+                    />
+                    <Label>Trailing Stop</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Dynamic stop loss that follows price movement</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
+                  {exitSettings.trailingStop.enabled && (
+                    <div className="space-y-4 ml-6">
+                      <Select
+                        value={exitSettings.trailingStop.mode}
+                        onValueChange={(value: 'fixed' | 'atr' | 'hybrid') => setExitSettings(prev => ({
+                          ...prev,
+                          trailingStop: { ...prev.trailingStop, mode: value }
+                        }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Fixed %</SelectItem>
+                          <SelectItem value="atr">ATR</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {exitSettings.trailingStop.mode === 'fixed' && (
+                        <div className="space-y-2">
+                          <Label className="text-sm">Fixed %</Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={exitSettings.trailingStop.fixedPercent}
+                            onChange={(e) => setExitSettings(prev => ({
+                              ...prev,
+                              trailingStop: { ...prev.trailingStop, fixedPercent: Number(e.target.value) }
+                            }))}
+                          />
+                        </div>
+                      )}
+                      
+                      {(exitSettings.trailingStop.mode === 'atr' || exitSettings.trailingStop.mode === 'hybrid') && (
+                        <div className="space-y-2">
+                          <Label className="text-sm">ATR Multiplier</Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={exitSettings.trailingStop.atrMultiplier}
+                            onChange={(e) => setExitSettings(prev => ({
+                              ...prev,
+                              trailingStop: { ...prev.trailingStop, atrMultiplier: Number(e.target.value) }
+                            }))}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ATR Stop Loss */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={exitSettings.atrStopLoss.enabled}
+                      onCheckedChange={(checked) => setExitSettings(prev => ({
+                        ...prev,
+                        atrStopLoss: { ...prev.atrStopLoss, enabled: checked }
+                      }))}
+                    />
+                    <Label>ATR Stop Loss</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Stop loss based on Average True Range volatility</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {exitSettings.atrStopLoss.enabled && (
+                    <div className="space-y-2 ml-6">
+                      <Label className="text-sm">ATR Multiplier</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={exitSettings.atrStopLoss.multiplier}
+                        onChange={(e) => setExitSettings(prev => ({
+                          ...prev,
+                          atrStopLoss: { ...prev.atrStopLoss, multiplier: Number(e.target.value) }
+                        }))}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Time-based Exit */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={exitSettings.timeBasedExit.enabled}
+                      onCheckedChange={(checked) => setExitSettings(prev => ({
+                        ...prev,
+                        timeBasedExit: { ...prev.timeBasedExit, enabled: checked }
+                      }))}
+                    />
+                    <Label>Time-based Exit</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Exit trades after a specified time period</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  {exitSettings.timeBasedExit.enabled && (
+                    <div className="space-y-4 ml-6">
+                      <Select
+                        value={exitSettings.timeBasedExit.mode}
+                        onValueChange={(value: 'candles' | 'daily_close' | 'weekly_close') => setExitSettings(prev => ({
+                          ...prev,
+                          timeBasedExit: { ...prev.timeBasedExit, mode: value }
+                        }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="candles">After N Candles</SelectItem>
+                          <SelectItem value="daily_close">Daily Close</SelectItem>
+                          <SelectItem value="weekly_close">Weekly Close</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {exitSettings.timeBasedExit.mode === 'candles' && (
+                        <div className="space-y-2">
+                          <Label className="text-sm">Candle Count</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.timeBasedExit.candleCount}
+                            onChange={(e) => setExitSettings(prev => ({
+                              ...prev,
+                              timeBasedExit: { ...prev.timeBasedExit, candleCount: Number(e.target.value) }
+                            }))}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ATR Length (only when relevant) */}
+                {showATRLength && (
+                  <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                    <Label>ATR Length</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Input
+                          type="number"
+                          value={exitSettings.trailingStop.atrLength}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            setExitSettings(prev => ({
+                              ...prev,
+                              trailingStop: { ...prev.trailingStop, atrLength: value },
+                              atrStopLoss: { ...prev.atrStopLoss, atrLength: value }
+                            }));
+                          }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Period for ATR calculation (affects both ATR trailing and ATR stop loss)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                )}
+
+                {/* Exit Priority */}
+                <div className="space-y-3">
+                  <Label>Exit Priority (drag to reorder)</Label>
+                  <div className="space-y-2">
+                    {exitSettings.exitPriority.map((priority, index) => (
+                      <div key={priority} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
+                        <span className="text-sm font-mono">{index + 1}.</span>
+                        <span className="flex-1">{priority}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={resetAdvancedExitsToDefault}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Return to Default
+                  </Button>
                 </div>
               </CardContent>
             </CollapsibleContent>
@@ -737,7 +1392,7 @@ export function StepAdvancedSettings({
         {/* Navigation */}
         <div className="flex justify-between pt-6">
           <Button variant="outline" onClick={onPrevious}>
-            Previous
+            Previous Page
           </Button>
           <Button onClick={onNext}>
             Continue to Risk Management
