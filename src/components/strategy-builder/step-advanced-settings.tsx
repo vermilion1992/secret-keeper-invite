@@ -4,14 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, X, Info, ChevronDown, Settings, TrendingUp } from 'lucide-react';
+import { Info, ChevronDown, Settings, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 interface StepAdvancedSettingsProps {
@@ -19,6 +17,7 @@ interface StepAdvancedSettingsProps {
   filterIndicators: IndicatorConfig[];
   onUpdateFilters: (filters: IndicatorConfig[]) => void;
   onNext: () => void;
+  onPrevious: () => void;
   userTier: UserTier;
 }
 
@@ -27,46 +26,41 @@ export function StepAdvancedSettings({
   filterIndicators, 
   onUpdateFilters, 
   onNext, 
+  onPrevious,
   userTier 
 }: StepAdvancedSettingsProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [strategyParams, setStrategyParams] = useState({
-    emaFast: 20,
-    emaSlow: 50,
-    rsiLength: 14,
-    macdFast: 12,
-    macdSlow: 26,
-    macdSignal: 9,
-    sourceType: 'close',
-    maType: 'EMA',
-    entryCondition: 'ema_cross',
-    exitMethod: 'signal_crossback',
-    tradeDirection: 'both',
-    reentryBars: 0
+  const [exitSettings, setExitSettings] = useState({
+    stopLoss: 5.0,
+    takeProfit: 10.0,
+    // Multi-TP settings
+    multiTpEnabled: false,
+    tp1: 5.0,
+    tp1Allocation: 33,
+    tp2: 10.0,
+    tp2Allocation: 33,
+    tp3: 15.0,
+    tp3Allocation: 34,
+    // Break-even settings
+    breakEvenEnabled: false,
+    breakEvenTrigger: 2.0,
+    breakEvenOffset: 0.1,
+    // Trailing settings
+    trailingType: 'none',
+    trailingPercent: 2.0,
+    trailingAtr: 1.5,
+    // ATR stop loss
+    atrStopEnabled: false,
+    atrMultiplier: 2.0,
+    // Time-based exit
+    timeExitType: 'none',
+    timeExitCandles: 24,
+    // Exit priority
+    exitPriority: 'tp_first'
   });
 
-  const tierAccess = getTierAccess(userTier);
-  const canAddFilters = tierAccess.canAddFilters;
-
-  const availableFilters: IndicatorConfig[] = [
-    { id: 'rsi', name: 'RSI', type: 'oscillator', parameters: { period: 14 }, advanced: false },
-    { id: 'macd', name: 'MACD', type: 'momentum', parameters: { fast: 12, slow: 26, signal: 9 }, advanced: false },
-    { id: 'bb', name: 'Bollinger Bands', type: 'volatility', parameters: { period: 20, std: 2 }, advanced: true },
-    { id: 'stoch', name: 'Stochastic', type: 'oscillator', parameters: { k: 14, d: 3 }, advanced: true },
-  ];
-
-  const updateParam = (key: string, value: any) => {
-    setStrategyParams(prev => ({ ...prev, [key]: value }));
-  };
-
-  const addFilter = (filter: IndicatorConfig) => {
-    if (!filterIndicators.find(f => f.id === filter.id)) {
-      onUpdateFilters([...filterIndicators, filter]);
-    }
-  };
-
-  const removeFilter = (id: string) => {
-    onUpdateFilters(filterIndicators.filter(f => f.id !== id));
+  const updateExitSetting = (key: string, value: any) => {
+    setExitSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -78,7 +72,7 @@ export function StepAdvancedSettings({
             <h2 className="text-2xl font-semibold">Advanced Settings</h2>
           </div>
           <p className="text-muted-foreground">
-            Configure strategy parameters and fine-tune your trading logic
+            Configure exit strategies and risk controls for your bot
           </p>
         </header>
 
@@ -93,142 +87,71 @@ export function StepAdvancedSettings({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <TrendingUp className="w-5 h-5 text-primary" />
-                  Core Parameters
+                  Basic Exit Settings
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* EMA Fast Length */}
+                  {/* Simple Stop Loss */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Label className="font-medium">EMA Fast Length</Label>
+                      <Label className="font-medium">Stop Loss (%)</Label>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="max-w-xs">Number of bars used to calculate the fast EMA. Shorter lengths react quicker but can create noise.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="space-y-2">
-                      <Slider
-                        value={[strategyParams.emaFast]}
-                        onValueChange={([value]) => updateParam('emaFast', value)}
-                        max={100}
-                        min={5}
-                        step={1}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>5</span>
-                        <span className="font-medium text-foreground">{strategyParams.emaFast}</span>
-                        <span>100</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* EMA Slow Length */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-medium">EMA Slow Length</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Number of bars used for the slow EMA. Longer lengths smooth out short-term fluctuations.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="space-y-2">
-                      <Slider
-                        value={[strategyParams.emaSlow]}
-                        onValueChange={([value]) => updateParam('emaSlow', value)}
-                        max={200}
-                        min={10}
-                        step={1}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>10</span>
-                        <span className="font-medium text-foreground">{strategyParams.emaSlow}</span>
-                        <span>200</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RSI Length */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-medium">RSI Length</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Bars used to calculate Relative Strength Index. Standard is 14, but shorter lengths give more signals.</p>
+                          <p className="max-w-xs">Maximum loss per trade before automatically closing the position.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
                     <Input
                       type="number"
-                      value={strategyParams.rsiLength}
-                      onChange={(e) => updateParam('rsiLength', Number(e.target.value))}
-                      min="2"
+                      value={exitSettings.stopLoss}
+                      onChange={(e) => updateExitSetting('stopLoss', Number(e.target.value))}
+                      min="0.1"
                       max="50"
+                      step="0.1"
+                      placeholder="5.0"
                       className="bg-background/50"
                     />
                   </div>
 
-                  {/* MACD Settings */}
+                  {/* Simple Take Profit */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <Label className="font-medium">MACD (Fast/Slow/Signal)</Label>
+                      <Label className="font-medium">Take Profit (%)</Label>
                       <Tooltip>
                         <TooltipTrigger>
                           <Info className="w-4 h-4 text-muted-foreground" />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="max-w-xs">Standard MACD configuration. Adjust to make signals faster or slower.</p>
+                          <p className="max-w-xs">Target profit level where the position closes automatically.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Input
-                        type="number"
-                        value={strategyParams.macdFast}
-                        onChange={(e) => updateParam('macdFast', Number(e.target.value))}
-                        placeholder="12"
-                        className="bg-background/50"
-                      />
-                      <Input
-                        type="number"
-                        value={strategyParams.macdSlow}
-                        onChange={(e) => updateParam('macdSlow', Number(e.target.value))}
-                        placeholder="26"
-                        className="bg-background/50"
-                      />
-                      <Input
-                        type="number"
-                        value={strategyParams.macdSignal}
-                        onChange={(e) => updateParam('macdSignal', Number(e.target.value))}
-                        placeholder="9"
-                        className="bg-background/50"
-                      />
-                    </div>
+                    <Input
+                      type="number"
+                      value={exitSettings.takeProfit}
+                      onChange={(e) => updateExitSetting('takeProfit', Number(e.target.value))}
+                      min="0.1"
+                      max="100"
+                      step="0.1"
+                      placeholder="10.0"
+                      className="bg-background/50"
+                    />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Advanced Options - Collapsible */}
+            {/* Advanced Exit Options - Collapsible */}
             <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
               <CollapsibleTrigger asChild>
                 <Card className="cursor-pointer transition-all duration-200 hover:shadow-lg border hover:border-primary/50">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Advanced Options</CardTitle>
+                      <CardTitle className="text-lg">Advanced Exit Options</CardTitle>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">Expert Settings</Badge>
                         <ChevronDown className={`w-4 h-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
@@ -240,236 +163,306 @@ export function StepAdvancedSettings({
               
               <CollapsibleContent>
                 <div className="space-y-4 mt-4">
-                  {/* Indicator Fine-tuning */}
+                  {/* Multi-TP Settings */}
                   <Card className="frosted">
                     <CardHeader>
-                      <CardTitle className="text-base">Indicator Fine-tuning</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={exitSettings.multiTpEnabled}
+                            onCheckedChange={(checked) => updateExitSetting('multiTpEnabled', checked)}
+                          />
+                          <span>Multi-TP (TP1–TP3)</span>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Split your trade into multiple targets and lock in profits step by step.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Source Type</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Price data source for calculations: Close, Open, High-Low average, or OHLC average.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select value={strategyParams.sourceType} onValueChange={(value) => updateParam('sourceType', value)}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="close">Close</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="hl2">HL2 (High+Low)/2</SelectItem>
-                            <SelectItem value="ohlc4">OHLC4 Average</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Moving Average Type</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Type of moving average: EMA (faster), SMA (smoother), or WMA (weighted).</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select value={strategyParams.maType} onValueChange={(value) => updateParam('maType', value)}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="EMA">EMA</SelectItem>
-                            <SelectItem value="SMA">SMA</SelectItem>
-                            <SelectItem value="WMA">WMA</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Strategy Logic */}
-                  <Card className="frosted">
-                    <CardHeader>
-                      <CardTitle className="text-base">Strategy Logic</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Entry Conditions</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Define what must happen for a trade to open.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select value={strategyParams.entryCondition} onValueChange={(value) => updateParam('entryCondition', value)}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ema_cross">EMA Cross</SelectItem>
-                            <SelectItem value="rsi_threshold">RSI Threshold</SelectItem>
-                            <SelectItem value="macd_cross">MACD Cross</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Exit Method</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Control how trades are closed once opened.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select value={strategyParams.exitMethod} onValueChange={(value) => updateParam('exitMethod', value)}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="signal_crossback">Signal Crossback</SelectItem>
-                            <SelectItem value="fixed_tp">Fixed Take Profit</SelectItem>
-                            <SelectItem value="trailing_stop">Trailing Stop</SelectItem>
-                            <SelectItem value="timed_exit">Timed Exit</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Trade Direction</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Limit the bot to trade only in your chosen direction.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select value={strategyParams.tradeDirection} onValueChange={(value) => updateParam('tradeDirection', value)}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="both">Long & Short</SelectItem>
-                            <SelectItem value="long">Long Only</SelectItem>
-                            <SelectItem value="short">Short Only</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Re-entry Bars</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Prevent over-trading by spacing out entries. 0 = no restriction.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Input
-                          type="number"
-                          value={strategyParams.reentryBars}
-                          onChange={(e) => updateParam('reentryBars', Number(e.target.value))}
-                          min="0"
-                          max="100"
-                          className="bg-background/50"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Filters */}
-                  <Card className="frosted">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">Additional Filters</CardTitle>
-                        {!canAddFilters && (
-                          <Badge variant="outline" className="text-xs">
-                            Upgrade to {userTier === 'basic' ? 'Pro' : 'Expert'} to unlock
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {canAddFilters ? (
-                        <div className="space-y-4">
-                          {/* Added Filters */}
-                          {filterIndicators.length > 0 && (
-                            <div className="space-y-2">
-                              {filterIndicators.map((filter) => (
-                                <div key={filter.id} className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
-                                  <div>
-                                    <span className="font-medium text-sm">{filter.name}</span>
-                                    <p className="text-xs text-muted-foreground">
-                                      {Object.entries(filter.parameters).map(([k, v]) => `${k}: ${v}`).join(', ')}
-                                    </p>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeFilter(filter.id)}
-                                    className="h-8 w-8 p-0 hover:bg-destructive/10"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Available Filters */}
-                          <div>
-                            <p className="text-sm text-muted-foreground mb-3">Available filters:</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {availableFilters
-                                .filter(f => !filterIndicators.find(existing => existing.id === f.id))
-                                .map((filter) => (
-                                  <button
-                                    key={filter.id}
-                                    onClick={() => addFilter(filter)}
-                                    className="flex items-center justify-between p-3 rounded-lg border border-dashed border-primary/30 hover:border-primary hover:bg-primary/5 transition-all duration-200"
-                                  >
-                                    <div className="text-left">
-                                      <span className="font-medium text-sm">{filter.name}</span>
-                                      {filter.advanced && (
-                                        <Badge variant="secondary" className="ml-2 text-xs">Advanced</Badge>
-                                      )}
-                                    </div>
-                                    <Plus className="w-4 h-4 text-muted-foreground" />
-                                  </button>
-                                ))}
-                            </div>
+                    {exitSettings.multiTpEnabled && (
+                      <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">TP1 (%) / Allocation</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              type="number"
+                              value={exitSettings.tp1}
+                              onChange={(e) => updateExitSetting('tp1', Number(e.target.value))}
+                              placeholder="5.0"
+                              className="bg-background/50"
+                            />
+                            <Input
+                              type="number"
+                              value={exitSettings.tp1Allocation}
+                              onChange={(e) => updateExitSetting('tp1Allocation', Number(e.target.value))}
+                              placeholder="33"
+                              max="100"
+                              className="bg-background/50"
+                            />
                           </div>
                         </div>
-                      ) : (
-                        <div className="p-6 text-center border border-dashed rounded-lg bg-background/30">
-                          <p className="text-sm text-muted-foreground">
-                            Filter indicators are available in Pro and Expert tiers
-                          </p>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">TP2 (%) / Allocation</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              type="number"
+                              value={exitSettings.tp2}
+                              onChange={(e) => updateExitSetting('tp2', Number(e.target.value))}
+                              placeholder="10.0"
+                              className="bg-background/50"
+                            />
+                            <Input
+                              type="number"
+                              value={exitSettings.tp2Allocation}
+                              onChange={(e) => updateExitSetting('tp2Allocation', Number(e.target.value))}
+                              placeholder="33"
+                              max="100"
+                              className="bg-background/50"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">TP3 (%) / Allocation</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              type="number"
+                              value={exitSettings.tp3}
+                              onChange={(e) => updateExitSetting('tp3', Number(e.target.value))}
+                              placeholder="15.0"
+                              className="bg-background/50"
+                            />
+                            <Input
+                              type="number"
+                              value={exitSettings.tp3Allocation}
+                              onChange={(e) => updateExitSetting('tp3Allocation', Number(e.target.value))}
+                              placeholder="34"
+                              max="100"
+                              className="bg-background/50"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+
+                  {/* Break-even Toggle */}
+                  <Card className="frosted">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={exitSettings.breakEvenEnabled}
+                            onCheckedChange={(checked) => updateExitSetting('breakEvenEnabled', checked)}
+                          />
+                          <span>Break-even Protection</span>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Protect capital by moving stop to entry once a trade is in profit.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardTitle>
+                    </CardHeader>
+                    {exitSettings.breakEvenEnabled && (
+                      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Trigger at Profit (%)</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.breakEvenTrigger}
+                            onChange={(e) => updateExitSetting('breakEvenTrigger', Number(e.target.value))}
+                            placeholder="2.0"
+                            className="bg-background/50"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Offset (%)</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.breakEvenOffset}
+                            onChange={(e) => updateExitSetting('breakEvenOffset', Number(e.target.value))}
+                            placeholder="0.1"
+                            step="0.1"
+                            className="bg-background/50"
+                          />
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+
+                  {/* Trailing Stop */}
+                  <Card className="frosted">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <span>Trailing Stop</span>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Follow the price as it moves in your favor. Choose % or volatility-based trailing.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Select value={exitSettings.trailingType} onValueChange={(value) => updateExitSetting('trailingType', value)}>
+                        <SelectTrigger className="bg-background/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="fixed">Fixed %</SelectItem>
+                          <SelectItem value="atr">ATR-based</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {exitSettings.trailingType === 'fixed' && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Trailing Percentage (%)</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.trailingPercent}
+                            onChange={(e) => updateExitSetting('trailingPercent', Number(e.target.value))}
+                            placeholder="2.0"
+                            className="bg-background/50"
+                          />
                         </div>
                       )}
+                      
+                      {(exitSettings.trailingType === 'atr' || exitSettings.trailingType === 'hybrid') && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">ATR Multiplier</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.trailingAtr}
+                            onChange={(e) => updateExitSetting('trailingAtr', Number(e.target.value))}
+                            placeholder="1.5"
+                            step="0.1"
+                            className="bg-background/50"
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* ATR-based Stop Loss */}
+                  <Card className="frosted">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={exitSettings.atrStopEnabled}
+                            onCheckedChange={(checked) => updateExitSetting('atrStopEnabled', checked)}
+                          />
+                          <span>ATR-based Stop Loss</span>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Use volatility to size stops dynamically.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardTitle>
+                    </CardHeader>
+                    {exitSettings.atrStopEnabled && (
+                      <CardContent>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">ATR Multiplier</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.atrMultiplier}
+                            onChange={(e) => updateExitSetting('atrMultiplier', Number(e.target.value))}
+                            placeholder="2.0"
+                            step="0.1"
+                            className="bg-background/50"
+                          />
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+
+                  {/* Time-based Exit */}
+                  <Card className="frosted">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <span>Time-based Exit</span>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Exit after a set time to reduce risk of overexposure.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Select value={exitSettings.timeExitType} onValueChange={(value) => updateExitSetting('timeExitType', value)}>
+                        <SelectTrigger className="bg-background/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="candles">After X candles</SelectItem>
+                          <SelectItem value="daily_close">Exit at daily close</SelectItem>
+                          <SelectItem value="weekly_close">Exit at weekly close</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      {exitSettings.timeExitType === 'candles' && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Number of Candles</Label>
+                          <Input
+                            type="number"
+                            value={exitSettings.timeExitCandles}
+                            onChange={(e) => updateExitSetting('timeExitCandles', Number(e.target.value))}
+                            placeholder="24"
+                            className="bg-background/50"
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Exit Priority */}
+                  <Card className="frosted">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <span>Exit Priority</span>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Control which rule has priority: TPs, trailing, or time-based.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Select value={exitSettings.exitPriority} onValueChange={(value) => updateExitSetting('exitPriority', value)}>
+                        <SelectTrigger className="bg-background/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tp_first">Take Profit First</SelectItem>
+                          <SelectItem value="trailing_first">Trailing First</SelectItem>
+                          <SelectItem value="time_first">Time-based First</SelectItem>
+                          <SelectItem value="closest_first">Closest Target First</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </CardContent>
                   </Card>
                 </div>
@@ -478,7 +471,10 @@ export function StepAdvancedSettings({
           </div>
         )}
 
-        <div className="flex items-center justify-end pt-6">
+        <div className="flex items-center justify-between pt-6">
+          <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+            Previous
+          </Button>
           <Button onClick={onNext} size="lg" className="px-8">
             Continue to Risk Management
           </Button>

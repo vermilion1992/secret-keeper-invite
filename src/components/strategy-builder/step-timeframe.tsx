@@ -17,9 +17,10 @@ interface StepTimeframeProps {
   backtestParams: BacktestParams;
   onUpdate: (params: BacktestParams) => void;
   onNext: () => void;
+  onPrevious: () => void;
 }
 
-export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimeframeProps) {
+export function StepTimeframe({ backtestParams, onUpdate, onNext, onPrevious }: StepTimeframeProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(365); // days
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 365));
@@ -385,7 +386,10 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext }: StepTimefram
           </CollapsibleContent>
         </Collapsible>
 
-        <div className="flex items-center justify-end pt-6">
+        <div className="flex items-center justify-between pt-6">
+          <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+            Previous
+          </Button>
           <Button onClick={onNext} size="lg" className="px-8">
             Continue to Backtest
           </Button>

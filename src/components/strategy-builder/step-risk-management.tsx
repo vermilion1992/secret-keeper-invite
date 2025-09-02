@@ -16,6 +16,7 @@ interface StepRiskManagementProps {
   riskManagement: RiskManagement;
   onUpdate: (risk: RiskManagement) => void;
   onNext: () => void;
+  onPrevious: () => void;
   userTier: UserTier;
   marketType: string | null;
 }
@@ -24,6 +25,7 @@ export function StepRiskManagement({
   riskManagement, 
   onUpdate, 
   onNext, 
+  onPrevious,
   userTier, 
   marketType 
 }: StepRiskManagementProps) {
@@ -328,7 +330,10 @@ export function StepRiskManagement({
           </CollapsibleContent>
         </Collapsible>
 
-        <div className="flex items-center justify-end pt-6">
+        <div className="flex items-center justify-between pt-6">
+          <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+            Previous
+          </Button>
           <Button onClick={onNext} size="lg" className="px-8">
             Continue to Timeframe Selection
           </Button>

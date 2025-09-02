@@ -68,6 +68,13 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
     }
   };
 
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      updateSteps(currentStep - 1);
+    }
+  };
+
   const handleStepClick = (stepNumber: number) => {
     setCurrentStep(stepNumber);
     updateSteps(stepNumber);
@@ -193,6 +200,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   filterIndicators={filterIndicators}
                   onUpdateFilters={setFilterIndicators}
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                   userTier={userTier}
                 />
               )}
@@ -202,6 +210,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   riskManagement={riskManagement}
                   onUpdate={setRiskManagement}
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                   userTier={userTier}
                   marketType={selectedMarketType}
                 />
@@ -212,6 +221,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   backtestParams={backtestParams}
                   onUpdate={setBacktestParams}
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                 />
               )}
 
