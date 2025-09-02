@@ -37,10 +37,7 @@ export function StepRiskManagement({
   const defaultRiskSettings = {
     capitalAllocation: 1.5,
     leverageMultiplier: 2,
-    percentPerTrade: 3,
-    stopLoss: 5,
-    takeProfit: 10.0,
-    trailingTakeProfit: 2.0
+    percentPerTrade: 3
   };
 
   const resetToDefault = (section: 'core' | 'all') => {
@@ -49,17 +46,14 @@ export function StepRiskManagement({
         ...riskManagement,
         capitalAllocation: defaultRiskSettings.capitalAllocation,
         leverageMultiplier: defaultRiskSettings.leverageMultiplier,
-        percentPerTrade: defaultRiskSettings.percentPerTrade,
-        stopLoss: defaultRiskSettings.stopLoss
+        percentPerTrade: defaultRiskSettings.percentPerTrade
       });
     } else {
       onUpdate({
+        ...riskManagement,
         capitalAllocation: defaultRiskSettings.capitalAllocation,
         leverageMultiplier: defaultRiskSettings.leverageMultiplier,
-        percentPerTrade: defaultRiskSettings.percentPerTrade,
-        stopLoss: defaultRiskSettings.stopLoss,
-        takeProfit: defaultRiskSettings.takeProfit,
-        trailingTakeProfit: defaultRiskSettings.trailingTakeProfit
+        percentPerTrade: defaultRiskSettings.percentPerTrade
       });
     }
   };
@@ -180,30 +174,6 @@ export function StepRiskManagement({
                   onChange={(e) => updateField('percentPerTrade', Number(e.target.value))}
                   min="1"
                   max="20"
-                  className="bg-background/50"
-                />
-              </div>
-
-              {/* Stop Loss & Take Profit */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Label className="font-medium">Stop Loss (%)</Label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="w-4 h-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Maximum loss per trade before automatically closing. Default: 5%</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  type="number"
-                  value={riskManagement.stopLoss || 5}
-                  onChange={(e) => updateField('stopLoss', Number(e.target.value))}
-                  min="0.1"
-                  max="20"
-                  step="0.1"
                   className="bg-background/50"
                 />
               </div>
@@ -332,48 +302,6 @@ export function StepRiskManagement({
                 </CardContent>
               </Card>
 
-              {/* Trailing Take Profit */}
-              <Card className="frosted">
-                <CardHeader>
-                  <CardTitle className="text-base">Trailing Options</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">Trailing Take Profit (%)</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Automatically adjust take profit levels as price moves favorably. Premium feature.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      {!canUseTrailing && (
-                        <Badge variant="outline" className="text-xs">Expert Only</Badge>
-                      )}
-                    </div>
-                    <Input
-                      type="number"
-                      value={riskManagement.trailingTakeProfit || ''}
-                      onChange={(e) => updateField('trailingTakeProfit', Number(e.target.value))}
-                      min="0.1"
-                      max="50"
-                      step="0.1"
-                      placeholder="2.0"
-                      disabled={!canUseTrailing}
-                      className="bg-background/50"
-                    />
-                    {!canUseTrailing && (
-                      <p className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg">
-                        Upgrade to Expert tier to use trailing take profit and advanced risk controls
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </CollapsibleContent>
         </Collapsible>
