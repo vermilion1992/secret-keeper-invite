@@ -687,13 +687,241 @@ export function StepAdvancedSettings({
                  </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Entry Condition Rules */}
+                {/* Logic Controls at top */}
+                <div className="flex flex-wrap gap-4">
+                  <div className="space-y-2">
+                    <Label className="font-medium">Logic Combiner</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Select value={entryLogic} onValueChange={setEntryLogic}>
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_true">AND (All conditions must be true)</SelectItem>
+                            <SelectItem value="any_true">OR (Any condition can be true)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">AND = stricter (all must be true), OR = looser (any true).</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="font-medium">Direction</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Select value={entryDirection} onValueChange={setEntryDirection}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="long">Long only</SelectItem>
+                            <SelectItem value="short">Short only</SelectItem>
+                            <SelectItem value="both">Both</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Restrict trades to long positions, short positions, or allow both.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="inverse-toggle"
+                      checked={entryInverse}
+                      onCheckedChange={setEntryInverse}
+                    />
+                    <Label htmlFor="inverse-toggle" className="font-medium">
+                      Inverse Signals
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Flip signals. If bullish conditions fail, enter short instead.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {/* Indicator Tiles */}
                 <div className="space-y-4">
-                  {entryConditions.map((condition, index) => (
-                    <div key={condition.id} className="border rounded-lg p-4 bg-background/50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-sm">Rule {index + 1}</h4>
-                        {entryConditions.length > 1 && (
+                  <Label className="font-medium">Available Indicators</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {getRelevantIndicators(strategy.name).map(indicator => {
+                      const isActive = entryConditions.some(c => {
+                        const operands = getOperandsForStrategy(strategy.name);
+                        return operands.some(op => 
+                          op.toLowerCase().includes(indicator) && 
+                          (c.leftOperand === op || c.rightOperand === op)
+                        );
+                      });
+
+                      const indicatorNames = {
+                        'ema': 'EMA',
+                        'sma': 'SMA', 
+                        'rsi': 'RSI',
+                        'macd': 'MACD',
+                        'bb': 'Bollinger Bands',
+                        'stoch': 'Stochastic',
+                        'cci': 'CCI',
+                        'atr': 'ATR',
+                        'adx': 'ADX',
+                        'obv': 'OBV',
+                        'vwap': 'VWAP',
+                        'vwma': 'VWMA',
+                        'ichimoku': 'Ichimoku',
+                        'donchian': 'Donchian',
+                        'roc': 'ROC',
+                        'breadth': 'Breadth',
+                        'ranking': 'Ranking'
+                      };
+
+                      const handleTileClick = () => {
+                        if (isActive) {
+                          // Remove all conditions for this indicator
+                          const operands = getOperandsForStrategy(strategy.name);
+                          const indicatorOperands = operands.filter(op => 
+                            op.toLowerCase().includes(indicator)
+                          );
+                          setEntryConditions(prev => prev.filter(c => 
+                            !indicatorOperands.includes(c.leftOperand) && 
+                            !indicatorOperands.includes(c.rightOperand)
+                          ));
+                        } else {
+                          // Add a default condition for this indicator
+                          const operands = getOperandsForStrategy(strategy.name);
+                          const indicatorOperands = operands.filter(op => 
+                            op.toLowerCase().includes(indicator)
+                          );
+                          
+                          if (indicatorOperands.length >= 2) {
+                            const newId = Date.now().toString();
+                            setEntryConditions(prev => [...prev, {
+                              id: newId,
+                              operator: 'crosses_above',
+                              leftOperand: indicatorOperands[0],
+                              rightOperand: indicatorOperands[1],
+                              enabled: true
+                            }]);
+                          } else if (indicatorOperands.length === 1) {
+                            const newId = Date.now().toString();
+                            setEntryConditions(prev => [...prev, {
+                              id: newId,
+                              operator: 'is_true',
+                              leftOperand: indicatorOperands[0],
+                              rightOperand: 'true',
+                              enabled: true
+                            }]);
+                          }
+                        }
+                      };
+
+                      return (
+                        <button
+                          key={indicator}
+                          onClick={handleTileClick}
+                          className={`p-3 rounded-lg border text-sm font-medium transition-all hover:scale-[1.02] ${
+                            isActive 
+                              ? 'bg-primary text-primary-foreground border-primary shadow-md' 
+                              : 'bg-background border-border hover:border-primary/50 hover:bg-accent'
+                          }`}
+                        >
+                          {indicatorNames[indicator] || indicator.toUpperCase()}
+                          {isActive && (
+                            <div className="w-2 h-2 bg-primary-foreground rounded-full ml-auto mt-1" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {entryConditions.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center p-4 border border-dashed rounded-lg">
+                      Click on indicator tiles above to create entry conditions
+                    </p>
+                  )}
+                </div>
+
+                {/* Active Condition Boxes */}
+                {entryConditions.length > 0 && (
+                  <div className="space-y-4">
+                    <Label className="font-medium">Active Conditions</Label>
+                    
+                    {entryConditions.map((condition, index) => (
+                      <Card key={condition.id} className="p-4 bg-muted/30">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Left Operand</Label>
+                            <Select
+                              value={condition.leftOperand}
+                              onValueChange={(value) => updateEntryCondition(condition.id, 'leftOperand', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getOperandsForStrategy(strategy.name).map(operand => (
+                                  <SelectItem key={operand} value={operand}>{operand}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Operator</Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Select
+                                  value={condition.operator}
+                                  onValueChange={(value) => updateEntryCondition(condition.id, 'operator', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {operators.map(op => (
+                                      <SelectItem key={op.value} value={op.value}>
+                                        {op.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">
+                                  {operators.find(op => op.value === condition.operator)?.tooltip || "Select an operator"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Right Operand</Label>
+                            <Select
+                              value={condition.rightOperand}
+                              onValueChange={(value) => updateEntryCondition(condition.id, 'rightOperand', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {condition.operator === 'is_true' ? (
+                                  <SelectItem value="true">True</SelectItem>
+                                ) : (
+                                  getOperandsForStrategy(strategy.name).map(operand => (
+                                    <SelectItem key={operand} value={operand}>{operand}</SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -702,160 +930,38 @@ export function StepAdvancedSettings({
                           >
                             <X className="w-4 h-4" />
                           </Button>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Left Operand</Label>
-                          <Select
-                            value={condition.leftOperand}
-                            onValueChange={(value) => updateEntryCondition(condition.id, 'leftOperand', value)}
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getOperandsForStrategy(strategy.name).map(operand => (
-                                <SelectItem key={operand} value={operand}>{operand}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Operator</Label>
-                          <Select
-                            value={condition.operator}
-                            onValueChange={(value) => updateEntryCondition(condition.id, 'operator', value)}
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {operators.map(op => (
-                                <SelectItem key={op.value} value={op.value}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span>{op.label}</span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="max-w-xs">{op.tooltip}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        {/* Preview */}
+                        <div className="mt-3 p-2 bg-muted rounded-md">
+                          <p className="text-xs text-muted-foreground">
+                            Preview: <span className="font-medium text-foreground">{getPreviewText(condition)}</span>
+                          </p>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Right Operand</Label>
-                          <Select
-                            value={condition.rightOperand}
-                            onValueChange={(value) => updateEntryCondition(condition.id, 'rightOperand', value)}
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getOperandsForStrategy(strategy.name).map(operand => (
-                                <SelectItem key={operand} value={operand}>{operand}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
-                        Preview: <em>{getPreviewText(condition)}</em>
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    variant="outline"
-                    onClick={addEntryCondition}
-                    className="w-full"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Entry Condition
-                  </Button>
-                </div>
-
-                {/* Logic Controls */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-medium">Logic Joiner</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">AND = all conditions must be true. OR = any condition can be true.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Select value={entryLogic} onValueChange={setEntryLogic}>
-                      <SelectTrigger className="bg-background/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all_true">All conditions (AND)</SelectItem>
-                        <SelectItem value="any_true">Any condition (OR)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      </Card>
+                    ))}
                   </div>
+                )}
 
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-medium">Direction</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Restrict trades to long positions, short positions, or allow both.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Select value={entryDirection} onValueChange={setEntryDirection}>
-                      <SelectTrigger className="bg-background/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="long">Long only</SelectItem>
-                        <SelectItem value="short">Short only</SelectItem>
-                        <SelectItem value="both">Both directions</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Overall Preview */}
+                {entryConditions.length > 0 && (
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <Label className="font-medium text-primary">Strategy Logic</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Go {entryDirection === 'both' ? 'Long/Short' : entryDirection.toUpperCase()} when{' '}
+                      {entryLogic === 'all_true' ? 'ALL' : 'ANY'} of the following{' '}
+                      {entryInverse ? '(or inverse) ' : ''}are true:
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {entryConditions.map((condition, index) => (
+                        <li key={condition.id} className="text-sm text-foreground flex items-center gap-2">
+                          <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                          {getPreviewText(condition)}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-medium">Inverse Logic</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="w-4 h-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Flip signals. If bullish conditions fail, enter short instead.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="inverse-logic"
-                        checked={entryInverse}
-                        onCheckedChange={setEntryInverse}
-                      />
-                      <Label htmlFor="inverse-logic" className="text-sm">
-                        Enable inverse signals
-                      </Label>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
