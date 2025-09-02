@@ -73,7 +73,8 @@ export function StepAdvancedSettings({
   // Filters
   const [filtersSettings, setFiltersSettings] = useState({
     htfFilter: false,
-    htfTimeframe: '1h',
+    htfTimeframe: '1d',
+    htfUseBtc: true, // Default to BTC/USDT daily EMA 200
     volumeFilter: false,
     volumeThreshold: 1.5,
     atrFilter: false,
@@ -142,7 +143,8 @@ export function StepAdvancedSettings({
 
   const defaultFiltersSettings = {
     htfFilter: false,
-    htfTimeframe: '1h',
+    htfTimeframe: '1d',
+    htfUseBtc: true,
     volumeFilter: false,
     volumeThreshold: 1.5,
     atrFilter: false,
@@ -284,13 +286,13 @@ export function StepAdvancedSettings({
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* 1. Default Strategy Settings */}
+            {/* 1. Indicator Settings */}
             <Card className="frosted">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <BarChart3 className="w-5 h-5 text-primary" />
-                    Default Strategy Settings
+                    Indicator Settings
                   </CardTitle>
                   <Button
                     variant="ghost"
@@ -303,7 +305,7 @@ export function StepAdvancedSettings({
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Core indicator configurations for the {strategy.name} strategy
+                  Core indicator configurations and moving average types for the {strategy.name} strategy
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -368,6 +370,36 @@ export function StepAdvancedSettings({
                     </div>
                   </div>
 
+                  {/* Moving Average Type */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">MA Type</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Moving average calculation method. EMA is more responsive, SMA is smoother.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Select
+                      value={strategySettings.maType}
+                      onValueChange={(value) => updateStrategySetting('maType', value)}
+                    >
+                      <SelectTrigger className="bg-background/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EMA">EMA (Exponential)</SelectItem>
+                        <SelectItem value="SMA">SMA (Simple)</SelectItem>
+                        <SelectItem value="WMA">WMA (Weighted)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* RSI Length */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -386,6 +418,52 @@ export function StepAdvancedSettings({
                       value={strategySettings.rsiLength}
                       onChange={(e) => updateStrategySetting('rsiLength', Number(e.target.value))}
                       min="5"
+                      max="50"
+                      className="bg-background/50"
+                    />
+                  </div>
+
+                  {/* RSI Overbought */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">RSI Overbought</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">RSI level considered overbought. Standard is 70.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      type="number"
+                      value={strategySettings.rsiOverbought}
+                      onChange={(e) => updateStrategySetting('rsiOverbought', Number(e.target.value))}
+                      min="50"
+                      max="90"
+                      className="bg-background/50"
+                    />
+                  </div>
+
+                  {/* RSI Oversold */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">RSI Oversold</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">RSI level considered oversold. Standard is 30.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      type="number"
+                      value={strategySettings.rsiOversold}
+                      onChange={(e) => updateStrategySetting('rsiOversold', Number(e.target.value))}
+                      min="10"
                       max="50"
                       className="bg-background/50"
                     />
@@ -458,6 +536,54 @@ export function StepAdvancedSettings({
                       onChange={(e) => updateStrategySetting('macdSignal', Number(e.target.value))}
                       min="3"
                       max="20"
+                      className="bg-background/50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* ATR Length */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">ATR Length</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Average True Range calculation period. Used for volatility-based stops.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      type="number"
+                      value={strategySettings.atrLength}
+                      onChange={(e) => updateStrategySetting('atrLength', Number(e.target.value))}
+                      min="5"
+                      max="50"
+                      className="bg-background/50"
+                    />
+                  </div>
+
+                  {/* Bollinger Band Period */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">Bollinger Band Period</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Period for Bollinger Bands calculation. Standard is 20.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      type="number"
+                      value={strategySettings.bbPeriod}
+                      onChange={(e) => updateStrategySetting('bbPeriod', Number(e.target.value))}
+                      min="10"
+                      max="50"
                       className="bg-background/50"
                     />
                   </div>
@@ -759,112 +885,32 @@ export function StepAdvancedSettings({
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground text-left">
-                      Indicator refinements and strategy-level logic options
+                      Strategy-level refinements and re-entry rules
                     </p>
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Indicator Source */}
+                      {/* MACD Smoothing Length */}
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          <Label className="font-medium">Indicator Source</Label>
+                          <Label className="font-medium">MACD Smoothing Length</Label>
                           <Tooltip>
                             <TooltipTrigger>
                               <Info className="w-4 h-4 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="max-w-xs">Price data used for calculations</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select
-                          value={strategySettings.indicatorSource}
-                          onValueChange={(value) => updateStrategySetting('indicatorSource', value)}
-                        >
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="close">Close</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="hl2">HL2 (High+Low)/2</SelectItem>
-                            <SelectItem value="ohlc4">OHLC4 (Open+High+Low+Close)/4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Moving Average Type */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">Moving Average Type</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">Calculation method for moving averages</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Select
-                          value={strategySettings.maType}
-                          onValueChange={(value) => updateStrategySetting('maType', value)}
-                        >
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="EMA">EMA</SelectItem>
-                            <SelectItem value="SMA">SMA</SelectItem>
-                            <SelectItem value="WMA">WMA</SelectItem>
-                            <SelectItem value="HMA">HMA</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* RSI Levels */}
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">RSI Overbought</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">RSI level considered overbought</p>
+                              <p className="max-w-xs">Additional smoothing for MACD signal line</p>
                             </TooltipContent>
                           </Tooltip>
                         </div>
                         <Input
                           type="number"
-                          value={strategySettings.rsiOverbought}
-                          onChange={(e) => updateStrategySetting('rsiOverbought', Number(e.target.value))}
-                          min="60"
-                          max="90"
-                          className="bg-background/50"
-                        />
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Label className="font-medium">RSI Oversold</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <Info className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs">RSI level considered oversold</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Input
-                          type="number"
-                          value={strategySettings.rsiOversold}
-                          onChange={(e) => updateStrategySetting('rsiOversold', Number(e.target.value))}
-                          min="10"
-                          max="40"
+                          value={strategySettings.smoothingLength}
+                          onChange={(e) => updateStrategySetting('smoothingLength', Number(e.target.value))}
+                          min="1"
+                          max="10"
                           className="bg-background/50"
                         />
                       </div>
@@ -965,32 +1011,54 @@ export function StepAdvancedSettings({
                 <CollapsibleContent>
                   <CardContent className="space-y-6">
                     {/* Higher Timeframe Filter */}
-                    <div className="flex items-center justify-between p-4 border border-border/30 rounded-lg">
-                      <div className="space-y-1">
-                        <Label className="font-medium">Higher Timeframe Filter</Label>
-                        <p className="text-sm text-muted-foreground">Require higher timeframe trend confirmation</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {filtersSettings.htfFilter && (
-                          <Select
-                            value={filtersSettings.htfTimeframe}
-                            onValueChange={(value) => updateFiltersSetting('htfTimeframe', value)}
-                          >
-                            <SelectTrigger className="w-20">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1h">1h</SelectItem>
-                              <SelectItem value="4h">4h</SelectItem>
-                              <SelectItem value="1d">1D</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                    <div className="p-4 border border-border/30 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <Label className="font-medium">Higher Timeframe Trend Filter</Label>
+                          <p className="text-sm text-muted-foreground">
+                            {filtersSettings.htfUseBtc 
+                              ? "Default: BTC/USDT daily EMA 200 condition (Close > EMA = bullish)"
+                              : "Use pair's own higher timeframe EMA instead of BTC"
+                            }
+                          </p>
+                        </div>
                         <Switch
                           checked={filtersSettings.htfFilter}
                           onCheckedChange={(checked) => updateFiltersSetting('htfFilter', checked)}
                         />
                       </div>
+                      
+                      {filtersSettings.htfFilter && (
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Timeframe</Label>
+                            <Select
+                              value={filtersSettings.htfTimeframe}
+                              onValueChange={(value) => updateFiltersSetting('htfTimeframe', value)}
+                            >
+                              <SelectTrigger className="bg-background/50">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1h">1 Hour</SelectItem>
+                                <SelectItem value="4h">4 Hours</SelectItem>
+                                <SelectItem value="1d">1 Day</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label className="text-sm">Reference</Label>
+                            <div className="flex items-center justify-between p-2 bg-background/30 rounded border">
+                              <span className="text-sm">{filtersSettings.htfUseBtc ? 'BTC/USDT' : 'Trading Pair'}</span>
+                              <Switch
+                                checked={filtersSettings.htfUseBtc}
+                                onCheckedChange={(checked) => updateFiltersSetting('htfUseBtc', checked)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Volume Filter */}
