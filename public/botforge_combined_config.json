@@ -1,0 +1,220 @@
+{
+  "strategies": {
+    "EMA Crossover Pro": {
+      "indicators": ["ema"],
+      "entryTiles": [
+        {
+          "id": "ema_cross_above",
+          "name": "EMA Cross Above",
+          "tooltip": "Fast EMA crosses above Slow EMA",
+          "operands": ["EMA Fast", "EMA Slow"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "EMA Fast",
+            "rightOperand": "EMA Slow"
+          }
+        },
+        {
+          "id": "ema_cross_below",
+          "name": "EMA Cross Below", 
+          "tooltip": "Fast EMA crosses below Slow EMA",
+          "operands": ["EMA Fast", "EMA Slow"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "EMA Fast",
+            "rightOperand": "EMA Slow"
+          }
+        }
+      ]
+    },
+    "SMA Crossover": {
+      "indicators": ["sma"],
+      "entryTiles": [
+        {
+          "id": "sma_cross_above",
+          "name": "SMA Cross Above",
+          "tooltip": "Fast SMA crosses above Slow SMA",
+          "operands": ["SMA Fast", "SMA Slow"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "SMA Fast",
+            "rightOperand": "SMA Slow"
+          }
+        },
+        {
+          "id": "sma_cross_below",
+          "name": "SMA Cross Below",
+          "tooltip": "Fast SMA crosses below Slow SMA", 
+          "operands": ["SMA Fast", "SMA Slow"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "SMA Fast",
+            "rightOperand": "SMA Slow"
+          }
+        }
+      ]
+    },
+    "RSI Bias": {
+      "indicators": ["rsi"],
+      "entryTiles": [
+        {
+          "id": "rsi_oversold",
+          "name": "RSI Oversold",
+          "tooltip": "RSI below oversold threshold",
+          "operands": ["RSI", "30"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "RSI",
+            "rightOperand": "30"
+          }
+        },
+        {
+          "id": "rsi_overbought",
+          "name": "RSI Overbought",
+          "tooltip": "RSI above overbought threshold",
+          "operands": ["RSI", "70"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "RSI",
+            "rightOperand": "70"
+          }
+        }
+      ]
+    },
+    "MACD Cross": {
+      "indicators": ["macd"],
+      "entryTiles": [
+        {
+          "id": "macd_cross_above",
+          "name": "MACD Cross Above",
+          "tooltip": "MACD line crosses above signal line",
+          "operands": ["MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "MACD Line",
+            "rightOperand": "MACD Signal"
+          }
+        },
+        {
+          "id": "macd_cross_below",
+          "name": "MACD Cross Below",
+          "tooltip": "MACD line crosses below signal line",
+          "operands": ["MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "MACD Line",
+            "rightOperand": "MACD Signal"
+          }
+        }
+      ]
+    },
+    "MACD + RSI Swing": {
+      "indicators": ["macd", "rsi"],
+      "entryTiles": [
+        {
+          "id": "macd_bullish_rsi_oversold",
+          "name": "MACD Bullish + RSI Oversold",
+          "tooltip": "MACD crosses above signal and RSI is oversold",
+          "operands": ["MACD Line", "MACD Signal", "RSI", "30"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "MACD Line",
+            "rightOperand": "MACD Signal"
+          }
+        },
+        {
+          "id": "macd_bearish_rsi_overbought",
+          "name": "MACD Bearish + RSI Overbought",
+          "tooltip": "MACD crosses below signal and RSI is overbought",
+          "operands": ["MACD Line", "MACD Signal", "RSI", "70"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "MACD Line",
+            "rightOperand": "MACD Signal"
+          }
+        }
+      ]
+    },
+    "Hybrid Momentum": {
+      "indicators": ["ema", "rsi", "macd", "breadth"],
+      "entryTiles": [
+        {
+          "id": "momentum_bullish",
+          "name": "Momentum Bullish",
+          "tooltip": "All momentum indicators align bullish",
+          "operands": ["EMA Fast", "EMA Slow", "RSI", "50", "MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "EMA Fast",
+            "rightOperand": "EMA Slow"
+          }
+        },
+        {
+          "id": "momentum_bearish",
+          "name": "Momentum Bearish",
+          "tooltip": "All momentum indicators align bearish",
+          "operands": ["EMA Fast", "EMA Slow", "RSI", "50", "MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "EMA Fast",
+            "rightOperand": "EMA Slow"
+          }
+        }
+      ]
+    },
+    "Market Breadth Gate": {
+      "indicators": ["breadth"],
+      "entryTiles": [
+        {
+          "id": "breadth_bullish",
+          "name": "Breadth Bullish",
+          "tooltip": "Market breadth indicates bullish sentiment",
+          "operands": ["Breadth Index", "50"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "Breadth Index",
+            "rightOperand": "50"
+          }
+        },
+        {
+          "id": "breadth_bearish",
+          "name": "Breadth Bearish",
+          "tooltip": "Market breadth indicates bearish sentiment",
+          "operands": ["Breadth Index", "50"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "Breadth Index",
+            "rightOperand": "50"
+          }
+        }
+      ]
+    },
+    "Market Neutral": {
+      "indicators": ["rank", "spread"],
+      "entryTiles": [
+        {
+          "id": "rank_spread_long",
+          "name": "Rank Spread Long",
+          "tooltip": "Enter long based on ranking and spread",
+          "operands": ["Asset Rank", "10", "Spread", "0.5"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "Asset Rank",
+            "rightOperand": "10"
+          }
+        },
+        {
+          "id": "rank_spread_short",
+          "name": "Rank Spread Short",
+          "tooltip": "Enter short based on ranking and spread",
+          "operands": ["Asset Rank", "90", "Spread", "0.5"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "Asset Rank",
+            "rightOperand": "90"
+          }
+        }
+      ]
+    }
+  }
+}
