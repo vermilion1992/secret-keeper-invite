@@ -23,7 +23,6 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
   const [selectedMarketType, setSelectedMarketType] = useState<MarketType | null>(null);
   const [selectedPairTemplate, setSelectedPairTemplate] = useState<PairTemplate | null>(null);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
-  const [selectedStrategyKey, setSelectedStrategyKey] = useState<string | null>(null);
   const [filterIndicators, setFilterIndicators] = useState<IndicatorConfig[]>([]);
   const [riskManagement, setRiskManagement] = useState<RiskManagement>({
     capitalAllocation: 100,
@@ -95,7 +94,6 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
 
   const handleStrategySelect = (strategy: Strategy) => {
     setSelectedStrategy(strategy);
-    setSelectedStrategyKey(strategy.id);
   };
 
   const handleExport = (format: 'python' | 'json', botName: string) => {
@@ -202,7 +200,6 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
               {currentStep === 4 && (
                 <StepAdvancedSettings
                   strategy={selectedStrategy}
-                  selectedStrategyKey={selectedStrategyKey}
                   filterIndicators={filterIndicators}
                   onUpdateFilters={setFilterIndicators}
                   onNext={handleNext}
