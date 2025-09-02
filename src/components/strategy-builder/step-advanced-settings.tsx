@@ -493,7 +493,22 @@ export function StepAdvancedSettings({
         }));
         break;
       case 'entry':
-        setEntryConditions([{ id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }]);
+        // Reset to first tile's defaultSeeds for the current strategy
+        if (strategy) {
+          const tiles = getEntryTilesForStrategy(strategy.name);
+          if (tiles.length > 0) {
+            const firstTile = tiles[0];
+            setEntryConditions([{
+              id: '1',
+              operator: firstTile.defaultSeeds?.operator || 'crosses_above',
+              leftOperand: firstTile.defaultSeeds?.leftOperand || firstTile.operands[0],
+              rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands[1] || '',
+              enabled: true
+            }]);
+          } else {
+            setEntryConditions([{ id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }]);
+          }
+        }
         setEntryLogic('all_true');
         setEntryDirection('both');
         setEntryInverse(false);
@@ -574,6 +589,9 @@ export function StepAdvancedSettings({
           rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands[1] || '',
           enabled: true
         }]);
+      } else {
+        // Fallback if no tiles configured
+        setEntryConditions([{ id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }]);
       }
     }
   }, [strategy?.name]);
@@ -630,7 +648,7 @@ export function StepAdvancedSettings({
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* EMA Settings */}
+                {/* Only show indicator panels that are relevant to the selected strategy */}
                 {getRelevantIndicators(strategy.name).includes('ema') && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-3">
@@ -720,7 +738,7 @@ export function StepAdvancedSettings({
                   </div>
                 )}
 
-                {/* RSI Settings */}
+                {/* RSI Settings - only show for strategies that use RSI */}
                 {getRelevantIndicators(strategy.name).includes('rsi') && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-3">
@@ -930,9 +948,11 @@ export function StepAdvancedSettings({
                    
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                      {getEntryTilesForStrategy(strategy.name).map(tile => {
+                       // Check if this tile's rule already exists (prevent duplicates)
                        const isActive = entryConditions.some(condition => 
                          condition.leftOperand === tile.defaultSeeds?.leftOperand &&
-                         condition.operator === tile.defaultSeeds?.operator
+                         condition.operator === tile.defaultSeeds?.operator &&
+                         condition.rightOperand === (tile.defaultSeeds?.rightOperand || '')
                        );
                        
                        return (
@@ -940,13 +960,14 @@ export function StepAdvancedSettings({
                            key={tile.id}
                            onClick={() => {
                              if (isActive) {
-                               // Remove the condition
+                               // Remove the exact matching condition
                                setEntryConditions(prev => prev.filter(condition => 
                                  !(condition.leftOperand === tile.defaultSeeds?.leftOperand &&
-                                   condition.operator === tile.defaultSeeds?.operator)
+                                   condition.operator === tile.defaultSeeds?.operator &&
+                                   condition.rightOperand === (tile.defaultSeeds?.rightOperand || ''))
                                ));
                              } else {
-                               // Add new condition if under cap
+                               // Add new condition if under cap and not duplicate
                                if (entryConditions.length < 5) {
                                  const newId = Date.now().toString();
                                  setEntryConditions(prev => [...prev, {
