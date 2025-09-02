@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle } from 'lucide-react';
+import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, Search, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface StepAdvancedSettingsProps {
@@ -33,6 +33,8 @@ export function StepAdvancedSettings({
 }: StepAdvancedSettingsProps) {
   const [isAdvancedStrategyOpen, setIsAdvancedStrategyOpen] = useState(false);
   const [isAdvancedExitOpen, setIsAdvancedExitOpen] = useState(false);
+  const [showMoreConditions, setShowMoreConditions] = useState(false);
+  const [conditionSearch, setConditionSearch] = useState('');
   
   // Strategy settings
   const [strategySettings, setStrategySettings] = useState({
@@ -427,98 +429,372 @@ export function StepAdvancedSettings({
                   </div>
                 </div>
 
-                {/* Default Entry Condition */}
-                <div className="space-y-3 pt-4 border-t border-border/50">
-                  <div className="flex items-center gap-2">
-                    <Label className="font-medium">Default Entry Condition</Label>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="w-4 h-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">Simple trigger for entries. Signal occurs on bar close of the condition.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                {/* Default Entry Condition - Redesigned with Tiles */}
+                <div className="space-y-4 pt-4 border-t border-border/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium">Entry Conditions</Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Choose how entries are triggered. Use simple core conditions or expand for advanced logic.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    {strategySettings.entryMode === 'custom' && (
+                      <Badge variant="secondary" className="text-xs">Custom Mode</Badge>
+                    )}
                   </div>
-                  <Select 
-                    value={strategySettings.defaultEntryCondition} 
-                    onValueChange={(value) => updateStrategySetting('defaultEntryCondition', value)}
-                    disabled={strategySettings.entryMode === 'custom'}
-                  >
-                    <SelectTrigger className={`bg-background/50 ${strategySettings.entryMode === 'custom' ? 'opacity-50' : ''}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ema_cross_above">
-                        <div className="space-y-1">
-                          <div>EMA Fast crosses above EMA Slow (Bull)</div>
-                          <div className="text-xs text-muted-foreground">Classic bullish crossover signal</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ema_cross_below">
-                        <div className="space-y-1">
-                          <div>EMA Fast crosses below EMA Slow (Bear)</div>
-                          <div className="text-xs text-muted-foreground">Classic bearish crossover signal</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="macd_cross_above">
-                        <div className="space-y-1">
-                          <div>MACD line crosses above signal (Bull)</div>
-                          <div className="text-xs text-muted-foreground">MACD bullish momentum shift</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="macd_cross_below">
-                        <div className="space-y-1">
-                          <div>MACD line crosses below signal (Bear)</div>
-                          <div className="text-xs text-muted-foreground">MACD bearish momentum shift</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="rsi_above_50">
-                        <div className="space-y-1">
-                          <div>RSI crosses above 50 (Bull)</div>
-                          <div className="text-xs text-muted-foreground">Simple trend bias confirmation</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="rsi_below_50">
-                        <div className="space-y-1">
-                          <div>RSI crosses below 50 (Bear)</div>
-                          <div className="text-xs text-muted-foreground">Simple trend bias confirmation</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="price_above_ma">
-                        <div className="space-y-1">
-                          <div>Price crosses above selected MA</div>
-                          <div className="text-xs text-muted-foreground">Price breaks above moving average</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="price_below_ma">
-                        <div className="space-y-1">
-                          <div>Price crosses below selected MA</div>
-                          <div className="text-xs text-muted-foreground">Price breaks below moving average</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="channel_breakout_up">
-                        <div className="space-y-1">
-                          <div>Close breaks above HH(n)</div>
-                          <div className="text-xs text-muted-foreground">Channel breakout upward</div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="channel_breakout_down">
-                        <div className="space-y-1">
-                          <div>Close breaks below LL(n)</div>
-                          <div className="text-xs text-muted-foreground">Channel breakout downward</div>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  {/* Core Condition Tiles */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {/* EMA Crossover Tile */}
+                    <div 
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
+                        strategySettings.defaultEntryCondition === 'ema_cross_above' || strategySettings.defaultEntryCondition === 'ema_cross_below' 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border bg-card/50'
+                      } ${strategySettings.entryMode === 'custom' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (strategySettings.entryMode !== 'custom') {
+                          updateStrategySetting('defaultEntryCondition', 'ema_cross_above');
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col items-center space-y-2 text-center">
+                        <TrendingUp className="w-6 h-6 text-primary" />
+                        <div className="text-sm font-medium">EMA Crossover</div>
+                        <div className="text-xs text-muted-foreground">Fast/Slow crosses</div>
+                      </div>
+                    </div>
+
+                    {/* MACD Cross Tile */}
+                    <div 
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
+                        strategySettings.defaultEntryCondition === 'macd_cross_above' || strategySettings.defaultEntryCondition === 'macd_cross_below'
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border bg-card/50'
+                      } ${strategySettings.entryMode === 'custom' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (strategySettings.entryMode !== 'custom') {
+                          updateStrategySetting('defaultEntryCondition', 'macd_cross_above');
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col items-center space-y-2 text-center">
+                        <BarChart3 className="w-6 h-6 text-primary" />
+                        <div className="text-sm font-medium">MACD Cross</div>
+                        <div className="text-xs text-muted-foreground">Line/Signal crosses</div>
+                      </div>
+                    </div>
+
+                    {/* RSI Threshold Tile */}
+                    <div 
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
+                        strategySettings.defaultEntryCondition === 'rsi_above_50' || strategySettings.defaultEntryCondition === 'rsi_below_50'
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border bg-card/50'
+                      } ${strategySettings.entryMode === 'custom' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (strategySettings.entryMode !== 'custom') {
+                          updateStrategySetting('defaultEntryCondition', 'rsi_above_50');
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col items-center space-y-2 text-center">
+                        <Target className="w-6 h-6 text-primary" />
+                        <div className="text-sm font-medium">RSI Threshold</div>
+                        <div className="text-xs text-muted-foreground">Crosses 50 level</div>
+                      </div>
+                    </div>
+
+                    {/* Price vs MA Tile */}
+                    <div 
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
+                        strategySettings.defaultEntryCondition === 'price_above_ma' || strategySettings.defaultEntryCondition === 'price_below_ma'
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border bg-card/50'
+                      } ${strategySettings.entryMode === 'custom' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (strategySettings.entryMode !== 'custom') {
+                          updateStrategySetting('defaultEntryCondition', 'price_above_ma');
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col items-center space-y-2 text-center">
+                        <TrendingUp className="w-6 h-6 text-primary" />
+                        <div className="text-sm font-medium">Price vs MA</div>
+                        <div className="text-xs text-muted-foreground">Price crosses MA</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Condition Configuration - Show when a tile is selected */}
+                  {strategySettings.defaultEntryCondition && strategySettings.entryMode !== 'custom' && (
+                    <div className="p-4 bg-accent/20 rounded-lg border border-accent/30">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {(strategySettings.defaultEntryCondition === 'ema_cross_above' || strategySettings.defaultEntryCondition === 'ema_cross_below') && (
+                          <>
+                            <div className="space-y-2">
+                              <Label className="text-sm">Direction</Label>
+                              <Select 
+                                value={strategySettings.defaultEntryCondition} 
+                                onValueChange={(value) => updateStrategySetting('defaultEntryCondition', value)}
+                              >
+                                <SelectTrigger className="bg-background/50">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="ema_cross_above">Bullish (Fast above Slow)</SelectItem>
+                                  <SelectItem value="ema_cross_below">Bearish (Fast below Slow)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center">
+                              <Info className="w-4 h-4 mr-2" />
+                              Uses EMA Fast ({strategySettings.emaFast}) and EMA Slow ({strategySettings.emaSlow}) from above
+                            </div>
+                          </>
+                        )}
+                        {(strategySettings.defaultEntryCondition === 'macd_cross_above' || strategySettings.defaultEntryCondition === 'macd_cross_below') && (
+                          <>
+                            <div className="space-y-2">
+                              <Label className="text-sm">Direction</Label>
+                              <Select 
+                                value={strategySettings.defaultEntryCondition} 
+                                onValueChange={(value) => updateStrategySetting('defaultEntryCondition', value)}
+                              >
+                                <SelectTrigger className="bg-background/50">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="macd_cross_above">Bullish (Line above Signal)</SelectItem>
+                                  <SelectItem value="macd_cross_below">Bearish (Line below Signal)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center">
+                              <Info className="w-4 h-4 mr-2" />
+                              Uses MACD settings ({strategySettings.macdFast}, {strategySettings.macdSlow}, {strategySettings.macdSignal}) from above
+                            </div>
+                          </>
+                        )}
+                        {(strategySettings.defaultEntryCondition === 'rsi_above_50' || strategySettings.defaultEntryCondition === 'rsi_below_50') && (
+                          <>
+                            <div className="space-y-2">
+                              <Label className="text-sm">Direction</Label>
+                              <Select 
+                                value={strategySettings.defaultEntryCondition} 
+                                onValueChange={(value) => updateStrategySetting('defaultEntryCondition', value)}
+                              >
+                                <SelectTrigger className="bg-background/50">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="rsi_above_50">Bullish (RSI above 50)</SelectItem>
+                                  <SelectItem value="rsi_below_50">Bearish (RSI below 50)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center">
+                              <Info className="w-4 h-4 mr-2" />
+                              Uses RSI Length ({strategySettings.rsiLength}) from above
+                            </div>
+                          </>
+                        )}
+                        {(strategySettings.defaultEntryCondition === 'price_above_ma' || strategySettings.defaultEntryCondition === 'price_below_ma') && (
+                          <>
+                            <div className="space-y-2">
+                              <Label className="text-sm">Direction</Label>
+                              <Select 
+                                value={strategySettings.defaultEntryCondition} 
+                                onValueChange={(value) => updateStrategySetting('defaultEntryCondition', value)}
+                              >
+                                <SelectTrigger className="bg-background/50">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="price_above_ma">Bullish (Price above MA)</SelectItem>
+                                  <SelectItem value="price_below_ma">Bearish (Price below MA)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm">MA Length</Label>
+                              <Input
+                                type="number"
+                                value={strategySettings.emaSlow}
+                                onChange={(e) => updateStrategySetting('emaSlow', Number(e.target.value))}
+                                min="10"
+                                max="200"
+                                className="bg-background/50"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show More Conditions Button */}
+                  <Collapsible open={showMoreConditions} onOpenChange={setShowMoreConditions}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-center gap-2 text-sm"
+                        disabled={strategySettings.entryMode === 'custom'}
+                      >
+                        Show More Conditions
+                        <ChevronDown className={`w-4 h-4 transition-transform ${showMoreConditions ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4">
+                      {/* Search Bar */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search conditions (e.g., ATR, Volume, CCI)..."
+                          value={conditionSearch}
+                          onChange={(e) => setConditionSearch(e.target.value)}
+                          className="pl-10 bg-background/50"
+                        />
+                      </div>
+
+                      {/* Advanced Condition Categories */}
+                      <div className="space-y-4">
+                        {/* Crossovers Category */}
+                        {(!conditionSearch || 'crossovers'.includes(conditionSearch.toLowerCase()) || 'cci'.includes(conditionSearch.toLowerCase()) || 'atr'.includes(conditionSearch.toLowerCase())) && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Crossovers</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'cci_zero_cross' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'cci_zero_cross')}
+                              >
+                                <div className="text-sm font-medium">CCI Zero Cross</div>
+                                <div className="text-xs text-muted-foreground">CCI crosses above/below zero line</div>
+                              </div>
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'stoch_cross' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'stoch_cross')}
+                              >
+                                <div className="text-sm font-medium">Stochastic Cross</div>
+                                <div className="text-xs text-muted-foreground">%K crosses %D line</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Thresholds Category */}
+                        {(!conditionSearch || 'thresholds'.includes(conditionSearch.toLowerCase()) || 'rsi'.includes(conditionSearch.toLowerCase()) || 'volume'.includes(conditionSearch.toLowerCase())) && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Thresholds</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'rsi_overbought' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'rsi_overbought')}
+                              >
+                                <div className="text-sm font-medium">RSI Overbought/Oversold</div>
+                                <div className="text-xs text-muted-foreground">RSI above 70 or below 30</div>
+                              </div>
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'volume_spike' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'volume_spike')}
+                              >
+                                <div className="text-sm font-medium">Volume Spike</div>
+                                <div className="text-xs text-muted-foreground">Volume above average threshold</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Breakouts Category */}
+                        {(!conditionSearch || 'breakouts'.includes(conditionSearch.toLowerCase()) || 'channel'.includes(conditionSearch.toLowerCase()) || 'bollinger'.includes(conditionSearch.toLowerCase())) && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Breakouts</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'channel_breakout' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'channel_breakout')}
+                              >
+                                <div className="text-sm font-medium">Channel Breakout</div>
+                                <div className="text-xs text-muted-foreground">Price breaks highest high/lowest low</div>
+                              </div>
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'bb_breakout' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'bb_breakout')}
+                              >
+                                <div className="text-sm font-medium">Bollinger Band Breakout</div>
+                                <div className="text-xs text-muted-foreground">Price breaks upper/lower band</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Filters Category */}
+                        {(!conditionSearch || 'filters'.includes(conditionSearch.toLowerCase()) || 'atr'.includes(conditionSearch.toLowerCase()) || 'adx'.includes(conditionSearch.toLowerCase())) && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Filters</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'atr_filter' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'atr_filter')}
+                              >
+                                <div className="text-sm font-medium">ATR Filter</div>
+                                <div className="text-xs text-muted-foreground">ATR above threshold for volatility</div>
+                              </div>
+                              <div 
+                                className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/50 ${
+                                  strategySettings.defaultEntryCondition === 'adx_filter' ? 'border-primary bg-primary/5' : 'border-border bg-card/50'
+                                }`}
+                                onClick={() => updateStrategySetting('defaultEntryCondition', 'adx_filter')}
+                              >
+                                <div className="text-sm font-medium">ADX Trend Filter</div>
+                                <div className="text-xs text-muted-foreground">ADX above 25 for strong trend</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* No Results */}
+                        {conditionSearch && !['crossovers', 'thresholds', 'breakouts', 'filters', 'cci', 'atr', 'rsi', 'volume', 'channel', 'bollinger', 'adx'].some(term => 
+                          term.includes(conditionSearch.toLowerCase()) || conditionSearch.toLowerCase().includes(term)
+                        ) && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>No conditions found for "{conditionSearch}"</p>
+                            <p className="text-xs mt-1">Try searching for: EMA, MACD, RSI, ATR, Volume, etc.</p>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Conflict Warning for Custom Mode */}
                   {strategySettings.entryMode === 'custom' && (
-                    <Alert>
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        Using custom entry rules. Default entry condition is disabled.
+                    <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-amber-800 dark:text-amber-200">
+                        Using custom entry rules. Default entry condition is disabled. Configure custom rules in Advanced Strategy Settings below.
                       </AlertDescription>
                     </Alert>
-                  )}
+                   )}
                 </div>
               </CardContent>
             </Card>
