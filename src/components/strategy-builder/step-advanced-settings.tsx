@@ -12,7 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, Search, Plus, X, Filter, RotateCcw, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface StepAdvancedSettingsProps {
   strategy: Strategy | null;
@@ -43,7 +43,7 @@ export function StepAdvancedSettings({
   const [isAdvancedExitOpen, setIsAdvancedExitOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
-  // Entry conditions - tile-based approach
+  // Entry conditions - tile-based approach  
   const [entryConditions, setEntryConditions] = useState<EntryCondition[]>([
     { id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }
   ]);
@@ -169,60 +169,270 @@ export function StepAdvancedSettings({
     exitPriority: 'tp_first'
   };
 
-  // Strategy-specific operand mapping
+  // Comprehensive strategy configuration with tiles and indicator mappings
+  const STRATEGY_CONFIG: Record<string, { 
+    indicators: string[], 
+    tiles: Array<{ id: string, label: string, operands: string[], defaultSeeds?: any }> 
+  }> = {
+    'EMA Crossover Pro': {
+      indicators: ['ema'],
+      tiles: [
+        { 
+          id: 'ema_cross_up', 
+          label: 'EMA Cross Up', 
+          operands: ['EMA Fast', 'EMA Slow'],
+          defaultSeeds: { operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
+        },
+        { 
+          id: 'ema_cross_down', 
+          label: 'EMA Cross Down', 
+          operands: ['EMA Fast', 'EMA Slow'],
+          defaultSeeds: { operator: 'crosses_below', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
+        }
+      ]
+    },
+    'SMA Crossover': {
+      indicators: ['sma'],
+      tiles: [
+        { 
+          id: 'sma_cross_up', 
+          label: 'SMA Cross Up', 
+          operands: ['SMA Fast', 'SMA Slow'],
+          defaultSeeds: { operator: 'crosses_above', leftOperand: 'SMA Fast', rightOperand: 'SMA Slow' }
+        }
+      ]
+    },
+    'RSI Bias': {
+      indicators: ['rsi'],
+      tiles: [
+        { 
+          id: 'rsi_oversold', 
+          label: 'RSI Oversold', 
+          operands: ['RSI', 'RSI Oversold'],
+          defaultSeeds: { operator: 'crosses_below', leftOperand: 'RSI', rightOperand: 'RSI Oversold' }
+        },
+        { 
+          id: 'rsi_overbought', 
+          label: 'RSI Overbought', 
+          operands: ['RSI', 'RSI Overbought'],
+          defaultSeeds: { operator: 'crosses_above', leftOperand: 'RSI', rightOperand: 'RSI Overbought' }
+        }
+      ]
+    },
+    'MACD Cross': {
+      indicators: ['macd'],
+      tiles: [
+        { 
+          id: 'macd_bullish', 
+          label: 'MACD Bullish', 
+          operands: ['MACD Line', 'MACD Signal'],
+          defaultSeeds: { operator: 'crosses_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
+        },
+        { 
+          id: 'macd_bearish', 
+          label: 'MACD Bearish', 
+          operands: ['MACD Line', 'MACD Signal'],
+          defaultSeeds: { operator: 'crosses_below', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
+        }
+      ]
+    },
+    'Hybrid Momentum': {
+      indicators: ['ema', 'rsi', 'macd'],
+      tiles: [
+        { 
+          id: 'ema_trend_up', 
+          label: 'EMA Trend Up', 
+          operands: ['EMA Fast', 'EMA Slow'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
+        },
+        { 
+          id: 'rsi_momentum', 
+          label: 'RSI Momentum', 
+          operands: ['RSI', 'RSI_50'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'RSI', rightOperand: 'RSI_50' }
+        },
+        { 
+          id: 'macd_positive', 
+          label: 'MACD Positive', 
+          operands: ['MACD Line', 'MACD Signal'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
+        },
+        { 
+          id: 'breadth_ok', 
+          label: 'Market Breadth OK', 
+          operands: ['Breadth_ok'],
+          defaultSeeds: { operator: 'is_true', leftOperand: 'Breadth_ok', rightOperand: '' }
+        }
+      ]
+    },
+    'Market Breadth Gate': {
+      indicators: ['breadth'],
+      tiles: [
+        { 
+          id: 'breadth_positive', 
+          label: 'Market Breadth Positive', 
+          operands: ['Breadth_ok'],
+          defaultSeeds: { operator: 'is_true', leftOperand: 'Breadth_ok', rightOperand: '' }
+        }
+      ]
+    },
+    'Market-Neutral': {
+      indicators: ['ranking'],
+      tiles: [
+        { 
+          id: 'rank_long', 
+          label: 'Top Ranked for Long', 
+          operands: ['Rank_long_topN'],
+          defaultSeeds: { operator: 'is_true', leftOperand: 'Rank_long_topN', rightOperand: '' }
+        },
+        { 
+          id: 'rank_short', 
+          label: 'Bottom Ranked for Short', 
+          operands: ['Rank_short_bottomN'],
+          defaultSeeds: { operator: 'is_true', leftOperand: 'Rank_short_bottomN', rightOperand: '' }
+        },
+        { 
+          id: 'spread_score', 
+          label: 'Spread Score OK', 
+          operands: ['Spread_score'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'Spread_score', rightOperand: '0' }
+        }
+      ]
+    },
+    'Turbo K6': {
+      indicators: ['ema', 'rsi', 'macd'],
+      tiles: [
+        { 
+          id: 'ema_trend', 
+          label: 'EMA Trend', 
+          operands: ['EMA Fast', 'EMA Slow'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
+        },
+        { 
+          id: 'rsi_momentum_k6', 
+          label: 'RSI Momentum', 
+          operands: ['RSI', 'RSI_50'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'RSI', rightOperand: 'RSI_50' }
+        },
+        { 
+          id: 'macd_bullish_k6', 
+          label: 'MACD Bullish', 
+          operands: ['MACD Line', 'MACD Signal'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
+        }
+      ]
+    },
+    // Additional strategies with proper mappings
+    'MACD + RSI Swing': {
+      indicators: ['macd', 'rsi'],
+      tiles: [
+        { 
+          id: 'macd_cross_up', 
+          label: 'MACD Cross Up', 
+          operands: ['MACD Line', 'MACD Signal'],
+          defaultSeeds: { operator: 'crosses_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
+        },
+        { 
+          id: 'rsi_not_extreme', 
+          label: 'RSI Not Extreme', 
+          operands: ['RSI', 'RSI Overbought', 'RSI Oversold'],
+          defaultSeeds: { operator: 'is_below', leftOperand: 'RSI', rightOperand: 'RSI Overbought' }
+        }
+      ]
+    },
+    'Stochastic (K/D)': {
+      indicators: ['stoch'],
+      tiles: [
+        { 
+          id: 'stoch_cross_up', 
+          label: 'Stoch %K Cross %D', 
+          operands: ['%K', '%D'],
+          defaultSeeds: { operator: 'crosses_above', leftOperand: '%K', rightOperand: '%D' }
+        },
+        { 
+          id: 'stoch_oversold', 
+          label: 'Stoch Oversold', 
+          operands: ['%K', 'Oversold'],
+          defaultSeeds: { operator: 'is_below', leftOperand: '%K', rightOperand: 'Oversold' }
+        }
+      ]
+    },
+    'Bollinger Reversion': {
+      indicators: ['bb', 'rsi'],
+      tiles: [
+        { 
+          id: 'bb_touch_lower', 
+          label: 'Touch Lower BB', 
+          operands: ['Price', 'BB Lower'],
+          defaultSeeds: { operator: 'is_below', leftOperand: 'Price', rightOperand: 'BB Lower' }
+        },
+        { 
+          id: 'bb_touch_upper', 
+          label: 'Touch Upper BB', 
+          operands: ['Price', 'BB Upper'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'Price', rightOperand: 'BB Upper' }
+        }
+      ]
+    },
+    'ATR Breakout': {
+      indicators: ['atr'],
+      tiles: [
+        { 
+          id: 'atr_breakout_up', 
+          label: 'ATR Breakout Up', 
+          operands: ['Price', 'PrevClose + k×ATR'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'Price', rightOperand: 'PrevClose + k×ATR' }
+        },
+        { 
+          id: 'atr_breakout_down', 
+          label: 'ATR Breakout Down', 
+          operands: ['Price', 'PrevClose - k×ATR'],
+          defaultSeeds: { operator: 'is_below', leftOperand: 'Price', rightOperand: 'PrevClose - k×ATR' }
+        }
+      ]
+    },
+    'VWAP Mean Revert': {
+      indicators: ['vwap'],
+      tiles: [
+        { 
+          id: 'vwap_above', 
+          label: 'Price Above VWAP', 
+          operands: ['Price', 'VWAP'],
+          defaultSeeds: { operator: 'is_above', leftOperand: 'Price', rightOperand: 'VWAP' }
+        },
+        { 
+          id: 'vwap_below', 
+          label: 'Price Below VWAP', 
+          operands: ['Price', 'VWAP'],
+          defaultSeeds: { operator: 'is_below', leftOperand: 'Price', rightOperand: 'VWAP' }
+        }
+      ]
+    }
+  };
+
+  // Get strategy-specific operands
   const getOperandsForStrategy = (strategyName: string) => {
-    const operandMap: Record<string, string[]> = {
-      'EMA Crossover Pro': ['EMA Fast', 'EMA Slow', 'Price'],
-      'SMA Crossover': ['SMA Fast', 'SMA Slow', 'Price'],
-      'Price vs MA Trend': ['Price', 'Selected MA'],
-      'MACD Cross': ['MACD Line', 'MACD Signal', 'MACD Histogram'],
-      'RSI Bias': ['RSI', 'RSI_50', 'RSI Overbought', 'RSI Oversold'],
-      'MACD + RSI Swing': ['MACD Line', 'MACD Signal', 'MACD Histogram', 'RSI', 'RSI_50', 'RSI Overbought', 'RSI Oversold'],
-      'Stochastic (K/D)': ['%K', '%D', 'Overbought', 'Oversold'],
-      'Bollinger Reversion': ['Price', 'BB Upper', 'BB Lower', 'BB Mid'],
-      'Donchian Breakout': ['Price', 'Donchian High', 'Donchian Low'],
-      'ATR Breakout': ['Price', 'PrevClose + k×ATR', 'PrevClose - k×ATR', 'ATR Threshold'],
-      'VWAP Mean Revert': ['Price', 'VWAP'],
-      'OBV Trend': ['OBV', 'OBV MA', 'OBV Slope'],
-      'CCI Trend': ['CCI', '0-line', 'Overbought', 'Oversold'],
-      'Momentum ROC': ['ROC', 'Zero line', 'Threshold'],
-      'ADX Trend': ['ADX', 'DI+', 'DI-', 'ADX Threshold'],
-      'Ichimoku Trend': ['Price', 'Kijun', 'Tenkan', 'Cloud Top', 'Cloud Bottom'],
-      'VWMA Trend': ['Price', 'VWMA'],
-      'Hybrid Momentum': ['EMA Fast', 'EMA Slow', 'RSI', 'MACD Line', 'MACD Signal', 'Breadth_ok'],
-      'Market Breadth Gate': ['Breadth_ok'],
-      'Market-Neutral': ['Rank_long_topN', 'Rank_short_bottomN', 'Spread_score'],
-      'Turbo K6': ['EMA Fast', 'EMA Slow', 'RSI', 'MACD Line', 'MACD Signal']
-    };
-    return operandMap[strategyName] || ['EMA Fast', 'EMA Slow', 'Price'];
+    const config = STRATEGY_CONFIG[strategyName];
+    if (!config) return ['EMA Fast', 'EMA Slow', 'Price'];
+    
+    // Collect all unique operands from tiles
+    const operands = new Set<string>();
+    config.tiles.forEach(tile => {
+      tile.operands.forEach(operand => operands.add(operand));
+    });
+    return Array.from(operands);
   };
 
   // Get relevant indicators for the selected strategy
   const getRelevantIndicators = (strategyName: string) => {
-    const indicatorMap: Record<string, string[]> = {
-      'EMA Crossover Pro': ['ema'],
-      'SMA Crossover': ['sma'],
-      'Price vs MA Trend': ['ema', 'sma'],
-      'MACD Cross': ['macd'],
-      'RSI Bias': ['rsi'],
-      'MACD + RSI Swing': ['macd', 'rsi'],
-      'Stochastic (K/D)': ['stoch'],
-      'Bollinger Reversion': ['bb'],
-      'Donchian Breakout': ['donchian'],
-      'ATR Breakout': ['atr'],
-      'VWAP Mean Revert': ['vwap'],
-      'OBV Trend': ['obv'],
-      'CCI Trend': ['cci'],
-      'Momentum ROC': ['roc'],
-      'ADX Trend': ['adx'],
-      'Ichimoku Trend': ['ichimoku'],
-      'VWMA Trend': ['vwma'],
-      'Hybrid Momentum': ['ema', 'rsi', 'macd'],
-      'Market Breadth Gate': ['breadth'],
-      'Market-Neutral': ['ranking'],
-      'Turbo K6': ['ema', 'rsi', 'macd']
-    };
-    return indicatorMap[strategyName] || ['ema'];
+    const config = STRATEGY_CONFIG[strategyName];
+    return config?.indicators || ['ema'];
+  };
+
+  // Get entry tiles for the selected strategy
+  const getEntryTilesForStrategy = (strategyName: string) => {
+    const config = STRATEGY_CONFIG[strategyName];
+    return config?.tiles || [];
   };
 
   // Entry condition operators with tooltips
@@ -350,6 +560,23 @@ export function StepAdvancedSettings({
   };
 
   const conflicts = hasConflicts();
+
+  // Initialize entry conditions when strategy changes
+  useEffect(() => {
+    if (strategy) {
+      const tiles = getEntryTilesForStrategy(strategy.name);
+      if (tiles.length > 0) {
+        const firstTile = tiles[0];
+        setEntryConditions([{
+          id: '1',
+          operator: firstTile.defaultSeeds?.operator || 'crosses_above',
+          leftOperand: firstTile.defaultSeeds?.leftOperand || firstTile.operands[0],
+          rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands[1] || '',
+          enabled: true
+        }]);
+      }
+    }
+  }, [strategy?.name]);
 
   // Format strategy name (replace Echo with Hybrid Momentum)
   const formatStrategyName = (name: string) => {
@@ -685,10 +912,77 @@ export function StepAdvancedSettings({
                  <p className="text-sm text-muted-foreground">
                    Entry Conditions combine your indicator signals into simple rules. For example: <em>If EMA Fast crosses above EMA Slow AND RSI &gt; 50 → Go Long. If inverse is true → Go Short.</em>
                  </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Entry Condition Rules */}
-                <div className="space-y-4">
+               </CardHeader>
+               <CardContent className="space-y-6">
+                 {/* Entry Tiles - Strategy-specific clickable tiles */}
+                 <div className="space-y-4">
+                   <div className="flex items-center gap-2">
+                     <h4 className="font-medium">Available Entry Conditions</h4>
+                     <Tooltip>
+                       <TooltipTrigger>
+                         <Info className="w-4 h-4 text-muted-foreground" />
+                       </TooltipTrigger>
+                       <TooltipContent>
+                         <p className="max-w-xs">Click tiles to add them as rules. Each tile becomes a rule box below.</p>
+                       </TooltipContent>
+                     </Tooltip>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                     {getEntryTilesForStrategy(strategy.name).map(tile => {
+                       const isActive = entryConditions.some(condition => 
+                         condition.leftOperand === tile.defaultSeeds?.leftOperand &&
+                         condition.operator === tile.defaultSeeds?.operator
+                       );
+                       
+                       return (
+                         <button
+                           key={tile.id}
+                           onClick={() => {
+                             if (isActive) {
+                               // Remove the condition
+                               setEntryConditions(prev => prev.filter(condition => 
+                                 !(condition.leftOperand === tile.defaultSeeds?.leftOperand &&
+                                   condition.operator === tile.defaultSeeds?.operator)
+                               ));
+                             } else {
+                               // Add new condition if under cap
+                               if (entryConditions.length < 5) {
+                                 const newId = Date.now().toString();
+                                 setEntryConditions(prev => [...prev, {
+                                   id: newId,
+                                   operator: tile.defaultSeeds?.operator || 'is_above',
+                                   leftOperand: tile.defaultSeeds?.leftOperand || tile.operands[0],
+                                   rightOperand: tile.defaultSeeds?.rightOperand || tile.operands[1] || '',
+                                   enabled: true
+                                 }]);
+                               }
+                             }
+                           }}
+                           disabled={!isActive && entryConditions.length >= 5}
+                           className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                             isActive 
+                               ? 'border-primary bg-primary/10 text-primary' 
+                               : entryConditions.length >= 5
+                                 ? 'border-muted-foreground/20 bg-muted/50 text-muted-foreground cursor-not-allowed'
+                                 : 'border-border hover:border-primary hover:bg-primary/5 text-foreground'
+                           }`}
+                         >
+                           {tile.label}
+                         </button>
+                       );
+                     })}
+                   </div>
+                   
+                   {entryConditions.length >= 5 && (
+                     <div className="text-xs text-muted-foreground">
+                       Maximum 5 rules reached. Remove a rule to add more.
+                     </div>
+                   )}
+                 </div>
+
+                 {/* Entry Condition Rules */}
+                 <div className="space-y-4">
                   {entryConditions.map((condition, index) => (
                     <div key={condition.id} className="border rounded-lg p-4 bg-background/50">
                       <div className="flex items-center justify-between mb-3">
