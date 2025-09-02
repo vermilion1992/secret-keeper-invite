@@ -247,6 +247,51 @@ export function StepAdvancedSettings({
     }
   };
 
+  // Strategy-specific operand mapping
+  const getOperandsForStrategy = (strategyName: string) => {
+    const operandMap: Record<string, string[]> = {
+      'EMA Crossover Pro': ['EMA Fast', 'EMA Slow', 'Price'],
+      'MACD Cross': ['MACD Line', 'MACD Signal', 'MACD Histogram'],
+      'RSI Strategy': ['RSI', 'RSI Overbought (70)', 'RSI Oversold (30)', 'RSI Midline (50)'],
+      'CCI Strategy': ['CCI', '0-line', 'Overbought', 'Oversold'],
+      'Bollinger Band Strategy': ['Price', 'Upper Band', 'Lower Band', 'Middle Band'],
+      'Stochastic Strategy': ['%K', '%D', 'Overbought', 'Oversold'],
+      'VWAP Strategy': ['Price', 'VWAP'],
+      'OBV Strategy': ['OBV', 'OBV Moving Average'],
+      'Turbo K6': ['EMA Fast', 'EMA Slow', 'RSI', 'MACD Line', 'MACD Signal'],
+      'Hybrid Strategy': ['EMA Fast', 'EMA Slow', 'RSI', 'MACD Line'],
+      'Market Neutral': ['EMA Fast', 'EMA Slow', 'Price', 'RSI']
+    };
+    return operandMap[strategyName] || ['EMA Fast', 'EMA Slow', 'Price'];
+  };
+
+  // Get relevant indicators for the selected strategy
+  const getRelevantIndicators = (strategyName: string) => {
+    const indicatorMap: Record<string, string[]> = {
+      'EMA Crossover Pro': ['ema'],
+      'MACD Cross': ['macd'],
+      'RSI Strategy': ['rsi'],
+      'CCI Strategy': ['cci'],
+      'Bollinger Band Strategy': ['bb'],
+      'Stochastic Strategy': ['stoch'],
+      'VWAP Strategy': ['vwap'],
+      'OBV Strategy': ['obv'],
+      'Turbo K6': ['ema', 'rsi', 'macd'],
+      'Hybrid Strategy': ['ema', 'rsi', 'macd'],
+      'Market Neutral': ['ema', 'rsi']
+    };
+    return indicatorMap[strategyName] || ['ema'];
+  };
+
+  // Entry condition operators
+  const operators = [
+    { value: 'crosses_above', label: 'Crosses Above' },
+    { value: 'crosses_below', label: 'Crosses Below' },
+    { value: 'is_above', label: 'Is Above' },
+    { value: 'is_below', label: 'Is Below' },
+    { value: 'is_true', label: 'Is True' }
+  ];
+
   // Entry condition helpers
   const toggleEntryCondition = (condition: string) => {
     setActiveEntryConditions(prev => 
@@ -591,7 +636,7 @@ export function StepAdvancedSettings({
               </CardContent>
             </Card>
 
-            {/* 2. Entry Conditions - Tile-Based */}
+            {/* 2. Entry Conditions - Operator-Based Rule Builder */}
             <Card className="frosted">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -610,232 +655,111 @@ export function StepAdvancedSettings({
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Click tiles to add/remove conditions. Configure each independently.
+                  Create entry rules using operator logic. Click tiles to add/remove conditions.
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Core Condition Tiles */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {/* EMA Crossover Tile */}
-                  <div 
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
-                      activeEntryConditions.includes('ema_crossover')
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-card/50'
-                    }`}
-                    onClick={() => toggleEntryCondition('ema_crossover')}
+                {/* Add Rule Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setActiveEntryConditions(prev => [...prev, `rule_${prev.length + 1}`])}
+                    className="text-sm"
                   >
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <TrendingUp className="w-6 h-6 text-primary" />
-                      <div className="text-sm font-medium">EMA Crossover</div>
-                      <div className="text-xs text-muted-foreground">Fast/Slow crosses</div>
-                    </div>
-                  </div>
-
-                  {/* MACD Cross Tile */}
-                  <div 
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
-                      activeEntryConditions.includes('macd_cross')
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-card/50'
-                    }`}
-                    onClick={() => toggleEntryCondition('macd_cross')}
-                  >
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <BarChart3 className="w-6 h-6 text-primary" />
-                      <div className="text-sm font-medium">MACD Cross</div>
-                      <div className="text-xs text-muted-foreground">Line/Signal crosses</div>
-                    </div>
-                  </div>
-
-                  {/* RSI Threshold Tile */}
-                  <div 
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
-                      activeEntryConditions.includes('rsi_threshold')
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-card/50'
-                    }`}
-                    onClick={() => toggleEntryCondition('rsi_threshold')}
-                  >
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <Target className="w-6 h-6 text-primary" />
-                      <div className="text-sm font-medium">RSI Threshold</div>
-                      <div className="text-xs text-muted-foreground">Crosses 50 level</div>
-                    </div>
-                  </div>
-
-                  {/* Price vs MA Tile */}
-                  <div 
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all hover:border-primary/50 ${
-                      activeEntryConditions.includes('price_vs_ma')
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-card/50'
-                    }`}
-                    onClick={() => toggleEntryCondition('price_vs_ma')}
-                  >
-                    <div className="flex flex-col items-center space-y-2 text-center">
-                      <TrendingUp className="w-6 h-6 text-primary" />
-                      <div className="text-sm font-medium">Price vs MA</div>
-                      <div className="text-xs text-muted-foreground">Price crosses MA</div>
-                    </div>
-                  </div>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Entry Rule
+                  </Button>
                 </div>
 
-                {/* Active Conditions Configuration */}
+                {/* Entry Rules */}
                 {activeEntryConditions.length > 0 && (
                   <div className="space-y-4">
-                    {activeEntryConditions.map(condition => (
+                    {activeEntryConditions.map((condition, index) => (
                       <div key={condition} className="p-4 bg-accent/10 rounded-lg border border-accent/20">
-                        <div className="flex items-center justify-between mb-3">
-                          <Label className="font-medium capitalize">{condition.replace('_', ' ')}</Label>
+                        <div className="flex items-center justify-between mb-4">
+                          <Label className="font-medium">Rule {index + 1}</Label>
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => toggleEntryCondition(condition)}
+                            onClick={() => setActiveEntryConditions(prev => prev.filter(c => c !== condition))}
                             className="text-red-500 hover:text-red-600"
                           >
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
                         
-                        {/* Condition-specific parameters */}
-                        {condition === 'ema_crossover' && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label className="text-sm">Fast Length</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.ema_crossover.fast}
-                                onChange={(e) => updateEntryParam('ema_crossover', 'fast', Number(e.target.value))}
-                                min="5"
-                                max="100"
-                                className="bg-background/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm">Slow Length</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.ema_crossover.slow}
-                                onChange={(e) => updateEntryParam('ema_crossover', 'slow', Number(e.target.value))}
-                                min="10"
-                                max="200"
-                                className="bg-background/50"
-                              />
-                            </div>
+                        {/* Operator-based rule builder */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Left operand */}
+                          <div className="space-y-2">
+                            <Label className="text-sm">Left Operand</Label>
+                            <Select defaultValue={getOperandsForStrategy(strategy.name)[0]}>
+                              <SelectTrigger className="bg-background/50">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getOperandsForStrategy(strategy.name).map(operand => (
+                                  <SelectItem key={operand} value={operand.toLowerCase().replace(/\s+/g, '_')}>
+                                    {operand}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        )}
 
-                        {condition === 'macd_cross' && (
-                          <div className="grid grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                              <Label className="text-sm">Fast</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.macd_cross.fast}
-                                onChange={(e) => updateEntryParam('macd_cross', 'fast', Number(e.target.value))}
-                                min="5"
-                                max="50"
-                                className="bg-background/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm">Slow</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.macd_cross.slow}
-                                onChange={(e) => updateEntryParam('macd_cross', 'slow', Number(e.target.value))}
-                                min="10"
-                                max="100"
-                                className="bg-background/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm">Signal</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.macd_cross.signal}
-                                onChange={(e) => updateEntryParam('macd_cross', 'signal', Number(e.target.value))}
-                                min="3"
-                                max="20"
-                                className="bg-background/50"
-                              />
-                            </div>
+                          {/* Operator */}
+                          <div className="space-y-2">
+                            <Label className="text-sm">Operator</Label>
+                            <Select defaultValue="crosses_above">
+                              <SelectTrigger className="bg-background/50">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {operators.map(op => (
+                                  <SelectItem key={op.value} value={op.value}>
+                                    {op.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        )}
 
-                        {condition === 'rsi_threshold' && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label className="text-sm">RSI Length</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.rsi_threshold.length}
-                                onChange={(e) => updateEntryParam('rsi_threshold', 'length', Number(e.target.value))}
-                                min="5"
-                                max="50"
-                                className="bg-background/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm">Threshold Level</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.rsi_threshold.level}
-                                onChange={(e) => updateEntryParam('rsi_threshold', 'level', Number(e.target.value))}
-                                min="20"
-                                max="80"
-                                className="bg-background/50"
-                              />
-                            </div>
+                          {/* Right operand */}
+                          <div className="space-y-2">
+                            <Label className="text-sm">Right Operand</Label>
+                            <Select defaultValue={getOperandsForStrategy(strategy.name)[1] || getOperandsForStrategy(strategy.name)[0]}>
+                              <SelectTrigger className="bg-background/50">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getOperandsForStrategy(strategy.name).map(operand => (
+                                  <SelectItem key={operand} value={operand.toLowerCase().replace(/\s+/g, '_')}>
+                                    {operand}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        )}
+                        </div>
 
-                        {condition === 'price_vs_ma' && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label className="text-sm">MA Length</Label>
-                              <Input
-                                type="number"
-                                value={entryParams.price_vs_ma.length}
-                                onChange={(e) => updateEntryParam('price_vs_ma', 'length', Number(e.target.value))}
-                                min="10"
-                                max="200"
-                                className="bg-background/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-sm">MA Type</Label>
-                              <Select
-                                value={entryParams.price_vs_ma.type}
-                                onValueChange={(value) => updateEntryParam('price_vs_ma', 'type', value)}
-                              >
-                                <SelectTrigger className="bg-background/50">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="EMA">EMA</SelectItem>
-                                  <SelectItem value="SMA">SMA</SelectItem>
-                                  <SelectItem value="WMA">WMA</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        )}
+                        {/* Rule preview */}
+                        <div className="mt-3 p-2 bg-background/50 rounded text-sm text-muted-foreground">
+                          Preview: "If {getOperandsForStrategy(strategy.name)[0]} crosses above {getOperandsForStrategy(strategy.name)[1] || getOperandsForStrategy(strategy.name)[0]} → Bullish"
+                        </div>
                       </div>
                     ))}
 
-                    {/* Entry Logic and Direction */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border/30">
+                    {/* Entry Logic Controls */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border/30">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">Entry Logic</Label>
+                        <Label className="text-sm font-medium">Rule Joiner</Label>
                         <Select value={entryLogic} onValueChange={setEntryLogic}>
                           <SelectTrigger className="bg-background/50">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all_true">All conditions must be TRUE → enter LONG</SelectItem>
-                            <SelectItem value="any_true">Any condition TRUE → enter LONG</SelectItem>
+                            <SelectItem value="all_true">All conditions (AND)</SelectItem>
+                            <SelectItem value="any_true">Any condition (OR)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -851,6 +775,23 @@ export function StepAdvancedSettings({
                             <SelectItem value="both">Both (Long & Short)</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Inverse Logic</Label>
+                        <div className="flex items-center space-x-2 pt-2">
+                          <Switch id="inverse-logic" />
+                          <Label htmlFor="inverse-logic" className="text-sm">
+                            If inverse is true → enter Short
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Natural language summary */}
+                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                      <div className="text-sm">
+                        <span className="font-medium text-primary">Entry Logic: </span>
+                        "If {entryLogic === 'all_true' ? 'all conditions are' : 'any condition is'} true → enter {entryDirection === 'both' ? 'LONG. If inverse, enter SHORT' : entryDirection.toUpperCase()}"
                       </div>
                     </div>
                   </div>
