@@ -94,6 +94,8 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
 
   const handleStrategySelect = (strategy: Strategy) => {
     setSelectedStrategy(strategy);
+    // Clear filter indicators when strategy changes
+    setFilterIndicators([]);
   };
 
   const handleExport = (format: 'python' | 'json', botName: string) => {
@@ -197,7 +199,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                 />
               )}
 
-              {currentStep === 4 && (
+              {currentStep === 4 && selectedStrategy && (
                 <StepAdvancedSettings
                   strategy={selectedStrategy}
                   filterIndicators={filterIndicators}
