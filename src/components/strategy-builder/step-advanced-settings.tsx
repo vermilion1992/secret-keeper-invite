@@ -45,6 +45,8 @@ export function StepAdvancedSettings({
     cciLength: 20,
     atrLength: 14,
     bbPeriod: 20,
+    // Default Entry Condition
+    defaultEntryCondition: 'ema_cross_above',
     // Advanced strategy settings
     indicatorSource: 'close',
     maType: 'EMA',
@@ -53,7 +55,15 @@ export function StepAdvancedSettings({
     smoothingLength: 3,
     entryConfirmation: false,
     tradeDirection: 'both',
-    reentryBars: 1
+    reentryBars: 1,
+    // Advanced Entry Logic
+    entryMode: 'default',
+    entryRules: [{ type: 'ema_cross', operator: 'cross_up', param1: 20, param2: 50 }],
+    entryJoiner: 'AND',
+    confirmBars: 1,
+    htfConfirm: false,
+    minBetweenEntries: 1,
+    oneTradePerSession: false
   });
 
   const [exitSettings, setExitSettings] = useState({
@@ -99,6 +109,7 @@ export function StepAdvancedSettings({
     cciLength: 20,
     atrLength: 14,
     bbPeriod: 20,
+    defaultEntryCondition: 'ema_cross_above',
     indicatorSource: 'close',
     maType: 'EMA',
     rsiOverbought: 70,
@@ -106,7 +117,14 @@ export function StepAdvancedSettings({
     smoothingLength: 3,
     entryConfirmation: false,
     tradeDirection: 'both',
-    reentryBars: 1
+    reentryBars: 1,
+    entryMode: 'default',
+    entryRules: [{ type: 'ema_cross', operator: 'cross_up', param1: 20, param2: 50 }],
+    entryJoiner: 'AND',
+    confirmBars: 1,
+    htfConfirm: false,
+    minBetweenEntries: 1,
+    oneTradePerSession: false
   };
 
   const defaultExitSettings = {
@@ -153,7 +171,8 @@ export function StepAdvancedSettings({
           rsiLength: defaultStrategySettings.rsiLength,
           macdFast: defaultStrategySettings.macdFast,
           macdSlow: defaultStrategySettings.macdSlow,
-          macdSignal: defaultStrategySettings.macdSignal
+          macdSignal: defaultStrategySettings.macdSignal,
+          defaultEntryCondition: defaultStrategySettings.defaultEntryCondition
         }));
         break;
       case 'strategyAdvanced':
@@ -172,11 +191,39 @@ export function StepAdvancedSettings({
     }
   };
 
+  // Add entry rule helpers
+  const addEntryRule = () => {
+    const newRule = { type: 'ema_cross', operator: 'cross_up', param1: 20, param2: 50 };
+    setStrategySettings(prev => ({
+      ...prev,
+      entryRules: [...prev.entryRules, newRule]
+    }));
+  };
+
+  const removeEntryRule = (index: number) => {
+    setStrategySettings(prev => ({
+      ...prev,
+      entryRules: prev.entryRules.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateEntryRule = (index: number, field: string, value: any) => {
+    setStrategySettings(prev => ({
+      ...prev,
+      entryRules: prev.entryRules.map((rule, i) => 
+        i === index ? { ...rule, [field]: value } : rule
+      )
+    }));
+  };
+
   // Conflict detection
   const hasConflicts = () => {
     const conflicts = [];
     if (exitSettings.atrStopEnabled && exitSettings.stopLoss > 0) {
       conflicts.push("ATR Stop Loss conflicts with Fixed Stop Loss");
+    }
+    if (strategySettings.entryMode === 'custom') {
+      conflicts.push("Using custom entry rules. Default entry condition is disabled.");
     }
     return conflicts;
   };
@@ -379,6 +426,100 @@ export function StepAdvancedSettings({
                     />
                   </div>
                 </div>
+
+                {/* Default Entry Condition */}
+                <div className="space-y-3 pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-2">
+                    <Label className="font-medium">Default Entry Condition</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Simple trigger for entries. Signal occurs on bar close of the condition.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Select 
+                    value={strategySettings.defaultEntryCondition} 
+                    onValueChange={(value) => updateStrategySetting('defaultEntryCondition', value)}
+                    disabled={strategySettings.entryMode === 'custom'}
+                  >
+                    <SelectTrigger className={`bg-background/50 ${strategySettings.entryMode === 'custom' ? 'opacity-50' : ''}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ema_cross_above">
+                        <div className="space-y-1">
+                          <div>EMA Fast crosses above EMA Slow (Bull)</div>
+                          <div className="text-xs text-muted-foreground">Classic bullish crossover signal</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ema_cross_below">
+                        <div className="space-y-1">
+                          <div>EMA Fast crosses below EMA Slow (Bear)</div>
+                          <div className="text-xs text-muted-foreground">Classic bearish crossover signal</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="macd_cross_above">
+                        <div className="space-y-1">
+                          <div>MACD line crosses above signal (Bull)</div>
+                          <div className="text-xs text-muted-foreground">MACD bullish momentum shift</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="macd_cross_below">
+                        <div className="space-y-1">
+                          <div>MACD line crosses below signal (Bear)</div>
+                          <div className="text-xs text-muted-foreground">MACD bearish momentum shift</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rsi_above_50">
+                        <div className="space-y-1">
+                          <div>RSI crosses above 50 (Bull)</div>
+                          <div className="text-xs text-muted-foreground">Simple trend bias confirmation</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rsi_below_50">
+                        <div className="space-y-1">
+                          <div>RSI crosses below 50 (Bear)</div>
+                          <div className="text-xs text-muted-foreground">Simple trend bias confirmation</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="price_above_ma">
+                        <div className="space-y-1">
+                          <div>Price crosses above selected MA</div>
+                          <div className="text-xs text-muted-foreground">Price breaks above moving average</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="price_below_ma">
+                        <div className="space-y-1">
+                          <div>Price crosses below selected MA</div>
+                          <div className="text-xs text-muted-foreground">Price breaks below moving average</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="channel_breakout_up">
+                        <div className="space-y-1">
+                          <div>Close breaks above HH(n)</div>
+                          <div className="text-xs text-muted-foreground">Channel breakout upward</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="channel_breakout_down">
+                        <div className="space-y-1">
+                          <div>Close breaks below LL(n)</div>
+                          <div className="text-xs text-muted-foreground">Channel breakout downward</div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {strategySettings.entryMode === 'custom' && (
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Using custom entry rules. Default entry condition is disabled.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -411,6 +552,277 @@ export function StepAdvancedSettings({
               
               <CollapsibleContent>
                 <div className="space-y-4 mt-4">
+                  {/* Entry Logic (Advanced) */}
+                  <Card className="frosted">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">Entry Logic (Advanced)</CardTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setStrategySettings(prev => ({
+                              ...prev,
+                              entryMode: defaultStrategySettings.entryMode,
+                              entryRules: defaultStrategySettings.entryRules,
+                              entryJoiner: defaultStrategySettings.entryJoiner,
+                              confirmBars: defaultStrategySettings.confirmBars,
+                              htfConfirm: defaultStrategySettings.htfConfirm,
+                              tradeDirection: defaultStrategySettings.tradeDirection,
+                              minBetweenEntries: defaultStrategySettings.minBetweenEntries,
+                              oneTradePerSession: defaultStrategySettings.oneTradePerSession
+                            }));
+                          }}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Return to Default
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Build multi-condition entries with AND/OR and confirmation windows
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Entry Mode */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Label className="font-medium">Entry Mode</Label>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="w-4 h-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Choose between simple default entry or custom multi-condition rules.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Select value={strategySettings.entryMode} onValueChange={(value) => updateStrategySetting('entryMode', value)}>
+                          <SelectTrigger className="bg-background/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Use Default Entry</SelectItem>
+                            <SelectItem value="custom">Custom Rules (AND/OR)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Custom Entry Rules */}
+                      {strategySettings.entryMode === 'custom' && (
+                        <div className="space-y-4 p-4 border border-border/50 rounded-lg bg-background/30">
+                          <div className="flex items-center justify-between">
+                            <Label className="font-medium">Entry Rules</Label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={addEntryRule}
+                              className="text-xs"
+                            >
+                              Add Rule
+                            </Button>
+                          </div>
+                          
+                          {strategySettings.entryRules.map((rule, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 border border-border/30 rounded-md bg-background/20">
+                              <Select value={rule.type} onValueChange={(value) => updateEntryRule(index, 'type', value)}>
+                                <SelectTrigger className="w-40">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="ema_cross">EMA Cross</SelectItem>
+                                  <SelectItem value="macd_cross">MACD Cross</SelectItem>
+                                  <SelectItem value="rsi_threshold">RSI Threshold</SelectItem>
+                                  <SelectItem value="price_vs_ma">Price vs MA</SelectItem>
+                                  <SelectItem value="channel_breakout">Channel Breakout</SelectItem>
+                                  <SelectItem value="volume_sma">Volume {'>'} SMA</SelectItem>
+                                  <SelectItem value="atr_threshold">ATR {'>'} Threshold</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              <Select value={rule.operator} onValueChange={(value) => updateEntryRule(index, 'operator', value)}>
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="cross_up">Cross Up</SelectItem>
+                                  <SelectItem value="cross_down">Cross Down</SelectItem>
+                                  <SelectItem value=">">{'>'}</SelectItem>
+                                  <SelectItem value="<">{'<'}</SelectItem>
+                                  <SelectItem value=">=">{'>='}</SelectItem>
+                                  <SelectItem value="<=">{' <='}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              <Input
+                                type="number"
+                                value={rule.param1}
+                                onChange={(e) => updateEntryRule(index, 'param1', Number(e.target.value))}
+                                className="w-20"
+                                placeholder="P1"
+                              />
+                              
+                              <Input
+                                type="number"
+                                value={rule.param2}
+                                onChange={(e) => updateEntryRule(index, 'param2', Number(e.target.value))}
+                                className="w-20"
+                                placeholder="P2"
+                              />
+                              
+                              {strategySettings.entryRules.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeEntryRule(index)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+
+                          {strategySettings.entryRules.length > 1 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Label className="font-medium">Rule Joiner</Label>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="w-4 h-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs">AND requires all rules to be true. OR requires any rule to be true.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <Select value={strategySettings.entryJoiner} onValueChange={(value) => updateStrategySetting('entryJoiner', value)}>
+                                <SelectTrigger className="w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="AND">AND</SelectItem>
+                                  <SelectItem value="OR">OR</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Label className="font-medium">Confirm Bars</Label>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="w-4 h-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs">Condition must be true for X bars before entry.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <Input
+                                type="number"
+                                value={strategySettings.confirmBars}
+                                onChange={(e) => updateStrategySetting('confirmBars', Number(e.target.value))}
+                                min="1"
+                                max="10"
+                                className="bg-background/50"
+                              />
+                            </div>
+
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Label className="font-medium">HTF Confirm</Label>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="w-4 h-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="max-w-xs">Require higher timeframe trend confirmation (configured on Timeframe page).</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <Switch
+                                checked={strategySettings.htfConfirm}
+                                onCheckedChange={(checked) => updateStrategySetting('htfConfirm', checked)}
+                              />
+                              {strategySettings.htfConfirm && (
+                                <p className="text-xs text-muted-foreground">Configured on Timeframe page</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Direction & Re-entry */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label className="font-medium">Trade Direction</Label>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="w-4 h-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">Restrict trading to long only, short only, or both directions.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <Select value={strategySettings.tradeDirection} onValueChange={(value) => updateStrategySetting('tradeDirection', value)}>
+                            <SelectTrigger className="bg-background/50">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="both">Both</SelectItem>
+                              <SelectItem value="long">Long Only</SelectItem>
+                              <SelectItem value="short">Short Only</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label className="font-medium">Min Bars Between</Label>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="w-4 h-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">Minimum bars required between entries to prevent overtrading.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <Input
+                            type="number"
+                            value={strategySettings.minBetweenEntries}
+                            onChange={(e) => updateStrategySetting('minBetweenEntries', Number(e.target.value))}
+                            min="1"
+                            max="100"
+                            className="bg-background/50"
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label className="font-medium">One Trade Per Session</Label>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Info className="w-4 h-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">Limit to one trade per trading session/day.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <Switch
+                            checked={strategySettings.oneTradePerSession}
+                            onCheckedChange={(checked) => updateStrategySetting('oneTradePerSession', checked)}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <Card className="frosted">
                     <CardHeader>
                       <CardTitle className="text-base">Indicator Configuration</CardTitle>
