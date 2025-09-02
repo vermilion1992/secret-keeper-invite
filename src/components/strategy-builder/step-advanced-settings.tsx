@@ -169,229 +169,135 @@ export function StepAdvancedSettings({
     exitPriority: 'tp_first'
   };
 
-  // Load configuration from JSON file
-  const [strategyConfig, setStrategyConfig] = useState<any>(null);
-  
+  // Global config state
+  const [BF_CONFIG, setBF_CONFIG] = useState<any>(null);
+
+  // Load the JSON config once
   useEffect(() => {
     const loadConfig = async () => {
       try {
         const response = await fetch('/botforge_combined_config.json');
         const config = await response.json();
-        setStrategyConfig(config);
+        setBF_CONFIG(config);
+        
+        // Store globally for easy access
+        (window as any).BF_CONFIG = config;
       } catch (error) {
-        console.error('Failed to load strategy config:', error);
-        // Fallback to inline config if JSON fails
-        setStrategyConfig({ strategies: FALLBACK_CONFIG });
+        console.error('Failed to load BF config:', error);
       }
     };
     loadConfig();
   }, []);
 
-  // Fallback configuration in case JSON fails to load
-  const FALLBACK_CONFIG: Record<string, { 
-    indicators: string[], 
-    entryTiles: Array<{ id: string, name: string, operands: string[], defaultSeeds?: any }> 
-  }> = {
-    'EMA Crossover Pro': {
-      indicators: ['ema'],
-      entryTiles: [
-        { 
-          id: 'ema_cross_up', 
-          name: 'EMA Cross Up', 
-          operands: ['EMA Fast', 'EMA Slow'],
-          defaultSeeds: { operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
-        },
-        { 
-          id: 'ema_cross_down', 
-          name: 'EMA Cross Down', 
-          operands: ['EMA Fast', 'EMA Slow'],
-          defaultSeeds: { operator: 'crosses_below', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
-        }
-      ]
-    },
-    'SMA Crossover': {
-      indicators: ['sma'],
-      entryTiles: [
-        { 
-          id: 'sma_cross_up', 
-          name: 'SMA Cross Up', 
-          operands: ['SMA Fast', 'SMA Slow'],
-          defaultSeeds: { operator: 'crosses_above', leftOperand: 'SMA Fast', rightOperand: 'SMA Slow' }
-        }
-      ]
-    },
-    'RSI Bias': {
-      indicators: ['rsi'],
-      entryTiles: [
-        { 
-          id: 'rsi_oversold', 
-          name: 'RSI Oversold', 
-          operands: ['RSI', 'RSI Oversold'],
-          defaultSeeds: { operator: 'crosses_below', leftOperand: 'RSI', rightOperand: 'RSI Oversold' }
-        },
-        { 
-          id: 'rsi_overbought', 
-          name: 'RSI Overbought', 
-          operands: ['RSI', 'RSI Overbought'],
-          defaultSeeds: { operator: 'crosses_above', leftOperand: 'RSI', rightOperand: 'RSI Overbought' }
-        }
-      ]
-    },
-    'MACD Cross': {
-      indicators: ['macd'],
-      entryTiles: [
-        { 
-          id: 'macd_bullish', 
-          name: 'MACD Bullish', 
-          operands: ['MACD Line', 'MACD Signal'],
-          defaultSeeds: { operator: 'crosses_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
-        },
-        { 
-          id: 'macd_bearish', 
-          name: 'MACD Bearish', 
-          operands: ['MACD Line', 'MACD Signal'],
-          defaultSeeds: { operator: 'crosses_below', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
-        }
-      ]
-    },
-    'MACD + RSI Swing': {
-      indicators: ['macd', 'rsi'],
-      entryTiles: [
-        { 
-          id: 'macd_cross_up', 
-          name: 'MACD Cross Up', 
-          operands: ['MACD Line', 'MACD Signal'],
-          defaultSeeds: { operator: 'crosses_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
-        },
-        { 
-          id: 'rsi_not_extreme', 
-          name: 'RSI Not Extreme', 
-          operands: ['RSI', 'RSI Overbought', 'RSI Oversold'],
-          defaultSeeds: { operator: 'is_below', leftOperand: 'RSI', rightOperand: 'RSI Overbought' }
-        }
-      ]
-    },
-    'Hybrid Momentum': {
-      indicators: ['ema', 'rsi', 'macd', 'breadth'],
-      entryTiles: [
-        { 
-          id: 'ema_trend_up', 
-          name: 'EMA Trend Up', 
-          operands: ['EMA Fast', 'EMA Slow'],
-          defaultSeeds: { operator: 'is_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow' }
-        },
-        { 
-          id: 'rsi_momentum', 
-          name: 'RSI Momentum', 
-          operands: ['RSI', 'RSI_50'],
-          defaultSeeds: { operator: 'is_above', leftOperand: 'RSI', rightOperand: 'RSI_50' }
-        },
-        { 
-          id: 'macd_positive', 
-          name: 'MACD Positive', 
-          operands: ['MACD Line', 'MACD Signal'],
-          defaultSeeds: { operator: 'is_above', leftOperand: 'MACD Line', rightOperand: 'MACD Signal' }
-        },
-        { 
-          id: 'breadth_ok', 
-          name: 'Market Breadth OK', 
-          operands: ['Breadth_ok'],
-          defaultSeeds: { operator: 'is_true', leftOperand: 'Breadth_ok', rightOperand: '' }
-        }
-      ]
-    },
-    'Market Breadth Gate': {
-      indicators: ['breadth'],
-      entryTiles: [
-        { 
-          id: 'breadth_positive', 
-          name: 'Market Breadth Positive', 
-          operands: ['Breadth_ok'],
-          defaultSeeds: { operator: 'is_true', leftOperand: 'Breadth_ok', rightOperand: '' }
-        }
-      ]
-    },
-    'Market Neutral': {
-      indicators: ['rank', 'spread'],
-      entryTiles: [
-        { 
-          id: 'rank_long', 
-          name: 'Top Ranked for Long', 
-          operands: ['Rank_long_topN'],
-          defaultSeeds: { operator: 'is_true', leftOperand: 'Rank_long_topN', rightOperand: '' }
-        },
-        { 
-          id: 'rank_short', 
-          name: 'Bottom Ranked for Short', 
-          operands: ['Rank_short_bottomN'],
-          defaultSeeds: { operator: 'is_true', leftOperand: 'Rank_short_bottomN', rightOperand: '' }
-        },
-        { 
-          id: 'spread_score', 
-          name: 'Spread Score OK', 
-          operands: ['Spread_score'],
-          defaultSeeds: { operator: 'is_above', leftOperand: 'Spread_score', rightOperand: '0' }
-        }
-      ]
-    }
+  // Get selected strategy key from global or localStorage
+  const getSelectedStrategyKey = () => {
+    const globalKey = (window as any).selectedStrategyKey;
+    const localKey = localStorage.getItem('bf_selected_strategy');
+    return globalKey || localKey || null;
   };
 
   // Get strategy-specific operands from loaded config
-  const getOperandsForStrategy = (strategyName: string) => {
-    const configData = strategyConfig?.strategies || FALLBACK_CONFIG;
-    const config = configData[strategyName];
+  const getOperandsForStrategy = (strategyKey: string) => {
+    if (!BF_CONFIG?.strategies) return ['EMA Fast', 'EMA Slow', 'Price'];
+    
+    const config = BF_CONFIG.strategies[strategyKey];
     if (!config) return ['EMA Fast', 'EMA Slow', 'Price'];
     
     // Collect all unique operands from tiles
     const operands = new Set<string>();
-    config.entryTiles.forEach((tile: any) => {
-      tile.operands.forEach((operand: string) => operands.add(operand));
+    config.entryTiles?.forEach((tile: any) => {
+      tile.operands?.forEach((operand: string) => operands.add(operand));
     });
     return Array.from(operands);
   };
 
   // Get relevant indicators for the selected strategy
-  const getRelevantIndicators = (strategyName: string) => {
-    const configData = strategyConfig?.strategies || FALLBACK_CONFIG;
-    const config = configData[strategyName];
+  const getRelevantIndicators = (strategyKey: string) => {
+    if (!BF_CONFIG?.strategies) return ['ema'];
+    
+    const config = BF_CONFIG.strategies[strategyKey];
     return config?.indicators || ['ema'];
   };
 
   // Get entry tiles for the selected strategy
-  const getEntryTilesForStrategy = (strategyName: string) => {
-    const configData = strategyConfig?.strategies || FALLBACK_CONFIG;
-    const config = configData[strategyName];
+  const getEntryTilesForStrategy = (strategyKey: string) => {
+    if (!BF_CONFIG?.strategies) return [];
+    
+    const config = BF_CONFIG.strategies[strategyKey];
     return config?.entryTiles || [];
   };
 
-  // Entry condition operators with tooltips
-  const operators = [
-    { 
-      value: 'crosses_above', 
-      label: 'Crosses Above',
-      tooltip: 'Triggers when left-hand series moves from below to above right-hand series on bar close.'
-    },
-    { 
-      value: 'crosses_below', 
-      label: 'Crosses Below',
-      tooltip: 'Triggers when left-hand series moves from above to below right-hand series on bar close.'
-    },
-    { 
-      value: 'is_above', 
-      label: 'Is Above',
-      tooltip: 'True when left-hand value is greater than right-hand value.'
-    },
-    { 
-      value: 'is_below', 
-      label: 'Is Below',
-      tooltip: 'True when left-hand value is less than right-hand value.'
-    },
-    { 
-      value: 'is_true', 
-      label: 'Is True',
-      tooltip: 'Used for yes/no signals, e.g., MACD Histogram > 0 or Breadth_ok.'
+  // Get operators from global config
+  const getAvailableOperators = () => {
+    return BF_CONFIG?.global?.operators || [
+      { 
+        value: 'crosses_above', 
+        label: 'Crosses Above',
+        tooltip: 'Triggers when left-hand series moves from below to above right-hand series on bar close.'
+      },
+      { 
+        value: 'crosses_below', 
+        label: 'Crosses Below',
+        tooltip: 'Triggers when left-hand series moves from above to below right-hand series on bar close.'
+      },
+      { 
+        value: 'is_above', 
+        label: 'Is Above',
+        tooltip: 'True when left-hand value is greater than right-hand value.'
+      },
+      { 
+        value: 'is_below', 
+        label: 'Is Below',
+        tooltip: 'True when left-hand value is less than right-hand value.'
+      },
+      { 
+        value: 'is_true', 
+        label: 'Is True',
+        tooltip: 'Used for yes/no signals, e.g., MACD Histogram > 0 or Breadth_ok.'
+      }
+    ];
+  };
+
+  // Get rule cap from global config
+  const getRuleCap = () => {
+    return BF_CONFIG?.global?.ruleCap || 5;
+  };
+
+  // Initialize default seeds when strategy changes
+  useEffect(() => {
+    const strategyKey = getSelectedStrategyKey();
+    if (strategyKey && BF_CONFIG?.strategies) {
+      const config = BF_CONFIG.strategies[strategyKey];
+      if (config?.defaultSeeds && config.defaultSeeds.length > 0) {
+        // Convert defaultSeeds to entry conditions
+        const defaultConditions = config.defaultSeeds.slice(0, getRuleCap()).map((seed: any, index: number) => ({
+          id: (index + 1).toString(),
+          operator: seed.operator || 'crosses_above',
+          leftOperand: seed.leftOperand || 'EMA Fast',
+          rightOperand: seed.rightOperand || 'EMA Slow',
+          enabled: true
+        }));
+        
+        setEntryConditions(defaultConditions);
+      } else {
+        // Fallback to first tile's default seeds
+        const tiles = getEntryTilesForStrategy(strategyKey);
+        if (tiles.length > 0) {
+          const firstTile = tiles[0];
+          setEntryConditions([{
+            id: '1',
+            operator: firstTile.defaultSeeds?.operator || 'crosses_above',
+            leftOperand: firstTile.defaultSeeds?.leftOperand || firstTile.operands?.[0] || 'EMA Fast',
+            rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands?.[1] || 'EMA Slow',
+            enabled: true
+          }]);
+        }
+      }
     }
-  ];
+  }, [BF_CONFIG, strategy?.name]);
+
+  // Entry condition operators with tooltips
+  const operators = getAvailableOperators();
 
   const updateStrategySetting = (key: string, value: any) => {
     setStrategySettings(prev => ({ ...prev, [key]: value }));
@@ -424,7 +330,8 @@ export function StepAdvancedSettings({
       case 'entry':
         // Reset to first tile's defaultSeeds for the current strategy
         if (strategy) {
-          const tiles = getEntryTilesForStrategy(strategy.name);
+          const strategyKey = getSelectedStrategyKey();
+          const tiles = strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
           if (tiles.length > 0) {
             const firstTile = tiles[0];
             setEntryConditions([{
@@ -471,7 +378,8 @@ export function StepAdvancedSettings({
 
   const addEntryCondition = () => {
     const newId = Date.now().toString();
-    const availableOperands = getOperandsForStrategy(strategy?.name || '');
+    const strategyKey = getSelectedStrategyKey();
+    const availableOperands = strategyKey ? getOperandsForStrategy(strategyKey) : ['EMA Fast', 'EMA Slow'];
     setEntryConditions(prev => [...prev, {
       id: newId,
       operator: 'is_above',
@@ -508,7 +416,8 @@ export function StepAdvancedSettings({
   // Initialize entry conditions when strategy changes
   useEffect(() => {
     if (strategy) {
-      const tiles = getEntryTilesForStrategy(strategy.name);
+      const strategyKey = getSelectedStrategyKey();
+      const tiles = strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
       if (tiles.length > 0) {
         const firstTile = tiles[0];
         setEntryConditions([{
@@ -578,7 +487,10 @@ export function StepAdvancedSettings({
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Only show indicator panels that are relevant to the selected strategy */}
-                {getRelevantIndicators(strategy.name).includes('ema') && (
+                {(() => {
+                  const strategyKey = getSelectedStrategyKey();
+                  return strategyKey && getRelevantIndicators(strategyKey).includes('ema');
+                })() && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
@@ -668,7 +580,10 @@ export function StepAdvancedSettings({
                 )}
 
                 {/* RSI Settings - only show for strategies that use RSI */}
-                {getRelevantIndicators(strategy.name).includes('rsi') && (
+                {(() => {
+                  const strategyKey = getSelectedStrategyKey();
+                  return strategyKey && getRelevantIndicators(strategyKey).includes('rsi');
+                })() && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
@@ -739,7 +654,10 @@ export function StepAdvancedSettings({
                 )}
 
                 {/* MACD Settings */}
-                {getRelevantIndicators(strategy.name).includes('macd') && (
+                {(() => {
+                  const strategyKey = getSelectedStrategyKey();
+                  return strategyKey && getRelevantIndicators(strategyKey).includes('macd');
+                })() && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
@@ -876,7 +794,10 @@ export function StepAdvancedSettings({
                    </div>
                    
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                     {getEntryTilesForStrategy(strategy.name).map(tile => {
+                     {(() => {
+                       const strategyKey = getSelectedStrategyKey();
+                       return strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
+                     })().map(tile => {
                        // Check if this tile's rule already exists (prevent duplicates)
                        const isActive = entryConditions.some(condition => 
                          condition.leftOperand === tile.defaultSeeds?.leftOperand &&
@@ -897,38 +818,38 @@ export function StepAdvancedSettings({
                                ));
                              } else {
                                // Add new condition if under cap and not duplicate
-                               if (entryConditions.length < 5) {
-                                 const newId = Date.now().toString();
-                                 setEntryConditions(prev => [...prev, {
-                                   id: newId,
-                                   operator: tile.defaultSeeds?.operator || 'is_above',
-                                   leftOperand: tile.defaultSeeds?.leftOperand || tile.operands[0],
-                                   rightOperand: tile.defaultSeeds?.rightOperand || tile.operands[1] || '',
-                                   enabled: true
-                                 }]);
-                               }
-                             }
-                           }}
-                           disabled={!isActive && entryConditions.length >= 5}
-                           className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                             isActive 
-                               ? 'border-primary bg-primary/10 text-primary' 
-                               : entryConditions.length >= 5
-                                 ? 'border-muted-foreground/20 bg-muted/50 text-muted-foreground cursor-not-allowed'
-                                 : 'border-border hover:border-primary hover:bg-primary/5 text-foreground'
-                           }`}
+                                if (entryConditions.length < getRuleCap()) {
+                                  const newId = Date.now().toString();
+                                  setEntryConditions(prev => [...prev, {
+                                    id: newId,
+                                    operator: tile.defaultSeeds?.operator || 'is_above',
+                                    leftOperand: tile.defaultSeeds?.leftOperand || tile.operands?.[0] || '',
+                                    rightOperand: tile.defaultSeeds?.rightOperand || tile.operands?.[1] || '',
+                                    enabled: true
+                                  }]);
+                                }
+                              }
+                            }}
+                            disabled={!isActive && entryConditions.length >= getRuleCap()}
+                            className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                              isActive 
+                                ? 'border-primary bg-primary/10 text-primary' 
+                                : entryConditions.length >= getRuleCap()
+                                  ? 'border-muted-foreground/20 bg-muted/50 text-muted-foreground cursor-not-allowed'
+                                  : 'border-border hover:border-primary hover:bg-primary/5 text-foreground'
+                            }`}
                          >
-                           {tile.label}
+                           {tile.name || tile.label}
                          </button>
                        );
                      })}
                    </div>
                    
-                   {entryConditions.length >= 5 && (
-                     <div className="text-xs text-muted-foreground">
-                       Maximum 5 rules reached. Remove a rule to add more.
-                     </div>
-                   )}
+                    {entryConditions.length >= getRuleCap() && (
+                      <div className="text-xs text-muted-foreground">
+                        Maximum {getRuleCap()} rules reached. Remove a rule to add more.
+                      </div>
+                    )}
                  </div>
 
                  {/* Entry Condition Rules */}
@@ -960,7 +881,10 @@ export function StepAdvancedSettings({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {getOperandsForStrategy(strategy.name).map(operand => (
+                              {(() => {
+                                const strategyKey = getSelectedStrategyKey();
+                                return strategyKey ? getOperandsForStrategy(strategyKey) : ['EMA Fast', 'EMA Slow'];
+                              })().map(operand => (
                                 <SelectItem key={operand} value={operand}>{operand}</SelectItem>
                               ))}
                             </SelectContent>
@@ -1003,7 +927,10 @@ export function StepAdvancedSettings({
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {getOperandsForStrategy(strategy.name).map(operand => (
+                              {(() => {
+                                const strategyKey = getSelectedStrategyKey();
+                                return strategyKey ? getOperandsForStrategy(strategyKey) : ['EMA Fast', 'EMA Slow'];
+                              })().map(operand => (
                                 <SelectItem key={operand} value={operand}>{operand}</SelectItem>
                               ))}
                             </SelectContent>

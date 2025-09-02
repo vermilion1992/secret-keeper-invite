@@ -476,6 +476,19 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
     const Icon = strategy.icon;
     const isSelected = selected?.id === strategy.id;
 
+    const handleStrategyClick = () => {
+      if (!isLocked) {
+        // Store strategy key globally and in localStorage
+        const strategyKey = strategy.id.replace(/-/g, '_'); // Convert kebab-case to snake_case
+        localStorage.setItem('bf_selected_strategy', strategyKey);
+        
+        // Also store in a global variable for immediate access
+        (window as any).selectedStrategyKey = strategyKey;
+        
+        openModal({...strategy, type: 'strategy'});
+      }
+    };
+
     return (
       <TooltipProvider key={strategy.id}>
         <Card 
@@ -484,7 +497,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
             ? 'ring-2 ring-success border-success bg-success/10'
             : 'hover:border-primary hover:bg-primary/10'
           }`}
-          onClick={() => !isLocked && openModal({...strategy, type: 'strategy'})}
+          onClick={handleStrategyClick}
         >
           {isLocked && (
             <div className="absolute top-2 right-2 z-10">
