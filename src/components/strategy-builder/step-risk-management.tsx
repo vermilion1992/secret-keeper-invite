@@ -34,6 +34,36 @@ export function StepRiskManagement({
   const canUseTrailing = tierAccess.canUseTrailingTP;
   const isPerps = marketType === 'perps';
 
+  const defaultRiskSettings = {
+    capitalAllocation: 1.5,
+    leverageMultiplier: 2,
+    percentPerTrade: 3,
+    stopLoss: 5,
+    takeProfit: 10.0,
+    trailingTakeProfit: 2.0
+  };
+
+  const resetToDefault = (section: 'core' | 'all') => {
+    if (section === 'core') {
+      onUpdate({
+        ...riskManagement,
+        capitalAllocation: defaultRiskSettings.capitalAllocation,
+        leverageMultiplier: defaultRiskSettings.leverageMultiplier,
+        percentPerTrade: defaultRiskSettings.percentPerTrade,
+        stopLoss: defaultRiskSettings.stopLoss
+      });
+    } else {
+      onUpdate({
+        capitalAllocation: defaultRiskSettings.capitalAllocation,
+        leverageMultiplier: defaultRiskSettings.leverageMultiplier,
+        percentPerTrade: defaultRiskSettings.percentPerTrade,
+        stopLoss: defaultRiskSettings.stopLoss,
+        takeProfit: defaultRiskSettings.takeProfit,
+        trailingTakeProfit: defaultRiskSettings.trailingTakeProfit
+      });
+    }
+  };
+
   const updateField = (field: keyof RiskManagement, value: number) => {
     onUpdate({ ...riskManagement, [field]: value });
   };
@@ -54,10 +84,20 @@ export function StepRiskManagement({
         {/* Default Settings - Always Visible */}
         <Card className="frosted">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <DollarSign className="w-5 h-5 text-primary" />
-              Core Risk Parameters
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <DollarSign className="w-5 h-5 text-primary" />
+                Core Risk Parameters
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => resetToDefault('core')}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Return to Default
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -179,6 +219,14 @@ export function StepRiskManagement({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Advanced Risk Controls</CardTitle>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => resetToDefault('all')}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Reset All
+                    </Button>
                     <Badge variant="outline">Expert Settings</Badge>
                     <ChevronDown className={`w-4 h-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
                   </div>

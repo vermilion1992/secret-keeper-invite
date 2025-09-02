@@ -173,6 +173,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   selected={selectedMarketType}
                   onSelect={handleMarketTypeSelect}
                   onNext={handleNext}
+                  onPrevious={currentStep > 1 ? handlePrevious : undefined}
                 />
               )}
               
@@ -181,6 +182,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   selected={selectedPairTemplate}
                   onSelect={handlePairTemplateSelect}
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                   userTier={userTier}
                 />
               )}
@@ -190,6 +192,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   selected={selectedStrategy}
                   onSelect={handleStrategySelect}
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                   userTier={userTier}
                 />
               )}
@@ -228,6 +231,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
               {currentStep === 7 && (
                 <StepBacktest
                   onNext={handleNext}
+                  onPrevious={handlePrevious}
                   onRunBacktest={handleRunBacktest}
                 />
               )}
@@ -237,6 +241,7 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
                   backtestResult={{} as any}
                   onExport={handleExport}
                   onShare={handleShare}
+                  onPrevious={handlePrevious}
                 />
               )}
 

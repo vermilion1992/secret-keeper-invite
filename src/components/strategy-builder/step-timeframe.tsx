@@ -29,6 +29,25 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext, onPrevious }: 
   const [higherTimeframe, setHigherTimeframe] = useState('1d');
   const [executionTiming, setExecutionTiming] = useState('bar_close');
 
+  const defaultTimeframeSettings = {
+    timeframe: '1h' as Timeframe,
+    maxPeriod: 365,
+    candleCount: 365
+  };
+
+  const resetToDefault = (section: 'primary' | 'all') => {
+    if (section === 'primary') {
+      onUpdate(defaultTimeframeSettings);
+      setSelectedPeriod(365);
+    } else {
+      onUpdate(defaultTimeframeSettings);
+      setSelectedPeriod(365);
+      setUseCustomRange(false);
+      setHigherTimeframe('1d');
+      setExecutionTiming('bar_close');
+    }
+  };
+
   const timePeriods = [
     { days: 7, label: '7 Days' },
     { days: 30, label: '30 Days' },
@@ -93,10 +112,20 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext, onPrevious }: 
         {/* Default Settings - Always Visible */}
         <Card className="frosted">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="w-5 h-5 text-primary" />
-              Primary Timeframe
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="w-5 h-5 text-primary" />
+                Primary Timeframe
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => resetToDefault('primary')}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Return to Default
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
@@ -181,6 +210,14 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext, onPrevious }: 
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Advanced Timing Options</CardTitle>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => resetToDefault('all')}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Reset All
+                    </Button>
                     <Badge variant="outline">Multi-Timeframe</Badge>
                     <ChevronDown className={`w-4 h-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
                   </div>

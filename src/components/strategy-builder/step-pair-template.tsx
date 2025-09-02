@@ -10,10 +10,11 @@ interface StepPairTemplateProps {
   selected: PairTemplate | null;
   onSelect: (template: PairTemplate) => void;
   onNext: () => void;
+  onPrevious: () => void;
   userTier: UserTier;
 }
 
-export function StepPairTemplate({ selected, onSelect, onNext, userTier }: StepPairTemplateProps) {
+export function StepPairTemplate({ selected, onSelect, onNext, onPrevious, userTier }: StepPairTemplateProps) {
   const tierAccess = getTierAccess(userTier);
   
   const pairTemplates = [
@@ -171,7 +172,10 @@ export function StepPairTemplate({ selected, onSelect, onNext, userTier }: StepP
         })}
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-between">
+        <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+          Previous
+        </Button>
         <Button
           onClick={onNext}
           disabled={!selected}

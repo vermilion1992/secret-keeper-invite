@@ -7,11 +7,12 @@ import { Play, BarChart3 } from 'lucide-react';
 
 interface StepBacktestProps {
   onNext: () => void;
+  onPrevious: () => void;
   onRunBacktest: () => void;
   isLoading?: boolean;
 }
 
-export function StepBacktest({ onNext, onRunBacktest, isLoading = false }: StepBacktestProps) {
+export function StepBacktest({ onNext, onPrevious, onRunBacktest, isLoading = false }: StepBacktestProps) {
   const [backtestStarted, setBacktestStarted] = useState(false);
 
   const handleRunBacktest = () => {
@@ -52,14 +53,20 @@ export function StepBacktest({ onNext, onRunBacktest, isLoading = false }: StepB
               <Badge variant="outline">Risk Analysis</Badge>
             </div>
 
-            <Button 
-              onClick={handleRunBacktest} 
-              disabled={isLoading}
-              className="gap-2"
-            >
-              <Play className="w-4 h-4" />
-              Run Backtest
-            </Button>
+            <div className="flex gap-3 justify-center">
+              <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+                Previous
+              </Button>
+              <Button 
+                onClick={handleRunBacktest} 
+                disabled={isLoading}
+                className="gap-2 px-8"
+                size="lg"
+              >
+                <Play className="w-4 h-4" />
+                Run Backtest
+              </Button>
+            </div>
           </div>
         </Card>
       ) : (
@@ -79,6 +86,12 @@ export function StepBacktest({ onNext, onRunBacktest, isLoading = false }: StepB
             <div className="space-y-2">
               <Progress value={66} className="h-2" />
               <p className="text-xs text-muted-foreground">Analyzing trading signals...</p>
+            </div>
+            
+            <div className="flex justify-between pt-6">
+              <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+                Previous
+              </Button>
             </div>
           </div>
         </Card>

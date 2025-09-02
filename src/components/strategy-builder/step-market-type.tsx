@@ -8,9 +8,10 @@ interface StepMarketTypeProps {
   selected: MarketType | null;
   onSelect: (type: MarketType) => void;
   onNext: () => void;
+  onPrevious?: () => void;
 }
 
-export function StepMarketType({ selected, onSelect, onNext }: StepMarketTypeProps) {
+export function StepMarketType({ selected, onSelect, onNext, onPrevious }: StepMarketTypeProps) {
   const marketTypes = [
     {
       type: 'spot' as MarketType,
@@ -80,7 +81,12 @@ export function StepMarketType({ selected, onSelect, onNext }: StepMarketTypePro
         ))}
       </div>
 
-      <div className="flex justify-center">
+      <div className={`flex ${onPrevious ? 'justify-between' : 'justify-center'}`}>
+        {onPrevious && (
+          <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+            Previous
+          </Button>
+        )}
         <Button
           onClick={onNext}
           disabled={!selected}

@@ -41,6 +41,9 @@ export function StepAdvancedSettings({
     tp2Allocation: 33,
     tp3: 15.0,
     tp3Allocation: 34,
+    tp1TrailingEnabled: false,
+    tp2TrailingEnabled: false,
+    tp3TrailingEnabled: false,
     // Break-even settings
     breakEvenEnabled: false,
     breakEvenTrigger: 2.0,
@@ -59,8 +62,46 @@ export function StepAdvancedSettings({
     exitPriority: 'tp_first'
   });
 
+  const defaultExitSettings = {
+    stopLoss: 5.0,
+    takeProfit: 10.0,
+    multiTpEnabled: false,
+    tp1: 5.0,
+    tp1Allocation: 33,
+    tp2: 10.0,
+    tp2Allocation: 33,
+    tp3: 15.0,
+    tp3Allocation: 34,
+    tp1TrailingEnabled: false,
+    tp2TrailingEnabled: false,
+    tp3TrailingEnabled: false,
+    breakEvenEnabled: false,
+    breakEvenTrigger: 2.0,
+    breakEvenOffset: 0.1,
+    trailingType: 'none',
+    trailingPercent: 2.0,
+    trailingAtr: 1.5,
+    atrStopEnabled: false,
+    atrMultiplier: 2.0,
+    timeExitType: 'none',
+    timeExitCandles: 24,
+    exitPriority: 'tp_first'
+  };
+
   const updateExitSetting = (key: string, value: any) => {
     setExitSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const resetToDefault = (section: 'basic' | 'all') => {
+    if (section === 'basic') {
+      setExitSettings(prev => ({
+        ...prev,
+        stopLoss: defaultExitSettings.stopLoss,
+        takeProfit: defaultExitSettings.takeProfit
+      }));
+    } else {
+      setExitSettings(defaultExitSettings);
+    }
   };
 
   return (
@@ -85,10 +126,20 @@ export function StepAdvancedSettings({
             {/* Default Settings - Always Visible */}
             <Card className="frosted">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  Basic Exit Settings
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Basic Exit Settings
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => resetToDefault('basic')}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Return to Default
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -153,6 +204,14 @@ export function StepAdvancedSettings({
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">Advanced Exit Options</CardTitle>
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resetToDefault('all')}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Reset All
+                        </Button>
                         <Badge variant="outline">Expert Settings</Badge>
                         <ChevronDown className={`w-4 h-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
                       </div>
@@ -187,7 +246,16 @@ export function StepAdvancedSettings({
                     {exitSettings.multiTpEnabled && (
                       <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">TP1 (%) / Allocation</Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">TP1 (%) / Allocation</Label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Trail after?</span>
+                              <Switch 
+                                checked={exitSettings.tp1TrailingEnabled}
+                                onCheckedChange={(checked) => updateExitSetting('tp1TrailingEnabled', checked)}
+                              />
+                            </div>
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             <Input
                               type="number"
@@ -207,7 +275,16 @@ export function StepAdvancedSettings({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">TP2 (%) / Allocation</Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">TP2 (%) / Allocation</Label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Trail after?</span>
+                              <Switch 
+                                checked={exitSettings.tp2TrailingEnabled}
+                                onCheckedChange={(checked) => updateExitSetting('tp2TrailingEnabled', checked)}
+                              />
+                            </div>
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             <Input
                               type="number"
@@ -227,7 +304,16 @@ export function StepAdvancedSettings({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">TP3 (%) / Allocation</Label>
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm font-medium">TP3 (%) / Allocation</Label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Trail after?</span>
+                              <Switch 
+                                checked={exitSettings.tp3TrailingEnabled}
+                                onCheckedChange={(checked) => updateExitSetting('tp3TrailingEnabled', checked)}
+                              />
+                            </div>
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             <Input
                               type="number"

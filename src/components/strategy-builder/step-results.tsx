@@ -20,6 +20,7 @@ interface StepResultsProps {
   backtestResult: BacktestResult;
   onExport: (format: 'python' | 'json', botName: string) => void;
   onShare: (botName: string) => void;
+  onPrevious: () => void;
   onCompare?: () => void;
 }
 
@@ -91,7 +92,7 @@ const mockResult: BacktestResult = {
   tradeDistribution: []
 };
 
-export function StepResults({ onExport, onShare, onCompare = () => console.log('Compare backtests') }: StepResultsProps) {
+export function StepResults({ onExport, onShare, onPrevious, onCompare = () => console.log('Compare backtests') }: StepResultsProps) {
   const [botName, setBotName] = useState('');
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);

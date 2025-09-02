@@ -29,6 +29,7 @@ interface StepStrategyProps {
   selected: Strategy | null;
   onSelect: (strategy: Strategy) => void;
   onNext: () => void;
+  onPrevious: () => void;
   userTier: UserTier;
 }
 
@@ -420,7 +421,7 @@ const ENHANCED_INDICATORS = [
   }
 ];
 
-export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrategyProps) {
+export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier }: StepStrategyProps) {
   const [expandedItem, setExpandedItem] = useState<any>(null);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -779,9 +780,12 @@ export function StepStrategy({ selected, onSelect, onNext, userTier }: StepStrat
         </TabsContent>
       </Tabs>
 
-      <div className="flex items-center justify-end gap-3 pt-2">
-        <Button variant="secondary" onClick={() => onNext()} disabled={!selected}>
-          Continue
+      <div className="flex justify-between pt-6">
+        <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
+          Previous
+        </Button>
+        <Button onClick={onNext} disabled={!selected} size="lg" className="px-8">
+          Continue to Advanced Settings
         </Button>
       </div>
     </div>
