@@ -215,6 +215,329 @@
           }
         }
       ]
+    },
+    "Bollinger Band Bounce": {
+      "indicators": ["bollinger", "rsi"],
+      "entryTiles": [
+        {
+          "id": "bb_bounce_oversold",
+          "name": "BB Lower Bounce + RSI",
+          "tooltip": "Price bounces from lower Bollinger Band with RSI oversold",
+          "operands": ["Price", "BB Lower", "RSI", "30"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "Price",
+            "rightOperand": "BB Lower"
+          }
+        },
+        {
+          "id": "bb_bounce_overbought",
+          "name": "BB Upper Bounce + RSI",
+          "tooltip": "Price bounces from upper Bollinger Band with RSI overbought",
+          "operands": ["Price", "BB Upper", "RSI", "70"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "Price",
+            "rightOperand": "BB Upper"
+          }
+        }
+      ]
+    },
+    "Stochastic Swing Filter": {
+      "indicators": ["stochastic", "sma"],
+      "entryTiles": [
+        {
+          "id": "stoch_oversold_sma",
+          "name": "Stoch Oversold + SMA",
+          "tooltip": "Stochastic oversold with SMA trend confirmation",
+          "operands": ["Stochastic %K", "20", "Price", "SMA"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "Stochastic %K",
+            "rightOperand": "20"
+          }
+        },
+        {
+          "id": "stoch_overbought_sma",
+          "name": "Stoch Overbought + SMA",
+          "tooltip": "Stochastic overbought with SMA trend confirmation",
+          "operands": ["Stochastic %K", "80", "Price", "SMA"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "Stochastic %K",
+            "rightOperand": "80"
+          }
+        }
+      ]
+    },
+    "VWAP Trend Rider": {
+      "indicators": ["vwap", "ema"],
+      "entryTiles": [
+        {
+          "id": "vwap_above_ema",
+          "name": "Price Above VWAP + EMA",
+          "tooltip": "Price above VWAP with EMA slope confirmation",
+          "operands": ["Price", "VWAP", "EMA Slope", "0"],
+          "defaultSeeds": {
+            "operator": "is_above",
+            "leftOperand": "Price",
+            "rightOperand": "VWAP"
+          }
+        },
+        {
+          "id": "vwap_below_ema",
+          "name": "Price Below VWAP + EMA",
+          "tooltip": "Price below VWAP with EMA slope confirmation",
+          "operands": ["Price", "VWAP", "EMA Slope", "0"],
+          "defaultSeeds": {
+            "operator": "is_below",
+            "leftOperand": "Price",
+            "rightOperand": "VWAP"
+          }
+        }
+      ]
+    },
+    "ATR Trailing Stops": {
+      "indicators": ["atr"],
+      "entryTiles": [
+        {
+          "id": "atr_long_entry",
+          "name": "ATR Long Entry",
+          "tooltip": "Long entry with ATR-based stop placement",
+          "operands": ["Price", "ATR Trail", "ATR", "2.0"],
+          "defaultSeeds": {
+            "operator": "is_above",
+            "leftOperand": "Price",
+            "rightOperand": "ATR Trail"
+          }
+        },
+        {
+          "id": "atr_short_entry",
+          "name": "ATR Short Entry",
+          "tooltip": "Short entry with ATR-based stop placement",
+          "operands": ["Price", "ATR Trail", "ATR", "2.0"],
+          "defaultSeeds": {
+            "operator": "is_below",
+            "leftOperand": "Price",
+            "rightOperand": "ATR Trail"
+          }
+        }
+      ]
+    },
+    "Momentum King": {
+      "indicators": ["momentum", "volume"],
+      "entryTiles": [
+        {
+          "id": "momentum_volume_long",
+          "name": "High Momentum + Volume",
+          "tooltip": "Strong momentum with volume confirmation",
+          "operands": ["Momentum Score", "80", "Volume", "Volume MA"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "Momentum Score",
+            "rightOperand": "80"
+          }
+        },
+        {
+          "id": "momentum_volume_short",
+          "name": "Low Momentum + Volume",
+          "tooltip": "Weak momentum with volume confirmation",
+          "operands": ["Momentum Score", "20", "Volume", "Volume MA"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "Momentum Score",
+            "rightOperand": "20"
+          }
+        }
+      ]
+    },
+    "Vol Spike Breakout": {
+      "indicators": ["volume", "atr"],
+      "entryTiles": [
+        {
+          "id": "vol_spike_breakout",
+          "name": "Volume Spike Breakout",
+          "tooltip": "Entry after unusual volume spike with breakout",
+          "operands": ["Volume", "Volume MA", "Price", "Breakout Level"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "Volume",
+            "rightOperand": "Volume MA"
+          }
+        }
+      ]
+    },
+    "K-Strength Divergence": {
+      "indicators": ["k-strength", "rsi"],
+      "entryTiles": [
+        {
+          "id": "k_strength_divergence",
+          "name": "K-Strength + RSI Divergence",
+          "tooltip": "Divergence between K-strength and RSI signals",
+          "operands": ["K-Strength", "RSI", "Divergence Signal", "True"],
+          "defaultSeeds": {
+            "operator": "is_true",
+            "leftOperand": "Divergence Signal",
+            "rightOperand": "True"
+          }
+        }
+      ]
+    },
+    "Turbo K6": {
+      "indicators": ["k6", "atr", "volume"],
+      "entryTiles": [
+        {
+          "id": "turbo_k6_long",
+          "name": "Turbo K6 Long",
+          "tooltip": "Multi-layer breakout with volatility targeting",
+          "operands": ["K6 Signal", "True", "ATR", "Volatility Target"],
+          "defaultSeeds": {
+            "operator": "is_true",
+            "leftOperand": "K6 Signal",
+            "rightOperand": "True"
+          }
+        }
+      ]
+    },
+    "Breakout Pullback": {
+      "indicators": ["breakout", "rsi", "atr"],
+      "entryTiles": [
+        {
+          "id": "breakout_pullback_long",
+          "name": "Breakout + RSI Pullback",
+          "tooltip": "Entry after breakout confirmation with RSI pullback",
+          "operands": ["Price", "Breakout Level", "RSI", "50"],
+          "defaultSeeds": {
+            "operator": "is_above",
+            "leftOperand": "Price",
+            "rightOperand": "Breakout Level"
+          }
+        }
+      ]
+    },
+    "Range Reversal": {
+      "indicators": ["bollinger", "rsi"],
+      "entryTiles": [
+        {
+          "id": "range_reversal_long",
+          "name": "Range Reversal Long",
+          "tooltip": "Fade extremes inside trading ranges",
+          "operands": ["Price", "BB Lower", "RSI", "30"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "Price",
+            "rightOperand": "BB Lower"
+          }
+        },
+        {
+          "id": "range_reversal_short",
+          "name": "Range Reversal Short",
+          "tooltip": "Fade extremes inside trading ranges",
+          "operands": ["Price", "BB Upper", "RSI", "70"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "Price",
+            "rightOperand": "BB Upper"
+          }
+        }
+      ]
+    },
+    "Trend Following Core": {
+      "indicators": ["ema", "macd"],
+      "entryTiles": [
+        {
+          "id": "trend_following_long",
+          "name": "EMA Trend + MACD Long",
+          "tooltip": "EMA slope with MACD confirmation",
+          "operands": ["EMA Slope", "0", "MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "EMA Slope",
+            "rightOperand": "0"
+          }
+        },
+        {
+          "id": "trend_following_short",
+          "name": "EMA Trend + MACD Short",
+          "tooltip": "EMA slope with MACD confirmation",
+          "operands": ["EMA Slope", "0", "MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "EMA Slope",
+            "rightOperand": "0"
+          }
+        }
+      ]
+    },
+    "Multi-Confirm Swing": {
+      "indicators": ["rsi", "macd", "stochastic"],
+      "entryTiles": [
+        {
+          "id": "multi_confirm_long",
+          "name": "Triple Oscillator Long",
+          "tooltip": "RSI + MACD + Stochastic alignment",
+          "operands": ["RSI", "50", "MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "RSI",
+            "rightOperand": "50"
+          }
+        },
+        {
+          "id": "multi_confirm_short",
+          "name": "Triple Oscillator Short",
+          "tooltip": "RSI + MACD + Stochastic alignment",
+          "operands": ["RSI", "50", "MACD Line", "MACD Signal"],
+          "defaultSeeds": {
+            "operator": "less_than",
+            "leftOperand": "RSI",
+            "rightOperand": "50"
+          }
+        }
+      ]
+    },
+    "Support/Resistance Bounce": {
+      "indicators": ["support-resistance", "volume"],
+      "entryTiles": [
+        {
+          "id": "support_bounce",
+          "name": "Support Bounce + Volume",
+          "tooltip": "Bounce from support with volume confirmation",
+          "operands": ["Price", "Support Level", "Volume", "Volume MA"],
+          "defaultSeeds": {
+            "operator": "crosses_above",
+            "leftOperand": "Price",
+            "rightOperand": "Support Level"
+          }
+        },
+        {
+          "id": "resistance_bounce",
+          "name": "Resistance Bounce + Volume",
+          "tooltip": "Bounce from resistance with volume confirmation",
+          "operands": ["Price", "Resistance Level", "Volume", "Volume MA"],
+          "defaultSeeds": {
+            "operator": "crosses_below",
+            "leftOperand": "Price",
+            "rightOperand": "Resistance Level"
+          }
+        }
+      ]
+    },
+    "High Volatility Rider": {
+      "indicators": ["atr", "volatility"],
+      "entryTiles": [
+        {
+          "id": "high_vol_long",
+          "name": "High Volatility Long",
+          "tooltip": "Target high-volatility assets with ATR scaling",
+          "operands": ["Volatility Rank", "80", "ATR", "ATR MA"],
+          "defaultSeeds": {
+            "operator": "greater_than",
+            "leftOperand": "Volatility Rank",
+            "rightOperand": "80"
+          }
+        }
+      ]
     }
   }
 }
