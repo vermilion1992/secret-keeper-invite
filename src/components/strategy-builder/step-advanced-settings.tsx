@@ -465,6 +465,44 @@ export function StepAdvancedSettings({
     return `${condition.leftOperand} ${operatorText.toLowerCase()} ${condition.rightOperand}`;
   };
 
+  // Generate strategy summary text
+  const generateSummaryText = (direction: 'long' | 'short') => {
+    if (entryConditions.length === 0) return '';
+
+    const operatorMap: Record<string, { normal: string, inverse: string }> = {
+      'crosses_above': { normal: 'crosses above', inverse: 'crosses below' },
+      'crosses_below': { normal: 'crosses below', inverse: 'crosses above' },
+      'is_above': { normal: 'is above', inverse: 'is below' },
+      'is_below': { normal: 'is below', inverse: 'is above' },
+      'is_true': { normal: 'is true', inverse: 'is false' }
+    };
+
+    const connector = entryLogic === 'all_true' ? ' and ' : ' or ';
+    
+    const ruleTexts = entryConditions.map(condition => {
+      const operatorConfig = operatorMap[condition.operator];
+      let operatorText = operatorConfig?.normal || condition.operator;
+      
+      // Apply inverse logic for shorts when inverse is enabled
+      if (direction === 'short' && entryInverse) {
+        operatorText = operatorConfig?.inverse || condition.operator;
+      }
+      
+      if (condition.operator === 'is_true') {
+        return `${condition.leftOperand} ${operatorText}`;
+      }
+      return `${condition.leftOperand} ${operatorText} ${condition.rightOperand}`;
+    });
+
+    // Handle the case where direction is both but inverse is off
+    if (direction === 'short' && entryDirection === 'both' && !entryInverse) {
+      // If there are no short-specific rules and inverse is off, show disabled
+      return 'conditions disabled (enable inverse signals to allow short entries)';
+    }
+
+    return ruleTexts.join(connector) + '.';
+  };
+
   const updateStrategySetting = (key: string, value: any) => {
     setStrategySettings(prev => ({ ...prev, [key]: value }));
   };
@@ -918,7 +956,17 @@ export function StepAdvancedSettings({
               {/* Logic Controls */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t">
                 <div className="space-y-3">
-                  <Label className="font-medium">Logic Joiner</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="font-medium">Entry Logic</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Choose how rules are combined. AND = every rule must be true. OR = any single rule can be true.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Select value={entryLogic} onValueChange={setEntryLogic}>
                     <SelectTrigger className="bg-background/50">
                       <SelectValue />
@@ -931,7 +979,17 @@ export function StepAdvancedSettings({
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="font-medium">Direction</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="font-medium">Trade Direction</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Which side the bot is allowed to trade. 'Both directions' allows longs and shorts.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <Select value={entryDirection} onValueChange={setEntryDirection}>
                     <SelectTrigger className="bg-background/50">
                       <SelectValue />
@@ -945,18 +1003,78 @@ export function StepAdvancedSettings({
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="font-medium">Inverse Logic</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="font-medium">Enable inverse signals</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">If on, the opposite of your entry rules can trigger the opposite side. Turn off to only trade your primary rules.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="inverse-logic"
                       checked={entryInverse}
                       onCheckedChange={setEntryInverse}
                     />
-                    <Label htmlFor="inverse-logic" className="text-sm">
-                      Enable inverse signals
+                    <Label htmlFor="inverse-logic" className="text-sm text-muted-foreground">
+                      Also allow the opposite of your rules (e.g., if RSI &gt; 50 goes long, RSI &lt; 50 can go short).
                     </Label>
                   </div>
                 </div>
+              </div>
+
+              {/* Strategy Summary */}
+              <div className="pt-6 border-t">
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Target className="w-5 h-5 text-primary" />
+                      Strategy Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {entryConditions.length === 0 ? (
+                      <p className="text-muted-foreground italic">
+                        No entry rules yet. Add a condition to see your strategy summary.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {entryDirection === 'both' ? (
+                          <>
+                            <div>
+                              <span className="font-medium text-emerald-600">Enter LONG</span> when {generateSummaryText('long')}
+                            </div>
+                            <div>
+                              <span className="font-medium text-red-600">Enter SHORT</span> when {generateSummaryText('short')}
+                            </div>
+                          </>
+                        ) : entryDirection === 'long' ? (
+                          <>
+                            <div>
+                              <span className="font-medium text-emerald-600">Enter LONG</span> when {generateSummaryText('long')}
+                            </div>
+                            <div className="text-muted-foreground">
+                              Short entries disabled.
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <span className="font-medium text-red-600">Enter SHORT</span> when {generateSummaryText('short')}
+                            </div>
+                            <div className="text-muted-foreground">
+                              Long entries disabled.
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
