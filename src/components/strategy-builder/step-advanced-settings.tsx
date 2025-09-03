@@ -25,6 +25,7 @@ interface StepAdvancedSettingsProps {
 
 interface EntryCondition {
   id: string;
+  tileId?: string; // Track which tile created this rule
   operator: string;
   leftOperand: string;
   rightOperand: string;
@@ -194,17 +195,27 @@ export function StepAdvancedSettings({
     return globalKey || localKey || null;
   };
 
-  // Get strategy-specific operands from loaded config
+  // Get strategy-specific operands from loaded config for a specific tile
+  const getOperandsForTile = (strategyKey: string, tileId: string) => {
+    if (!BF_CONFIG?.strategies) return ['EMA Fast', 'EMA Slow', 'Price'];
+    
+    const config = BF_CONFIG.strategies[strategyKey];
+    if (!config?.operands) return ['EMA Fast', 'EMA Slow', 'Price'];
+    
+    return config.operands[tileId] || ['EMA Fast', 'EMA Slow', 'Price'];
+  };
+
+  // Get all operands for the strategy (for backward compatibility)
   const getOperandsForStrategy = (strategyKey: string) => {
     if (!BF_CONFIG?.strategies) return ['EMA Fast', 'EMA Slow', 'Price'];
     
     const config = BF_CONFIG.strategies[strategyKey];
-    if (!config) return ['EMA Fast', 'EMA Slow', 'Price'];
+    if (!config?.operands) return ['EMA Fast', 'EMA Slow', 'Price'];
     
-    // Collect all unique operands from tiles
+    // Collect all unique operands from all tiles
     const operands = new Set<string>();
-    config.entryTiles?.forEach((tile: any) => {
-      tile.operands?.forEach((operand: string) => operands.add(operand));
+    Object.values(config.operands).forEach((tileOperands: any) => {
+      tileOperands?.forEach((operand: string) => operands.add(operand));
     });
     return Array.from(operands);
   };
@@ -260,36 +271,12 @@ export function StepAdvancedSettings({
     return BF_CONFIG?.global?.ruleCap || 5;
   };
 
-  // Initialize default seeds when strategy changes
+  // Initialize with empty conditions - no auto-seeding
   useEffect(() => {
     const strategyKey = getSelectedStrategyKey();
     if (strategyKey && BF_CONFIG?.strategies) {
-      const config = BF_CONFIG.strategies[strategyKey];
-      const tiles = getEntryTilesForStrategy(strategyKey);
-      
-      if (tiles.length > 0) {
-        // Create individual entry conditions for each tile defined in the strategy
-        const defaultConditions = tiles.slice(0, getRuleCap()).map((tile: any, index: number) => ({
-          id: (index + 1).toString(),
-          operator: tile.defaultSeeds?.operator || 'crosses_above',
-          leftOperand: tile.defaultSeeds?.leftOperand || tile.operands?.[0] || 'EMA Fast',
-          rightOperand: tile.defaultSeeds?.rightOperand || tile.operands?.[1] || 'EMA Slow',
-          enabled: true
-        }));
-        
-        setEntryConditions(defaultConditions);
-      } else if (config?.defaultSeeds && config.defaultSeeds.length > 0) {
-        // Fallback to global defaultSeeds if no tiles
-        const defaultConditions = config.defaultSeeds.slice(0, getRuleCap()).map((seed: any, index: number) => ({
-          id: (index + 1).toString(),
-          operator: seed.operator || 'crosses_above',
-          leftOperand: seed.leftOperand || 'EMA Fast',
-          rightOperand: seed.rightOperand || 'EMA Slow',
-          enabled: true
-        }));
-        
-        setEntryConditions(defaultConditions);
-      }
+      // Always start with empty conditions
+      setEntryConditions([]);
     }
   }, [BF_CONFIG, strategy?.name]);
 
@@ -325,24 +312,8 @@ export function StepAdvancedSettings({
         }));
         break;
       case 'entry':
-        // Reset to create individual conditions for each tile in the strategy
-        if (strategy) {
-          const strategyKey = getSelectedStrategyKey();
-          const tiles = strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
-          if (tiles.length > 0) {
-            // Create individual entry conditions for each tile
-            const defaultConditions = tiles.slice(0, getRuleCap()).map((tile: any, index: number) => ({
-              id: (index + 1).toString(),
-              operator: tile.defaultSeeds?.operator || 'crosses_above',
-              leftOperand: tile.defaultSeeds?.leftOperand || tile.operands?.[0] || 'EMA Fast',
-              rightOperand: tile.defaultSeeds?.rightOperand || tile.operands?.[1] || 'EMA Slow',
-              enabled: true
-            }));
-            setEntryConditions(defaultConditions);
-          } else {
-            setEntryConditions([{ id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }]);
-          }
-        }
+        // Reset to empty - clear all entry conditions
+        setEntryConditions([]);
         setEntryLogic('all_true');
         setEntryDirection('both');
         setEntryInverse(false);
@@ -420,6 +391,9 @@ export function StepAdvancedSettings({
 
   const getPreviewText = (condition: EntryCondition) => {
     const operatorText = operators.find(op => op.value === condition.operator)?.label || condition.operator;
+    if (condition.operator === 'is_true') {
+      return `${condition.leftOperand} ${operatorText.toLowerCase()}`;
+    }
     return `${condition.leftOperand} ${operatorText.toLowerCase()} ${condition.rightOperand}`;
   };
 
@@ -997,15 +971,41 @@ export function StepAdvancedSettings({
                     <Zap className="w-5 h-5 text-primary" />
                     Entry Conditions
                   </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => resetToDefault('entry')}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-1" />
-                    Return to Default
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const strategyKey = getSelectedStrategyKey();
+                        if (strategyKey && BF_CONFIG?.strategies) {
+                          const config = BF_CONFIG.strategies[strategyKey];
+                          if (config?.defaultSeeds && config.defaultSeeds.length > 0) {
+                            const defaultConditions = config.defaultSeeds.slice(0, getRuleCap()).map((seed: any, index: number) => ({
+                              id: (index + 1).toString(),
+                              operator: seed.operator || 'is_above',
+                              leftOperand: seed.leftOperand || 'EMA Fast',
+                              rightOperand: seed.rightOperand || 'EMA Slow',
+                              enabled: true
+                            }));
+                            setEntryConditions(defaultConditions);
+                          }
+                        }
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <Zap className="w-4 h-4 mr-1" />
+                      Seed defaults
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => resetToDefault('entry')}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Return to Default
+                    </Button>
+                  </div>
                 </div>
                  <p className="text-sm text-muted-foreground">
                    Entry Conditions combine your indicator signals into simple rules. For example: <em>If EMA Fast crosses above EMA Slow AND RSI &gt; 50 → Go Long. If inverse is true → Go Short.</em>
@@ -1027,39 +1027,40 @@ export function StepAdvancedSettings({
                    </div>
                    
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                     {(() => {
-                       const strategyKey = getSelectedStrategyKey();
-                       return strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
-                     })().map(tile => {
-                       // Check if this tile's rule already exists (prevent duplicates)
-                       const isActive = entryConditions.some(condition => 
-                         condition.leftOperand === tile.defaultSeeds?.leftOperand &&
-                         condition.operator === tile.defaultSeeds?.operator &&
-                         condition.rightOperand === (tile.defaultSeeds?.rightOperand || '')
-                       );
-                       
-                       return (
-                         <button
-                           key={tile.id}
-                           onClick={() => {
-                             if (isActive) {
-                               // Remove the exact matching condition
-                               setEntryConditions(prev => prev.filter(condition => 
-                                 !(condition.leftOperand === tile.defaultSeeds?.leftOperand &&
-                                   condition.operator === tile.defaultSeeds?.operator &&
-                                   condition.rightOperand === (tile.defaultSeeds?.rightOperand || ''))
-                               ));
-                             } else {
-                               // Add new condition if under cap and not duplicate
+                      {(() => {
+                        const strategyKey = getSelectedStrategyKey();
+                        return strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
+                      })().map(tile => {
+                        // Check if this tile has any active rules (using tileId property to track)
+                        const isActive = entryConditions.some((condition: any) => condition.tileId === tile.id);
+                        
+                        return (
+                          <button
+                            key={tile.id}
+                            onClick={() => {
+                              const strategyKey = getSelectedStrategyKey();
+                              if (!strategyKey) return;
+                              
+                              if (isActive) {
+                                // Remove ALL rules created from this tile
+                                setEntryConditions(prev => prev.filter((condition: any) => condition.tileId !== tile.id));
+                              } else {
+                                // Add new condition if under cap
                                 if (entryConditions.length < getRuleCap()) {
+                                  const tileOperands = getOperandsForTile(strategyKey, tile.id);
+                                  const firstOperator = BF_CONFIG?.global?.operators?.[0]?.value || 'is_above';
+                                  
                                   const newId = Date.now().toString();
-                                  setEntryConditions(prev => [...prev, {
+                                  const newCondition = {
                                     id: newId,
-                                    operator: tile.defaultSeeds?.operator || 'is_above',
-                                    leftOperand: tile.defaultSeeds?.leftOperand || tile.operands?.[0] || '',
-                                    rightOperand: tile.defaultSeeds?.rightOperand || tile.operands?.[1] || '',
+                                    tileId: tile.id, // Track which tile created this rule
+                                    operator: tile.defaultSeeds?.operator || firstOperator,
+                                    leftOperand: tile.defaultSeeds?.leftOperand || tileOperands[0] || 'EMA Fast',
+                                    rightOperand: tile.defaultSeeds?.rightOperand || (tileOperands[1] || (firstOperator === 'is_true' ? '' : tileOperands[0])),
                                     enabled: true
-                                  }]);
+                                  };
+                                  
+                                  setEntryConditions(prev => [...prev, newCondition]);
                                 }
                               }
                             }}
@@ -1071,11 +1072,11 @@ export function StepAdvancedSettings({
                                   ? 'border-muted-foreground/20 bg-muted/50 text-muted-foreground cursor-not-allowed'
                                   : 'border-border hover:border-primary hover:bg-primary/5 text-foreground'
                             }`}
-                         >
-                           {tile.name || tile.label}
-                         </button>
-                       );
-                     })}
+                          >
+                            {tile.name || tile.label}
+                          </button>
+                        );
+                      })}
                    </div>
                    
                     {entryConditions.length >= getRuleCap() && (
@@ -1103,7 +1104,7 @@ export function StepAdvancedSettings({
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className={`grid gap-4 ${condition.operator === 'is_true' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Left Operand</Label>
                           <Select
@@ -1116,7 +1117,14 @@ export function StepAdvancedSettings({
                             <SelectContent>
                               {(() => {
                                 const strategyKey = getSelectedStrategyKey();
-                                return strategyKey ? getOperandsForStrategy(strategyKey) : ['EMA Fast', 'EMA Slow'];
+                                if (!strategyKey) return ['EMA Fast', 'EMA Slow'];
+                                
+                                // Use tile-specific operands if available, otherwise fall back to all strategy operands
+                                const operands = (condition as any).tileId 
+                                  ? getOperandsForTile(strategyKey, (condition as any).tileId)
+                                  : getOperandsForStrategy(strategyKey);
+                                
+                                return operands;
                               })().map(operand => (
                                 <SelectItem key={operand} value={operand}>{operand}</SelectItem>
                               ))}
@@ -1150,25 +1158,34 @@ export function StepAdvancedSettings({
                           </Select>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Right Operand</Label>
-                          <Select
-                            value={condition.rightOperand}
-                            onValueChange={(value) => updateEntryCondition(condition.id, 'rightOperand', value)}
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(() => {
-                                const strategyKey = getSelectedStrategyKey();
-                                return strategyKey ? getOperandsForStrategy(strategyKey) : ['EMA Fast', 'EMA Slow'];
-                              })().map(operand => (
-                                <SelectItem key={operand} value={operand}>{operand}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        {condition.operator !== 'is_true' && (
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Right Operand</Label>
+                            <Select
+                              value={condition.rightOperand}
+                              onValueChange={(value) => updateEntryCondition(condition.id, 'rightOperand', value)}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(() => {
+                                  const strategyKey = getSelectedStrategyKey();
+                                  if (!strategyKey) return ['EMA Fast', 'EMA Slow'];
+                                  
+                                  // Use tile-specific operands if available, otherwise fall back to all strategy operands
+                                  const operands = (condition as any).tileId 
+                                    ? getOperandsForTile(strategyKey, (condition as any).tileId)
+                                    : getOperandsForStrategy(strategyKey);
+                                  
+                                  return operands;
+                                })().map(operand => (
+                                  <SelectItem key={operand} value={operand}>{operand}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-3 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
