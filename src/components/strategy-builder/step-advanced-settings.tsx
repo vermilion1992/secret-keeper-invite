@@ -770,7 +770,7 @@ export function StepAdvancedSettings({
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Family Tiles */}
+          {/* Family Tiles */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {families.map(family => {
                   const isOpen = familyTileStates[family];
@@ -796,7 +796,7 @@ export function StepAdvancedSettings({
                         </div>
                       </button>
                       
-                      {/* Family content - presets and rules */}
+                      {/* Family content - presets only */}
                       {isOpen && (
                         <div className="space-y-3 p-3 border rounded bg-background/30">
                           {/* Presets */}
@@ -829,79 +829,109 @@ export function StepAdvancedSettings({
                             <Plus className="w-4 h-4 mr-1" />
                             Add Custom Rule
                           </Button>
-                          
-                          {/* Active rules for this family */}
-                          {entryConditions.filter(condition => condition.family === family).map(condition => (
-                            <div key={condition.id} className="space-y-2 p-2 border rounded bg-background/50">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-muted-foreground">Rule</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeRule(condition.id)}
-                                  className="h-6 w-6 p-0 text-destructive"
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-2">
-                                <Select
-                                  value={condition.leftOperand}
-                                  onValueChange={(value) => updateRule(condition.id, 'leftOperand', value)}
-                                >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {getFamilyOperands(strategyKey, family).map(operand => (
-                                      <SelectItem key={operand} value={operand}>{operand}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                
-                                <Select
-                                  value={condition.operator}
-                                  onValueChange={(value) => updateRule(condition.id, 'operator', value)}
-                                >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {operators.map(op => (
-                                      <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              {condition.operator !== 'is_true' && (
-                                <Select
-                                  value={condition.rightOperand}
-                                  onValueChange={(value) => updateRule(condition.id, 'rightOperand', value)}
-                                >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {getFamilyOperands(strategyKey, family).map(operand => (
-                                      <SelectItem key={operand} value={operand}>{operand}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                              
-                              <div className="text-xs text-muted-foreground">
-                                {getPreviewText(condition)}
-                              </div>
-                            </div>
-                          ))}
                         </div>
                       )}
                     </div>
                   );
                 })}
               </div>
+
+              {/* Entry Condition Rules - Left to Right Layout */}
+              {entryConditions.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Active Rules</h4>
+                  <div className="space-y-4">
+                    {entryConditions.map((condition, index) => (
+                      <div key={condition.id} className="border rounded-lg p-4 bg-background/50">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-sm">Rule {index + 1}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {condition.family.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeRule(condition.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className={`grid gap-4 ${condition.operator === 'is_true' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Left Operand</Label>
+                            <Select
+                              value={condition.leftOperand}
+                              onValueChange={(value) => updateRule(condition.id, 'leftOperand', value)}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getFamilyOperands(strategyKey, condition.family).map(operand => (
+                                  <SelectItem key={operand} value={operand}>{operand}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">Operator</Label>
+                            <Select
+                              value={condition.operator}
+                              onValueChange={(value) => updateRule(condition.id, 'operator', value)}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {operators.map(op => (
+                                  <SelectItem key={op.value} value={op.value}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span>{op.label}</span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="max-w-xs">{op.tooltip}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {condition.operator !== 'is_true' && (
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground">Right Operand</Label>
+                              <Select
+                                value={condition.rightOperand}
+                                onValueChange={(value) => updateRule(condition.id, 'rightOperand', value)}
+                              >
+                                <SelectTrigger className="bg-background">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getFamilyOperands(strategyKey, condition.family).map(operand => (
+                                    <SelectItem key={operand} value={operand}>{operand}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-3 p-2 bg-muted/50 rounded text-sm text-muted-foreground">
+                          Preview: <em>{getPreviewText(condition)}</em>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {entryConditions.length >= getRuleCap() && (
                 <Alert>
