@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface StepStrategyProps {
   selected: Strategy | null;
@@ -422,6 +423,7 @@ const ENHANCED_INDICATORS = [
 ];
 
 export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier }: StepStrategyProps) {
+  const navigate = useNavigate();
   const [expandedItem, setExpandedItem] = useState<any>(null);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -769,8 +771,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         canAddFilters: expandedItem.tier !== 'basic'
                       });
                       
-                      // Navigate to advanced settings page immediately
-                      window.location.href = "/strategy-builder/advanced";
+                      navigate("/strategy-builder/advanced");
                     }
                     closeModal();
                   }}
