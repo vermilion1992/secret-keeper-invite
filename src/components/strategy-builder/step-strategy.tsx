@@ -772,8 +772,9 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                       });
                       
                       navigate("/strategy-builder/advanced");
+                    } else {
+                      closeModal();
                     }
-                    closeModal();
                   }}
                   className="flex-1"
                 >

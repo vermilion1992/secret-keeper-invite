@@ -44,9 +44,7 @@ export function StepAdvancedSettings({
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
   // Entry conditions - tile-based approach  
-  const [entryConditions, setEntryConditions] = useState<EntryCondition[]>([
-    { id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }
-  ]);
+  const [entryConditions, setEntryConditions] = useState<EntryCondition[]>([]);
   const [entryLogic, setEntryLogic] = useState('all_true'); // 'all_true' or 'any_true'
   const [entryDirection, setEntryDirection] = useState('both'); // 'long', 'short', 'both'
   const [entryInverse, setEntryInverse] = useState(false);
