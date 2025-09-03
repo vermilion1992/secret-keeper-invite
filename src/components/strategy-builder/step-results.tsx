@@ -698,7 +698,13 @@ export function StepResults({ onExport, onShare, onPrevious, onCompare = () => c
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     {
-                      onClick: () => onExport('python', botName || 'Untitled Bot'),
+                      onClick: () => {
+                        // Mark step as complete when exporting
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("bf_step8_complete", "true");
+                        }
+                        onExport('python', botName || 'Untitled Bot');
+                      },
                       variant: "default" as const,
                       gradient: "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
                       title: "Python Package",
@@ -706,7 +712,13 @@ export function StepResults({ onExport, onShare, onPrevious, onCompare = () => c
                       delay: 2.1
                     },
                     {
-                      onClick: () => onExport('json', botName || 'Untitled Bot'),
+                      onClick: () => {
+                        // Mark step as complete when exporting
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("bf_step8_complete", "true");
+                        }
+                        onExport('json', botName || 'Untitled Bot');
+                      },
                       variant: "outline" as const,
                       gradient: "border-2",
                       title: "JSON Config",
@@ -714,7 +726,13 @@ export function StepResults({ onExport, onShare, onPrevious, onCompare = () => c
                       delay: 2.2
                     },
                     {
-                      onClick: () => onShare(botName || 'Untitled Bot'),
+                      onClick: () => {
+                        // Mark step as complete when sharing
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("bf_step8_complete", "true");
+                        }
+                        onShare(botName || 'Untitled Bot');
+                      },
                       variant: "secondary" as const,
                       gradient: "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-2 border-green-200 dark:border-green-800",
                       title: "Share & Earn",

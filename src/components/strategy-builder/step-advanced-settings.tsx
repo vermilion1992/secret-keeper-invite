@@ -1,4 +1,5 @@
 import { Strategy, IndicatorConfig, UserTier } from '@/types/botforge';
+import { markStepComplete } from '@/lib/strategyWizard/status';
 import { getTierAccess } from '@/lib/tier-access';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1763,7 +1764,18 @@ export function StepAdvancedSettings({
             <Button variant="outline" onClick={onPrevious}>
               Previous
             </Button>
-            <Button onClick={onNext}>
+            <Button onClick={() => {
+              // Save step completion status
+              markStepComplete('step4_advanced');
+              // Save active rules to localStorage
+              if (typeof window !== "undefined") {
+                localStorage.setItem("bf_active_rules", JSON.stringify(entryConditions));
+                if (entryConditions.length > 0 || Object.keys(strategySettings).length > 0 || Object.keys(exitSettings).length > 0) {
+                  localStorage.setItem("bf_indicator_overrides", "true");
+                }
+              }
+              onNext();
+            }}>
               Next: Backtest
             </Button>
           </div>

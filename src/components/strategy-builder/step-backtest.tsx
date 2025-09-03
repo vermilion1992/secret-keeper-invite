@@ -18,6 +18,10 @@ export function StepBacktest({ onNext, onPrevious, onRunBacktest, isLoading = fa
   const handleRunBacktest = () => {
     setBacktestStarted(true);
     onRunBacktest();
+    // Mark backtest as ran
+    if (typeof window !== "undefined") {
+      localStorage.setItem("bf_backtest_ran", "true");
+    }
     // Simulate backtest completion
     setTimeout(() => {
       onNext();

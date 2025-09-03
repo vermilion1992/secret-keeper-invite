@@ -427,7 +427,16 @@ export function StepTimeframe({ backtestParams, onUpdate, onNext, onPrevious }: 
           <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
             Previous
           </Button>
-          <Button onClick={onNext} size="lg" className="px-8">
+          <Button onClick={() => {
+            // Save timeframe data and mark complete
+            if (typeof window !== "undefined") {
+              localStorage.setItem("bf_timeframe", JSON.stringify({
+                interval: backtestParams.timeframe,
+                lookback: backtestParams.maxPeriod
+              }));
+            }
+            onNext();
+          }} size="lg" className="px-8">
             Continue to Backtest
           </Button>
         </div>

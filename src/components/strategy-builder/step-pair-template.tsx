@@ -17,6 +17,17 @@ interface StepPairTemplateProps {
 export function StepPairTemplate({ selected, onSelect, onNext, onPrevious, userTier }: StepPairTemplateProps) {
   const tierAccess = getTierAccess(userTier);
   
+  const handleTemplateSelect = (template: PairTemplate) => {
+    onSelect(template);
+    // Save pairs to localStorage based on template
+    if (typeof window !== "undefined") {
+      const templateData = pairTemplates.find(t => t.template === template);
+      if (templateData) {
+        localStorage.setItem("bf_pairs", JSON.stringify(templateData.pairs));
+      }
+    }
+  };
+  
   const pairTemplates = [
     {
       template: 'top10' as PairTemplate,
@@ -112,7 +123,7 @@ export function StepPairTemplate({ selected, onSelect, onNext, onPrevious, userT
                         ? 'border-border hover:border-purple-500 hover:bg-purple-500/10 hover:shadow-lg'
                         : 'border-border/50 opacity-60 cursor-not-allowed'
                     }`}
-                    onClick={() => isAccessible && onSelect(template.template)}
+                    onClick={() => isAccessible && handleTemplateSelect(template.template)}
                   >
                     {!isAccessible && (
                       <div className="absolute top-3 right-3">

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { WizardNavigation } from './wizard-navigation';
+import { getWizardStatus, markStepComplete } from '@/lib/strategyWizard/status';
 import { StepMarketType } from './step-market-type';
 import { StepPairTemplate } from './step-pair-template';
 import { StepStrategy } from './step-strategy';
@@ -48,6 +49,54 @@ export function StrategyBuilderWizard({ userTier, credits }: StrategyBuilderWiza
     { step: 7, title: 'Backtest', description: 'Review and execute', isComplete: false, isActive: false },
     { step: 8, title: 'Results', description: 'Save and export bot', isComplete: false, isActive: false }
   ]);
+
+  // Update steps based on localStorage status
+  const updateStepsFromStorage = () => {
+    const status = getWizardStatus();
+    setSteps(prev => prev.map(step => ({
+      ...step,
+      isComplete: 
+        step.step === 1 ? status.step1_marketType :
+        step.step === 2 ? status.step2_pairs :
+        step.step === 3 ? status.step3_strategy :
+        step.step === 4 ? status.step4_advanced :
+        step.step === 5 ? status.step5_risk :
+        step.step === 6 ? status.step6_timeframe :
+        step.step === 7 ? status.step7_backtest :
+        step.step === 8 ? status.step8_results :
+        false
+    })));
+  };
+
+  // Update status on mount and visibility change
+  useEffect(() => {
+    updateStepsFromStorage();
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateStepsFromStorage();
+      }
+    };
+    
+    const handleStorageChange = () => {
+      updateStepsFromStorage();
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Refresh status when returning to overview
+  useEffect(() => {
+    if (currentStep === 0) {
+      updateStepsFromStorage();
+    }
+  }, [currentStep]);
 
   const updateSteps = (stepNumber: number, isComplete: boolean = false) => {
     setSteps(prev => prev.map(step => ({

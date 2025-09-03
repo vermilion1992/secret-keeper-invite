@@ -12,6 +12,14 @@ interface StepMarketTypeProps {
 }
 
 export function StepMarketType({ selected, onSelect, onNext, onPrevious }: StepMarketTypeProps) {
+  const handleMarketTypeSelect = (type: MarketType) => {
+    onSelect(type);
+    // Save to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("bf_market_type", type);
+    }
+  };
+
   const marketTypes = [
     {
       type: 'spot' as MarketType,
@@ -48,7 +56,7 @@ export function StepMarketType({ selected, onSelect, onNext, onPrevious }: StepM
                 ? 'ring-2 ring-green-500 border-green-500 bg-green-500/10'
                 : 'border-border hover:border-purple-500 hover:bg-purple-500/10'
             }`}
-            onClick={() => onSelect(market.type)}
+            onClick={() => handleMarketTypeSelect(market.type)}
           >
             <CardHeader className="text-center">
               <div className="flex items-center justify-center mb-4">

@@ -310,7 +310,13 @@ export function StepRiskManagement({
           <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
             Previous
           </Button>
-          <Button onClick={onNext} size="lg" className="px-8">
+          <Button onClick={() => {
+            // Save step completion status
+            if (typeof window !== "undefined") {
+              localStorage.setItem("bf_step5_complete", "true");
+            }
+            onNext();
+          }} size="lg" className="px-8">
             Continue to Timeframe Selection
           </Button>
         </div>
