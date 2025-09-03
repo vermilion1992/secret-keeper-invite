@@ -26,6 +26,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/strategy-builder" element={<StrategyBuilder />} />
+              <Route path="/strategy-builder/advanced" element={<StrategyBuilder />} />
               <Route path="/bot-community" element={<BotCommunity />} />
               <Route path="/my-bots" element={<MyBots />} />
               <Route path="/ai-chat" element={<AIChat />} />

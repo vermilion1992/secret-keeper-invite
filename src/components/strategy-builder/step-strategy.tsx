@@ -485,7 +485,8 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
         // Also store in a global variable for immediate access
         (window as any).selectedStrategyKey = strategyKey;
         
-        openModal({...strategy, type: 'strategy'});
+        // Navigate to advanced settings page
+        window.location.href = "/strategy-builder/advanced";
       }
     };
 
