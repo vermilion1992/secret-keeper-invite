@@ -20,7 +20,7 @@ const StrategyBuilder = () => {
     return (
       <div className="animate-fade-in">
         <StepAdvancedSettings
-          strategy={selectedStrategy}
+          strategy={null} // Advanced settings will read from localStorage/config
           filterIndicators={filterIndicators}
           onUpdateFilters={setFilterIndicators}
           onNext={() => {}}
