@@ -36,54 +36,16 @@ interface FamilyTileState {
   [family: string]: boolean; // Track which family tiles are open/closed
 }
 
-// Family-based presets
-const FAMILY_PRESETS: { [family: string]: Array<{label: string, lhs: string, op: string, rhs: string}> } = {
-  ema: [
-    { label: "Bullish Cross", lhs: "EMA Fast", op: "crosses_above", rhs: "EMA Slow" },
-    { label: "Bearish Cross", lhs: "EMA Fast", op: "crosses_below", rhs: "EMA Slow" },
-    { label: "Trend Up", lhs: "EMA Slope", op: "is_above", rhs: "0" },
-    { label: "Trend Down", lhs: "EMA Slope", op: "is_below", rhs: "0" },
-    { label: "Price > MA", lhs: "Price", op: "is_above", rhs: "EMA Slow" }
-  ],
-  sma: [
-    { label: "Price > SMA", lhs: "Price", op: "is_above", rhs: "SMA" },
-    { label: "Price < SMA", lhs: "Price", op: "is_below", rhs: "SMA" },
-    { label: "SMA Bull Cross", lhs: "SMA Fast", op: "crosses_above", rhs: "SMA Slow" },
-    { label: "SMA Bear Cross", lhs: "SMA Fast", op: "crosses_below", rhs: "SMA Slow" }
-  ],
-  ma: [
-    { label: "Price > MA", lhs: "Price", op: "is_above", rhs: "MA" },
-    { label: "Bull Cross", lhs: "MA Fast", op: "crosses_above", rhs: "MA Slow" },
-    { label: "Bear Cross", lhs: "MA Fast", op: "crosses_below", rhs: "MA Slow" }
-  ],
-  rsi: [
-    { label: "RSI > 50", lhs: "RSI", op: "is_above", rhs: "50" },
-    { label: "RSI < 50", lhs: "RSI", op: "is_below", rhs: "50" },
-    { label: "Overbought", lhs: "RSI", op: "is_above", rhs: "Overbought" },
-    { label: "Oversold", lhs: "RSI", op: "is_below", rhs: "Oversold" }
-  ],
-  macd: [
-    { label: "Bullish", lhs: "MACD Line", op: "crosses_above", rhs: "Signal Line" },
-    { label: "Bearish", lhs: "MACD Line", op: "crosses_below", rhs: "Signal Line" },
-    { label: "Hist > 0", lhs: "Histogram", op: "is_above", rhs: "0" },
-    { label: "Hist < 0", lhs: "Histogram", op: "is_below", rhs: "0" }
-  ],
-  stochastic: [
-    { label: "K > D", lhs: "%K", op: "crosses_above", rhs: "%D" },
-    { label: "K < D", lhs: "%K", op: "crosses_below", rhs: "%D" },
-    { label: "K > 80", lhs: "%K", op: "is_above", rhs: "80" },
-    { label: "K < 20", lhs: "%K", op: "is_below", rhs: "20" }
-  ],
-  bollinger: [
-    { label: "Lower Bounce", lhs: "Price", op: "crosses_above", rhs: "Lower Band" },
-    { label: "Upper Rejection", lhs: "Price", op: "crosses_below", rhs: "Upper Band" },
-    { label: "Band Breakout Up", lhs: "Price", op: "crosses_above", rhs: "Upper Band" },
-    { label: "Band Breakout Down", lhs: "Price", op: "crosses_below", rhs: "Lower Band" }
-  ],
-  breadth: [
-    { label: "Breadth Bullish", lhs: "%UpCoins", op: "is_above", rhs: "50" },
-    { label: "Breadth Bearish", lhs: "%UpCoins", op: "is_below", rhs: "50" }
-  ]
+// Family-based default presets - ONE rule per family
+const FAMILY_PRESETS: { [family: string]: {label: string, lhs: string, op: string, rhs: string} } = {
+  ema: { label: "Bullish Cross", lhs: "EMA Fast", op: "crosses_above", rhs: "EMA Slow" },
+  sma: { label: "Price > SMA", lhs: "Price", op: "is_above", rhs: "SMA" },
+  ma: { label: "Price > MA", lhs: "Price", op: "is_above", rhs: "MA" },
+  rsi: { label: "RSI > 50", lhs: "RSI", op: "is_above", rhs: "50" },
+  macd: { label: "Bullish", lhs: "MACD Line", op: "crosses_above", rhs: "Signal Line" },
+  stochastic: { label: "K > D", lhs: "%K", op: "crosses_above", rhs: "%D" },
+  bollinger: { label: "Lower Bounce", lhs: "Price", op: "crosses_above", rhs: "Lower Band" },
+  breadth: { label: "Breadth Bullish", lhs: "%UpCoins", op: "is_above", rhs: "50" }
 };
 
 export function StepAdvancedSettings({ 
@@ -393,48 +355,40 @@ export function StepAdvancedSettings({
         [family]: true
       }));
       
-      // Add default presets for this family
-      const presets = FAMILY_PRESETS[family];
-      if (presets && presets.length > 0) {
+      // Add default preset for this family (ONE rule only)
+      const preset = FAMILY_PRESETS[family];
+      if (preset) {
         const strategyKey = getSelectedStrategyKey();
         const operands = getFamilyOperands(strategyKey, family);
         
-        const newConditions: EntryCondition[] = [];
-        
-        for (const preset of presets) {
-          // Check if we're under rule cap
-          if (entryConditions.length + newConditions.length >= getRuleCap()) break;
-          
+        // Check if we're under rule cap
+        if (entryConditions.length < getRuleCap()) {
           // Check if operands exist in strategy
           const lhsExists = operands.includes(preset.lhs);
           const rhsExists = operands.includes(preset.rhs) || !isNaN(Number(preset.rhs));
           
-          if (!lhsExists) continue; // Skip if left operand doesn't exist
-          
-          const newCondition: EntryCondition = {
-            id: (Date.now() + newConditions.length).toString(),
-            family,
-            operator: preset.op,
-            leftOperand: preset.lhs,
-            rightOperand: rhsExists ? preset.rhs : (operands[1] || operands[0]),
-            enabled: true
-          };
-          
-          // Check for duplicates
-          const isDuplicate = entryConditions.some(condition => 
-            condition.family === family &&
-            condition.operator === preset.op &&
-            condition.leftOperand === preset.lhs &&
-            condition.rightOperand === newCondition.rightOperand
-          );
-          
-          if (!isDuplicate) {
-            newConditions.push(newCondition);
+          if (lhsExists) {
+            const newCondition: EntryCondition = {
+              id: Date.now().toString(),
+              family,
+              operator: preset.op,
+              leftOperand: preset.lhs,
+              rightOperand: rhsExists ? preset.rhs : (operands[1] || operands[0]),
+              enabled: true
+            };
+            
+            // Check for duplicates
+            const isDuplicate = entryConditions.some(condition => 
+              condition.family === family &&
+              condition.operator === preset.op &&
+              condition.leftOperand === preset.lhs &&
+              condition.rightOperand === newCondition.rightOperand
+            );
+            
+            if (!isDuplicate) {
+              setEntryConditions(prev => [...prev, newCondition]);
+            }
           }
-        }
-        
-        if (newConditions.length > 0) {
-          setEntryConditions(prev => [...prev, ...newConditions]);
         }
       }
     }
