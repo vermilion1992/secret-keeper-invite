@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Play, BarChart3 } from 'lucide-react';
+import StrategyReviewSummary from './summary';
 
 interface StepBacktestProps {
   onNext: () => void;
@@ -37,6 +38,8 @@ export function StepBacktest({ onNext, onPrevious, onRunBacktest, isLoading = fa
         </p>
       </header>
 
+      <StrategyReviewSummary />
+      
       {!backtestStarted ? (
         <Card className="p-8 text-center">
           <div className="space-y-6">
