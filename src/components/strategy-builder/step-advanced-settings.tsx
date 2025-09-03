@@ -1,5 +1,4 @@
-import { Strategy, UserTier } from '@/types/botforge';
-import { IndicatorConfig as OldIndicatorConfig } from '@/types/botforge';
+import { Strategy, IndicatorConfig, UserTier } from '@/types/botforge';
 import { markStepComplete } from '@/lib/strategyWizard/status';
 import { getTierAccess } from '@/lib/tier-access';
 import { Badge } from '@/components/ui/badge';
@@ -15,16 +14,11 @@ import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, Search, Plus, X, Filter, RotateCcw, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { loadConfigs, getStrategy, filterIndicators as filterIndicatorsByStrategy } from '@/lib/strategy-builder/correlation';
-import { StrategyConfig, Rule, RuleGroup, IndicatorConfig } from '@/lib/strategy-builder/types';
-import { validateRuleGroup } from '@/lib/strategy-builder/validation';
-import { previewStrategy } from '@/lib/strategy-builder/nlPreview';
-import { downloadPython } from '@/lib/strategy-builder/pythonExport';
 
 interface StepAdvancedSettingsProps {
   strategy: Strategy | null;
-  filterIndicators: OldIndicatorConfig[];
-  onUpdateFilters: (filters: OldIndicatorConfig[]) => void;
+  filterIndicators: IndicatorConfig[];
+  onUpdateFilters: (filters: IndicatorConfig[]) => void;
   onNext: () => void;
   onPrevious: () => void;
   userTier: UserTier;
@@ -55,40 +49,14 @@ const FAMILY_PRESETS: { [family: string]: {label: string, lhs: string, op: strin
   breadth: { label: "Breadth Bullish", lhs: "Breadth OK", op: "is_above", rhs: "50" }
 };
 
-export function StepAdvancedSettings({
-  strategy,
-  filterIndicators,
-  onUpdateFilters,
-  onNext,
+export function StepAdvancedSettings({ 
+  strategy, 
+  filterIndicators, 
+  onUpdateFilters, 
+  onNext, 
   onPrevious,
-  userTier
+  userTier 
 }: StepAdvancedSettingsProps) {
-  // Load strategy and indicator configs
-  const [strategyConfig, setStrategyConfig] = useState<StrategyConfig | null>(null);
-  const [indicators, setIndicators] = useState<IndicatorConfig[]>([]);
-  const [allowedIndicators, setAllowedIndicators] = useState<IndicatorConfig[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // State for rules (start empty)
-  const [ruleGroup, setRuleGroup] = useState<RuleGroup>({
-    joiner: 'AND',
-    rules: []
-  });
-
-  useEffect(() => {
-    const selectedStrategyId = localStorage.getItem('selectedStrategy');
-    if (selectedStrategyId) {
-      loadConfigs().then(({ strategies, indicators: allIndicators }) => {
-        const config = getStrategy(strategies, selectedStrategyId);
-        const allowed = filterIndicatorsByStrategy(allIndicators, config.allowedIndicators);
-        
-        setStrategyConfig(config);
-        setIndicators(allIndicators);
-        setAllowedIndicators(allowed);
-        setLoading(false);
-      });
-    }
-  }, []);
   const [isAdvancedStrategyOpen, setIsAdvancedStrategyOpen] = useState(false);
   const [isAdvancedExitOpen, setIsAdvancedExitOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
