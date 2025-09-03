@@ -478,24 +478,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
 
     const handleStrategyClick = () => {
       if (!isLocked) {
-        // Map UI strategy names to config keys in /botforge_combined_config.json
-        const configKeyMap: Record<string, string> = {
-          'EMA Crossover Pro': 'EMA Crossover Pro',
-          'MACD Confirmation': 'MACD Cross',
-          'RSI Mean Reversion': 'RSI Bias',
-          'Echo Hybrid': 'Hybrid Momentum',
-          'Breadth Monitor': 'Market Breadth Gate',
-          'Echo Market Neutral': 'Market Neutral',
-        };
-
-        const mappedKey = configKeyMap[strategy.name] || strategy.name;
-
-        // Store strategy key in localStorage and global window
-        localStorage.setItem('bf_selected_strategy', mappedKey);
-        (window as any).selectedStrategyKey = mappedKey;
-        
-        // Navigate to advanced settings page
-        window.location.href = "/strategy-builder/advanced";
+        openModal({...strategy, type: 'strategy'});
       }
     };
 
@@ -743,6 +726,22 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                 <Button
                   onClick={() => {
                     if (expandedItem.type === 'strategy') {
+                      // Map UI strategy names to config keys in /botforge_combined_config.json
+                      const configKeyMap: Record<string, string> = {
+                        'EMA Crossover Pro': 'EMA Crossover Pro',
+                        'MACD Confirmation': 'MACD Cross',
+                        'RSI Mean Reversion': 'RSI Bias',
+                        'Echo Hybrid': 'Hybrid Momentum',
+                        'Breadth Monitor': 'Market Breadth Gate',
+                        'Echo Market Neutral': 'Market Neutral',
+                      };
+
+                      const mappedKey = configKeyMap[expandedItem.name] || expandedItem.name;
+
+                      // Store strategy key in localStorage and global window
+                      localStorage.setItem('bf_selected_strategy', mappedKey);
+                      (window as any).selectedStrategyKey = mappedKey;
+
                       onSelect({ 
                         id: expandedItem.id, 
                         name: expandedItem.name, 
@@ -751,6 +750,11 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         defaultIndicators: [],
                         canAddFilters: expandedItem.tier !== 'basic'
                       });
+                      
+                      // Navigate to advanced settings page
+                      setTimeout(() => {
+                        window.location.href = "/strategy-builder/advanced";
+                      }, 100);
                     }
                     closeModal();
                   }}
