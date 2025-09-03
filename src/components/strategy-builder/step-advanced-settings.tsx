@@ -214,9 +214,8 @@ export function StepAdvancedSettings({
   // Get relevant indicators for the selected strategy
   const getRelevantIndicators = (strategyKey: string) => {
     if (!BF_CONFIG?.strategies) return ['ema'];
-    
     const config = BF_CONFIG.strategies[strategyKey];
-    return config?.indicators || ['ema'];
+    return config?.indicatorSettings || config?.indicators || ['ema'];
   };
 
   // Get entry tiles for the selected strategy

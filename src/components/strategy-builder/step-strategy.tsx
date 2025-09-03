@@ -724,7 +724,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
               
               <div className="flex gap-3 pt-4">
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     if (expandedItem.type === 'strategy') {
                       // Map UI strategy names to config keys in /botforge_combined_config.json
                       const configKeyMap: Record<string, string> = {
@@ -737,6 +737,24 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                       };
 
                       const mappedKey = configKeyMap[expandedItem.name] || expandedItem.name;
+
+                      // Ensure config is available and key exists
+                      let config: any = (window as any).BF_CONFIG;
+                      if (!config) {
+                        try {
+                          const res = await fetch('/botforge_combined_config.json');
+                          config = await res.json();
+                          (window as any).BF_CONFIG = config;
+                        } catch (e) {
+                          console.error('Failed to load config', e);
+                        }
+                      }
+
+                      const isSupported = !!config?.strategies?.[mappedKey];
+                      if (!isSupported) {
+                        alert('This strategy is not wired in the configuration yet. Please choose one of the supported strategies.');
+                        return; // Stay on page 3
+                      }
 
                       // Store strategy key in localStorage and global window
                       localStorage.setItem('bf_selected_strategy', mappedKey);
@@ -754,7 +772,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                       // Navigate to advanced settings page
                       setTimeout(() => {
                         window.location.href = "/strategy-builder/advanced";
-                      }, 100);
+                      }, 50);
                     }
                     closeModal();
                   }}
