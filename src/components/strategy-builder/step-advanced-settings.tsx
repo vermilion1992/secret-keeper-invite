@@ -42,10 +42,10 @@ const FAMILY_PRESETS: { [family: string]: {label: string, lhs: string, op: strin
   sma: { label: "Price > SMA", lhs: "Price", op: "is_above", rhs: "SMA" },
   ma: { label: "Price > MA", lhs: "Price", op: "is_above", rhs: "MA" },
   rsi: { label: "RSI > 50", lhs: "RSI", op: "is_above", rhs: "50" },
-  macd: { label: "Bullish", lhs: "MACD Line", op: "crosses_above", rhs: "Signal Line" },
+  macd: { label: "Bullish", lhs: "MACD Line", op: "crosses_above", rhs: "MACD Signal" },
   stochastic: { label: "K > D", lhs: "%K", op: "crosses_above", rhs: "%D" },
-  bollinger: { label: "Lower Bounce", lhs: "Price", op: "crosses_above", rhs: "Lower Band" },
-  breadth: { label: "Breadth Bullish", lhs: "%UpCoins", op: "is_above", rhs: "50" }
+  bollinger: { label: "Lower Bounce", lhs: "Price", op: "crosses_above", rhs: "BB Lower" },
+  breadth: { label: "Breadth Bullish", lhs: "Breadth OK", op: "is_above", rhs: "50" }
 };
 
 export function StepAdvancedSettings({ 
@@ -228,18 +228,61 @@ export function StepAdvancedSettings({
     return null;
   };
 
-  // Get family operands from strategy config
+  // Get family operands from strategy config with robust fallbacks
   const getFamilyOperands = (strategyKey: string, family: string) => {
     const config = getStrategyConfig(strategyKey);
-    if (!config?.operands) return ['Price', 'Value'];
-    
-    // Look for family-specific operands
-    if (config.operands[family]) {
-      return config.operands[family];
+
+    const defaultsByFamily: Record<string, string[]> = {
+      rsi: ["RSI", "30", "50", "70"],
+      bollinger: ["Price", "BB Lower", "BB Upper"],
+      macd: ["MACD Line", "MACD Signal", "Histogram", "0"],
+      ema: ["Price", "EMA Fast", "EMA Slow", "EMA Slope", "0"],
+      sma: ["Price", "SMA Fast", "SMA Slow", "SMA"],
+      ma: ["Price", "MA Fast", "MA Slow", "MA"],
+      stochastic: ["%K", "%D", "80", "20"],
+      breadth: ["Breadth OK", "50", "%UpCoins"],
+    };
+
+    if (!config?.operands) return defaultsByFamily[family] || ["Price", "Value"];
+
+    // Direct mapping (if config happens to provide it by family key)
+    if ((config.operands as any)[family]) {
+      return (config.operands as any)[family];
     }
-    
+
+    // Heuristically infer operands by scanning all operand arrays for family tokens
+    const allOperandsArrays = Object.values(config.operands) as string[][];
+    const tokensByFamily: Record<string, string[]> = {
+      rsi: ["RSI"],
+      bollinger: ["BB ", "Bollinger", "Upper", "Lower"],
+      macd: ["MACD", "Signal", "Histogram"],
+      ema: ["EMA"],
+      sma: ["SMA"],
+      ma: [" MA", "MA "],
+      stochastic: ["%K", "%D", "Stochastic"],
+      breadth: ["Breadth", "%UpCoins"],
+    };
+
+    const tokens = tokensByFamily[family] || [];
+    const matched = new Set<string>();
+    for (const arr of allOperandsArrays) {
+      const hits = arr.some(item => tokens.some(t => item.includes(t)));
+      if (hits) {
+        for (const item of arr) matched.add(item);
+      }
+    }
+
+    if (matched.size > 0) {
+      const arr = Array.from(matched);
+      if (family === 'rsi' && !arr.includes('50')) arr.push('50');
+      return arr;
+    }
+
+    // Family-specific defaults
+    if (defaultsByFamily[family]) return defaultsByFamily[family];
+
     // Fallback to first available operands
-    const firstOperands = Object.values(config.operands)[0] as string[] || ['Price', 'Value'];
+    const firstOperands = (allOperandsArrays[0] || ["Price", "Value"]) as string[];
     return firstOperands;
   };
 
