@@ -265,8 +265,21 @@ export function StepAdvancedSettings({
     const strategyKey = getSelectedStrategyKey();
     if (strategyKey && BF_CONFIG?.strategies) {
       const config = BF_CONFIG.strategies[strategyKey];
-      if (config?.defaultSeeds && config.defaultSeeds.length > 0) {
-        // Convert defaultSeeds to entry conditions
+      const tiles = getEntryTilesForStrategy(strategyKey);
+      
+      if (tiles.length > 0) {
+        // Create individual entry conditions for each tile defined in the strategy
+        const defaultConditions = tiles.slice(0, getRuleCap()).map((tile: any, index: number) => ({
+          id: (index + 1).toString(),
+          operator: tile.defaultSeeds?.operator || 'crosses_above',
+          leftOperand: tile.defaultSeeds?.leftOperand || tile.operands?.[0] || 'EMA Fast',
+          rightOperand: tile.defaultSeeds?.rightOperand || tile.operands?.[1] || 'EMA Slow',
+          enabled: true
+        }));
+        
+        setEntryConditions(defaultConditions);
+      } else if (config?.defaultSeeds && config.defaultSeeds.length > 0) {
+        // Fallback to global defaultSeeds if no tiles
         const defaultConditions = config.defaultSeeds.slice(0, getRuleCap()).map((seed: any, index: number) => ({
           id: (index + 1).toString(),
           operator: seed.operator || 'crosses_above',
@@ -276,19 +289,6 @@ export function StepAdvancedSettings({
         }));
         
         setEntryConditions(defaultConditions);
-      } else {
-        // Fallback to first tile's default seeds
-        const tiles = getEntryTilesForStrategy(strategyKey);
-        if (tiles.length > 0) {
-          const firstTile = tiles[0];
-          setEntryConditions([{
-            id: '1',
-            operator: firstTile.defaultSeeds?.operator || 'crosses_above',
-            leftOperand: firstTile.defaultSeeds?.leftOperand || firstTile.operands?.[0] || 'EMA Fast',
-            rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands?.[1] || 'EMA Slow',
-            enabled: true
-          }]);
-        }
       }
     }
   }, [BF_CONFIG, strategy?.name]);
@@ -325,19 +325,20 @@ export function StepAdvancedSettings({
         }));
         break;
       case 'entry':
-        // Reset to first tile's defaultSeeds for the current strategy
+        // Reset to create individual conditions for each tile in the strategy
         if (strategy) {
           const strategyKey = getSelectedStrategyKey();
           const tiles = strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
           if (tiles.length > 0) {
-            const firstTile = tiles[0];
-            setEntryConditions([{
-              id: '1',
-              operator: firstTile.defaultSeeds?.operator || 'crosses_above',
-              leftOperand: firstTile.defaultSeeds?.leftOperand || firstTile.operands[0],
-              rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands[1] || '',
+            // Create individual entry conditions for each tile
+            const defaultConditions = tiles.slice(0, getRuleCap()).map((tile: any, index: number) => ({
+              id: (index + 1).toString(),
+              operator: tile.defaultSeeds?.operator || 'crosses_above',
+              leftOperand: tile.defaultSeeds?.leftOperand || tile.operands?.[0] || 'EMA Fast',
+              rightOperand: tile.defaultSeeds?.rightOperand || tile.operands?.[1] || 'EMA Slow',
               enabled: true
-            }]);
+            }));
+            setEntryConditions(defaultConditions);
           } else {
             setEntryConditions([{ id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }]);
           }
@@ -410,26 +411,7 @@ export function StepAdvancedSettings({
 
   const conflicts = hasConflicts();
 
-  // Initialize entry conditions when strategy changes
-  useEffect(() => {
-    if (strategy) {
-      const strategyKey = getSelectedStrategyKey();
-      const tiles = strategyKey ? getEntryTilesForStrategy(strategyKey) : [];
-      if (tiles.length > 0) {
-        const firstTile = tiles[0];
-        setEntryConditions([{
-          id: '1',
-          operator: firstTile.defaultSeeds?.operator || 'crosses_above',
-          leftOperand: firstTile.defaultSeeds?.leftOperand || firstTile.operands[0],
-          rightOperand: firstTile.defaultSeeds?.rightOperand || firstTile.operands[1] || '',
-          enabled: true
-        }]);
-      } else {
-        // Fallback if no tiles configured
-        setEntryConditions([{ id: '1', operator: 'crosses_above', leftOperand: 'EMA Fast', rightOperand: 'EMA Slow', enabled: true }]);
-      }
-    }
-  }, [strategy?.name]);
+  // Initialize entry conditions when strategy changes (removed duplicate logic)
 
   // Format strategy name (replace Echo with Hybrid Momentum)
   const formatStrategyName = (name: string) => {
@@ -483,270 +465,524 @@ export function StepAdvancedSettings({
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Only show indicator panels that are relevant to the selected strategy */}
+                {/* Render individual panels for each indicator used by the strategy */}
                 {(() => {
                   const strategyKey = getSelectedStrategyKey();
-                  return strategyKey && getRelevantIndicators(strategyKey).includes('ema');
-                })() && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">EMA Fast Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Number of bars used to calculate the fast EMA. Shorter = reacts quicker.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="space-y-2">
-                        <Slider
-                          value={[strategySettings.emaFast]}
-                          onValueChange={([value]) => updateStrategySetting('emaFast', value)}
-                          max={100}
-                          min={5}
-                          step={1}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>5</span>
-                          <span className="font-medium text-foreground">{strategySettings.emaFast}</span>
-                          <span>100</span>
-                        </div>
-                      </div>
-                    </div>
+                  const indicators = strategyKey ? getRelevantIndicators(strategyKey) : [];
+                  
+                  return indicators.map((indicator, index) => {
+                    switch (indicator) {
+                      case 'ema':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <TrendingUp className="w-5 h-5 text-primary" />
+                              EMA Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">EMA Fast Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Number of bars used to calculate the fast EMA. Shorter = reacts quicker.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <div className="space-y-2">
+                                  <Slider
+                                    value={[strategySettings.emaFast]}
+                                    onValueChange={([value]) => updateStrategySetting('emaFast', value)}
+                                    max={100}
+                                    min={5}
+                                    step={1}
+                                    className="w-full"
+                                  />
+                                  <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>5</span>
+                                    <span className="font-medium text-foreground">{strategySettings.emaFast}</span>
+                                    <span>100</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">EMA Slow Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Number of bars used to calculate the slow EMA. Longer = smoother trend.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <div className="space-y-2">
+                                  <Slider
+                                    value={[strategySettings.emaSlow]}
+                                    onValueChange={([value]) => updateStrategySetting('emaSlow', value)}
+                                    max={200}
+                                    min={10}
+                                    step={1}
+                                    className="w-full"
+                                  />
+                                  <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>10</span>
+                                    <span className="font-medium text-foreground">{strategySettings.emaSlow}</span>
+                                    <span>200</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">MA Type</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Moving average calculation method. EMA is more responsive, SMA is smoother.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Select
+                                  value={strategySettings.maType}
+                                  onValueChange={(value) => updateStrategySetting('maType', value)}
+                                >
+                                  <SelectTrigger className="bg-background/50">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="EMA">EMA (Exponential)</SelectItem>
+                                    <SelectItem value="SMA">SMA (Simple)</SelectItem>
+                                    <SelectItem value="WMA">WMA (Weighted)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">EMA Slow Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Number of bars used to calculate the slow EMA. Longer = smoother trend.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="space-y-2">
-                        <Slider
-                          value={[strategySettings.emaSlow]}
-                          onValueChange={([value]) => updateStrategySetting('emaSlow', value)}
-                          max={200}
-                          min={10}
-                          step={1}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>10</span>
-                          <span className="font-medium text-foreground">{strategySettings.emaSlow}</span>
-                          <span>200</span>
-                        </div>
-                      </div>
-                    </div>
+                      case 'sma':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <TrendingUp className="w-5 h-5 text-primary" />
+                              SMA Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">SMA Fast Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Period for fast simple moving average (5-50)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.emaFast}
+                                  onChange={(e) => updateStrategySetting('emaFast', Number(e.target.value))}
+                                  min="5"
+                                  max="50"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">SMA Slow Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Period for slow simple moving average (20-200)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.emaSlow}
+                                  onChange={(e) => updateStrategySetting('emaSlow', Number(e.target.value))}
+                                  min="20"
+                                  max="200"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">MA Type</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Moving average calculation method. EMA is more responsive, SMA is smoother.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Select
-                        value={strategySettings.maType}
-                        onValueChange={(value) => updateStrategySetting('maType', value)}
-                      >
-                        <SelectTrigger className="bg-background/50">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="EMA">EMA (Exponential)</SelectItem>
-                          <SelectItem value="SMA">SMA (Simple)</SelectItem>
-                          <SelectItem value="WMA">WMA (Weighted)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
+                      case 'rsi':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <BarChart3 className="w-5 h-5 text-primary" />
+                              RSI Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">RSI Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Number of bars used to calculate RSI. Standard is 14, shorter gives more signals.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.rsiLength}
+                                  onChange={(e) => updateStrategySetting('rsiLength', Number(e.target.value))}
+                                  min="5"
+                                  max="50"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">RSI Overbought</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Level where RSI suggests price is overbought (default 70).</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.rsiOverbought}
+                                  onChange={(e) => updateStrategySetting('rsiOverbought', Number(e.target.value))}
+                                  min="50"
+                                  max="95"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">RSI Oversold</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Level where RSI suggests price is oversold (default 30).</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.rsiOversold}
+                                  onChange={(e) => updateStrategySetting('rsiOversold', Number(e.target.value))}
+                                  min="5"
+                                  max="50"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                {/* RSI Settings - only show for strategies that use RSI */}
-                {(() => {
-                  const strategyKey = getSelectedStrategyKey();
-                  return strategyKey && getRelevantIndicators(strategyKey).includes('rsi');
-                })() && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">RSI Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Number of bars used to calculate RSI. Standard is 14, shorter gives more signals.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.rsiLength}
-                        onChange={(e) => updateStrategySetting('rsiLength', Number(e.target.value))}
-                        min="5"
-                        max="50"
-                        className="bg-background/50"
-                      />
-                    </div>
+                      case 'macd':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <TrendingUp className="w-5 h-5 text-primary" />
+                              MACD Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">MACD Fast Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Fast EMA period for MACD calculation. Standard is 12.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.macdFast}
+                                  onChange={(e) => updateStrategySetting('macdFast', Number(e.target.value))}
+                                  min="5"
+                                  max="50"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">MACD Slow Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Slow EMA period for MACD calculation. Standard is 26.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.macdSlow}
+                                  onChange={(e) => updateStrategySetting('macdSlow', Number(e.target.value))}
+                                  min="10"
+                                  max="100"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">MACD Signal Length</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Number of bars used to smooth MACD crossovers.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.macdSignal}
+                                  onChange={(e) => updateStrategySetting('macdSignal', Number(e.target.value))}
+                                  min="3"
+                                  max="30"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">RSI Overbought</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Level where RSI suggests price is overbought (default 70).</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.rsiOverbought}
-                        onChange={(e) => updateStrategySetting('rsiOverbought', Number(e.target.value))}
-                        min="50"
-                        max="95"
-                        className="bg-background/50"
-                      />
-                    </div>
+                      case 'bollinger':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <BarChart3 className="w-5 h-5 text-primary" />
+                              Bollinger Bands Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">BB Period</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Period for Bollinger Bands calculation (10-50)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={strategySettings.bbPeriod}
+                                  onChange={(e) => updateStrategySetting('bbPeriod', Number(e.target.value))}
+                                  min="10"
+                                  max="50"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">Standard Deviation</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Standard deviation multiplier (1.5-2.5)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  value={2.0}
+                                  min="1.5"
+                                  max="2.5"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">RSI Oversold</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Level where RSI suggests price is oversold (default 30).</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.rsiOversold}
-                        onChange={(e) => updateStrategySetting('rsiOversold', Number(e.target.value))}
-                        min="5"
-                        max="50"
-                        className="bg-background/50"
-                      />
-                    </div>
-                  </div>
-                )}
+                      case 'stochastic':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <BarChart3 className="w-5 h-5 text-primary" />
+                              Stochastic Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">K Period</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">%K period for stochastic calculation (5-21)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={14}
+                                  min="5"
+                                  max="21"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">D Period</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">%D period for signal line (3-9)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={3}
+                                  min="3"
+                                  max="9"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">Smooth Period</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Smoothing period (1-5)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={1}
+                                  min="1"
+                                  max="5"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                {/* MACD Settings */}
-                {(() => {
-                  const strategyKey = getSelectedStrategyKey();
-                  return strategyKey && getRelevantIndicators(strategyKey).includes('macd');
-                })() && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">MACD Fast Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Fast EMA period for MACD calculation. Standard is 12.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.macdFast}
-                        onChange={(e) => updateStrategySetting('macdFast', Number(e.target.value))}
-                        min="5"
-                        max="50"
-                        className="bg-background/50"
-                      />
-                    </div>
+                      case 'breadth':
+                        return (
+                          <div key={`${indicator}-${index}`} className="space-y-4 p-4 border rounded-lg bg-background/20">
+                            <h3 className="text-lg font-medium flex items-center gap-2">
+                              <BarChart3 className="w-5 h-5 text-primary" />
+                              Market Breadth Settings
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">Breadth Period</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Period for breadth calculation (5-50)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={20}
+                                  min="5"
+                                  max="50"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <Label className="font-medium">Threshold</Label>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-xs">Breadth threshold level (30-70)</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                                <Input
+                                  type="number"
+                                  value={50}
+                                  min="30"
+                                  max="70"
+                                  className="bg-background/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">MACD Slow Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Slow EMA period for MACD calculation. Standard is 26.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.macdSlow}
-                        onChange={(e) => updateStrategySetting('macdSlow', Number(e.target.value))}
-                        min="10"
-                        max="100"
-                        className="bg-background/50"
-                      />
-                    </div>
+                      default:
+                        return null;
+                    }
+                  });
+                })()}
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">MACD Signal Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Number of bars used to smooth MACD crossovers.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.macdSignal}
-                        onChange={(e) => updateStrategySetting('macdSignal', Number(e.target.value))}
-                        min="3"
-                        max="30"
-                        className="bg-background/50"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Conditional ATR Length - only show when ATR stop is enabled */}
+                {/* ATR Length - only show when ATR stop is enabled */}
                 {exitSettings.atrStopEnabled && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium">ATR Length</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">Number of bars for ATR calculation. Used for volatility-based stops.</p>
-                          </TooltipContent>
-                        </Tooltip>
+                  <div className="space-y-4 p-4 border rounded-lg bg-background/20">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      ATR Settings
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Label className="font-medium">ATR Length</Label>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="w-4 h-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Number of bars for ATR calculation. Used for volatility-based stops.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Input
+                          type="number"
+                          value={strategySettings.atrLength}
+                          onChange={(e) => updateStrategySetting('atrLength', Number(e.target.value))}
+                          min="5"
+                          max="50"
+                          className="bg-background/50"
+                        />
                       </div>
-                      <Input
-                        type="number"
-                        value={strategySettings.atrLength}
-                        onChange={(e) => updateStrategySetting('atrLength', Number(e.target.value))}
-                        min="5"
-                        max="50"
-                        className="bg-background/50"
-                      />
                     </div>
                   </div>
                 )}
