@@ -478,12 +478,21 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
 
     const handleStrategyClick = () => {
       if (!isLocked) {
-        // Store strategy key globally and in localStorage
-        const strategyKey = strategy.id.replace(/-/g, '_'); // Convert kebab-case to snake_case
-        localStorage.setItem('bf_selected_strategy', strategyKey);
-        
-        // Also store in a global variable for immediate access
-        (window as any).selectedStrategyKey = strategyKey;
+        // Map UI strategy names to config keys in /botforge_combined_config.json
+        const configKeyMap: Record<string, string> = {
+          'EMA Crossover Pro': 'EMA Crossover Pro',
+          'MACD Confirmation': 'MACD Cross',
+          'RSI Mean Reversion': 'RSI Bias',
+          'Echo Hybrid': 'Hybrid Momentum',
+          'Breadth Monitor': 'Market Breadth Gate',
+          'Echo Market Neutral': 'Market Neutral',
+        };
+
+        const mappedKey = configKeyMap[strategy.name] || strategy.name;
+
+        // Store strategy key in localStorage and global window
+        localStorage.setItem('bf_selected_strategy', mappedKey);
+        (window as any).selectedStrategyKey = mappedKey;
         
         // Navigate to advanced settings page
         window.location.href = "/strategy-builder/advanced";

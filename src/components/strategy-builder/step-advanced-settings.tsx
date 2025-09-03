@@ -457,7 +457,7 @@ export function StepAdvancedSettings({
           </p>
         </header>
 
-        {!strategy ? (
+        {(() => { const key = getSelectedStrategyKey(); return !key; })() ? (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">Please select a strategy first.</p>
           </Card>
@@ -482,7 +482,7 @@ export function StepAdvancedSettings({
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Core indicator configurations for the {formatStrategyName(strategy.name)} strategy
+                  Core indicator configurations for the {formatStrategyName((getSelectedStrategyKey() || '').replace(/_/g, ' '))} strategy
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
