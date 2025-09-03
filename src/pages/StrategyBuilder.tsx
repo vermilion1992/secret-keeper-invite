@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 const StrategyBuilder = () => {
   // Mock user data - in real app this would come from auth/user context
-  const userTier: UserTier = 'basic'; // Can be 'basic', 'pro', or 'expert'
+  const userTier: UserTier = 'expert'; // Can be 'basic', 'pro', or 'expert'
   const credits = 10;
   const location = useLocation();
   const [filterIndicators, setFilterIndicators] = useState([]);
