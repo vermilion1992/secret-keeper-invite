@@ -769,10 +769,8 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         canAddFilters: expandedItem.tier !== 'basic'
                       });
                       
-                      // Navigate to advanced settings page
-                      setTimeout(() => {
-                        window.location.href = "/strategy-builder/advanced";
-                      }, 50);
+                      // Navigate to advanced settings page immediately
+                      window.location.href = "/strategy-builder/advanced";
                     }
                     closeModal();
                   }}

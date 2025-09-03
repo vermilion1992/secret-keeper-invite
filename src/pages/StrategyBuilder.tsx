@@ -1,5 +1,4 @@
 import { StrategyBuilderWizard } from '@/components/strategy-builder/strategy-builder-wizard';
-import { StepStrategy } from '@/components/strategy-builder/step-strategy';
 import { StepAdvancedSettings } from '@/components/strategy-builder/step-advanced-settings';
 import { UserTier } from '@/types/botforge';
 import { useLocation } from 'react-router-dom';
@@ -10,7 +9,6 @@ const StrategyBuilder = () => {
   const userTier: UserTier = 'basic'; // Can be 'basic', 'pro', or 'expert'
   const credits = 10;
   const location = useLocation();
-  const [selectedStrategy, setSelectedStrategy] = useState(null);
   const [filterIndicators, setFilterIndicators] = useState([]);
 
   // Determine which page to show based on route
@@ -31,14 +29,12 @@ const StrategyBuilder = () => {
     );
   }
 
+  // Default: Show the full 8-step wizard starting with Market Type (Spot/Perp)
   return (
     <div className="animate-fade-in">
-      <StepStrategy
-        selected={selectedStrategy}
-        onSelect={setSelectedStrategy}
-        onNext={() => {}}
-        onPrevious={() => {}}
+      <StrategyBuilderWizard 
         userTier={userTier}
+        credits={credits}
       />
     </div>
   );
