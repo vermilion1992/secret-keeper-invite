@@ -1,237 +1,112 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { TrophyIcon, StarIcon, ArrowDownTrayIcon, ShareIcon, ArrowTrendingUpIcon, UsersIcon } from '@heroicons/react/24/outline';
+'use client';
+import * as React from 'react';
+import { useCommunityBots } from '../hooks/useCommunityBots';
+import CommunityCard from '../components/bot-community/CommunityCard';
+import FiltersBar, { Filters } from '../components/bot-community/FiltersBar';
+import type { CommunityBot } from '../types/bot-community';
 
-const BotCommunity = () => {
-  // Mock leaderboard data
-  const leaderboardBots = [
-    {
-      id: '1',
-      name: 'Golden Cross Master',
-      author: 'CryptoTrader99',
-      strategy: 'EMA Crossover Pro',
-      roi: 157.3,
-      sharpe: 2.4,
-      downloads: 1247,
-      rating: 4.8,
-      tier: 'pro'
-    },
-    {
-      id: '2',
-      name: 'Volatility Hunter',
-      author: 'AlgoWizard',
-      strategy: 'ATR Trailing Stops',
-      roi: 134.7,
-      sharpe: 2.1,
-      downloads: 892,
-      rating: 4.6,
-      tier: 'expert'
-    },
-    {
-      id: '3',
-      name: 'Scalping Beast',
-      author: 'QuickProfit',
-      strategy: 'RSI Mean Reversion',
-      roi: 98.2,
-      sharpe: 1.9,
-      downloads: 654,
-      rating: 4.4,
-      tier: 'basic'
+// Import into My Bots local store if present:
+function importToMyBots(bot: CommunityBot) {
+  try {
+    const KEY = 'botforge.mybots';
+    const raw = localStorage.getItem(KEY);
+    const current = raw ? JSON.parse(raw) : [];
+    const id = `imp_${bot.id}`;
+    const newBot = {
+      id,
+      name: bot.name,
+      strategyId: bot.strategyId,
+      strategyLabel: bot.strategyLabel,
+      status: 'draft',
+      tags: bot.tags ?? [],
+      pinned: false,
+      latest: {
+        id: 'community',
+        ranAtISO: bot.updatedAtISO,
+        equityCurve: bot.equityCurve ?? [],
+        roiPct: bot.roiPct ?? 0,
+        winratePct: bot.winratePct ?? 0,
+        maxDrawdownPct: bot.maxDrawdownPct ?? 0,
+        trades: bot.trades ?? 0,
+      },
+      versions: [],
+    };
+    localStorage.setItem(KEY, JSON.stringify([newBot, ...current]));
+    alert('Imported to My Bots');
+  } catch (e) {
+    console.error(e);
+    alert('Failed to import');
+  }
+}
+
+export default function BotCommunity() {
+  const { bots } = useCommunityBots();
+
+  // derive unique strategies/tags for filters
+  const strategyOptions = React.useMemo(() => Array.from(new Set(bots.map(b => b.strategyLabel))).sort(), [bots]);
+  const tagOptions = React.useMemo(() => Array.from(new Set(bots.flatMap(b => b.tags ?? []))).sort(), [bots]);
+
+  const [filters, setFilters] = React.useState<Filters>({ q:'', strategy:'', tag:'', minROI: undefined, minWinrate: undefined, sort:'updated' });
+
+  const filtered = React.useMemo(() => {
+    let list = [...bots];
+
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
+      list = list.filter(b => [b.name, b.strategyLabel, b.author.name, ...(b.tags ?? [])].join(' ').toLowerCase().includes(q));
     }
-  ];
+    if (filters.strategy) list = list.filter(b => b.strategyLabel === filters.strategy);
+    if (filters.tag) list = list.filter(b => b.tags?.includes(filters.tag));
+    if (filters.minROI !== undefined) list = list.filter(b => (b.roiPct ?? -Infinity) >= (filters.minROI ?? -Infinity));
+    if (filters.minWinrate !== undefined) list = list.filter(b => (b.winratePct ?? -Infinity) >= (filters.minWinrate ?? -Infinity));
 
-  const handleCopyBot = (botId: string) => {
-    // In real app, this would copy the bot configuration
-    console.log('Copying bot:', botId);
-  };
+    switch (filters.sort) {
+      case 'roi': list.sort((a,b)=> (b.roiPct ?? -1) - (a.roiPct ?? -1)); break;
+      case 'winrate': list.sort((a,b)=> (b.winratePct ?? -1) - (a.winratePct ?? -1)); break;
+      case 'drawdown': list.sort((a,b)=> (a.maxDrawdownPct ?? 999) - (b.maxDrawdownPct ?? 999)); break;
+      case 'downloads': list.sort((a,b)=> (b.downloads ?? 0) - (a.downloads ?? 0)); break;
+      case 'likes': list.sort((a,b)=> (b.likes ?? 0) - (a.likes ?? 0)); break;
+      case 'updated':
+      default: list.sort((a,b)=> new Date(b.updatedAtISO).getTime() - new Date(a.updatedAtISO).getTime()); break;
+    }
+    return list;
+  }, [bots, filters]);
+
+  const [detailsId, setDetailsId] = React.useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/30">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-3">
-                <UsersIcon className="w-8 h-8 text-primary" />
-                Bot Community
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Discover and share profitable trading strategies
-              </p>
+    <div className="p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <div className="text-xl font-semibold">Bot Community</div>
+      </div>
+
+      <FiltersBar value={filters} onChange={setFilters} strategies={strategyOptions} tags={tagOptions} />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filtered.map(b => (
+          <CommunityCard
+            key={b.id}
+            bot={b}
+            onImport={(id)=> importToMyBots(b)}
+            onOpenDetails={(id)=> setDetailsId(id)}
+            onLike={(id)=> console.log('like', id)}
+          />
+        ))}
+      </div>
+
+      {/* Minimal details overlay (reuse card content for now) */}
+      {detailsId ? (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={()=> setDetailsId(null)} />
+          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl p-5 overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-lg font-semibold">Community Bot</div>
+              <button onClick={()=> setDetailsId(null)} className="text-sm px-2 py-1 rounded border">Close</button>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Share your bot</p>
-              <p className="text-lg font-semibold text-primary">+1 Credit Reward</p>
-            </div>
+            <pre className="text-xs bg-gray-50 rounded p-3 overflow-auto">{JSON.stringify(filtered.find(x=>x.id===detailsId), null, 2)}</pre>
           </div>
         </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/20 rounded-full">
-                  <TrophyIcon className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">1,247</p>
-                  <p className="text-sm text-muted-foreground">Total Bots</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-success/20 rounded-full">
-                  <ArrowTrendingUpIcon className="w-6 h-6 text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">+127%</p>
-                  <p className="text-sm text-muted-foreground">Avg ROI</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-500/20 rounded-full">
-                  <ArrowDownTrayIcon className="w-6 h-6 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">25.3K</p>
-                  <p className="text-sm text-muted-foreground">Downloads</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-500/20 rounded-full">
-                  <StarIcon className="w-6 h-6 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">4.6</p>
-                  <p className="text-sm text-muted-foreground">Avg Rating</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Leaderboard */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrophyIcon className="w-5 h-5 text-yellow-500" />
-              Top Performing Bots
-            </CardTitle>
-            <CardDescription>
-              Community's highest rated and most profitable trading bots
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {leaderboardBots.map((bot, index) => (
-                <div
-                  key={bot.id}
-                  className="flex items-center gap-4 p-4 border border-border/50 rounded-lg hover:bg-muted/30 transition-colors"
-                >
-                  {/* Rank */}
-                  <div className="flex-shrink-0 w-8 text-center">
-                    {index === 0 && <TrophyIcon className="w-6 h-6 text-yellow-500 mx-auto" />}
-                    {index === 1 && <TrophyIcon className="w-6 h-6 text-gray-400 mx-auto" />}
-                    {index === 2 && <TrophyIcon className="w-6 h-6 text-amber-600 mx-auto" />}
-                    {index > 2 && <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>}
-                  </div>
-
-                  {/* Bot Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-lg">{bot.name}</h3>
-                      <Badge variant={bot.tier === 'expert' ? 'default' : 'secondary'}>
-                        {bot.tier.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Avatar className="w-5 h-5">
-                          <AvatarFallback className="text-xs">
-                            {bot.author.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{bot.author}</span>
-                      </div>
-                      <span>•</span>
-                      <span>{bot.strategy}</span>
-                      <span>•</span>
-                      <div className="flex items-center gap-1">
-                        <StarIcon className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span>{bot.rating}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-6 text-sm">
-                    <div className="text-center">
-                      <p className="font-semibold text-success">+{bot.roi}%</p>
-                      <p className="text-muted-foreground">ROI</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-semibold">{bot.sharpe}</p>
-                      <p className="text-muted-foreground">Sharpe</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-semibold">{bot.downloads}</p>
-                      <p className="text-muted-foreground">Downloads</p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopyBot(bot.id)}
-                      className="flex items-center gap-1"
-                    >
-                      <ArrowDownTrayIcon className="w-4 h-4" />
-                      Copy
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-1"
-                    >
-                      <ShareIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center mt-6">
-              <Button variant="outline" size="lg">
-                Load More Bots
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      ) : null}
     </div>
   );
-};
-
-export default BotCommunity;
+}
