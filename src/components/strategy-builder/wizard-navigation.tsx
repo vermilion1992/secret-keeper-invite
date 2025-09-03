@@ -22,12 +22,12 @@ export function WizardNavigation({ steps, currentStep, onStepClick }: WizardNavi
           <Card key={step.step} className="overflow-hidden">
             <button
               onClick={() => onStepClick(step.step)}
-              className={`w-full p-6 text-left transition-all hover:bg-accent/50 ${
+              className={`w-full p-6 text-left transition-all duration-200 hover:shadow-md ${
                 step.isActive
                   ? 'bg-primary/10 border-primary/30'
                   : step.isComplete
                   ? 'bg-success/5 border-success/20'
-                  : 'bg-card border-border'
+                  : 'bg-card border-border hover:shadow-lg'
               }`}
             >
               <div className="flex items-start gap-4">
