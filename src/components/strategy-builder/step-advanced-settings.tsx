@@ -49,14 +49,40 @@ const FAMILY_PRESETS: { [family: string]: {label: string, lhs: string, op: strin
   breadth: { label: "Breadth Bullish", lhs: "Breadth OK", op: "is_above", rhs: "50" }
 };
 
-export function StepAdvancedSettings({ 
-  strategy, 
-  filterIndicators, 
-  onUpdateFilters, 
-  onNext, 
+export function StepAdvancedSettings({
+  strategy,
+  filterIndicators,
+  onUpdateFilters,
+  onNext,
   onPrevious,
-  userTier 
+  userTier
 }: StepAdvancedSettingsProps) {
+  // Load strategy and indicator configs
+  const [strategyConfig, setStrategyConfig] = useState<StrategyConfig | null>(null);
+  const [indicators, setIndicators] = useState<IndicatorConfig[]>([]);
+  const [allowedIndicators, setAllowedIndicators] = useState<IndicatorConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // State for rules (start empty)
+  const [ruleGroup, setRuleGroup] = useState<RuleGroup>({
+    joiner: 'AND',
+    rules: []
+  });
+
+  useEffect(() => {
+    const selectedStrategyId = localStorage.getItem('selectedStrategy');
+    if (selectedStrategyId) {
+      loadConfigs().then(({ strategies, indicators: allIndicators }) => {
+        const config = getStrategy(strategies, selectedStrategyId);
+        const allowed = filterIndicators(allIndicators, config.allowedIndicators);
+        
+        setStrategyConfig(config);
+        setIndicators(allIndicators);
+        setAllowedIndicators(allowed);
+        setLoading(false);
+      });
+    }
+  }, []);
   const [isAdvancedStrategyOpen, setIsAdvancedStrategyOpen] = useState(false);
   const [isAdvancedExitOpen, setIsAdvancedExitOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
