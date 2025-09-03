@@ -375,68 +375,71 @@ export function StepAdvancedSettings({
     }
   };
 
-  // Family tile toggle
+  // Family tile toggle - automatically adds default preset rules
   const toggleFamilyTile = (family: string) => {
-    setFamilyTileStates(prev => ({
-      ...prev,
-      [family]: !prev[family]
-    }));
-  };
-
-  // Add rule from preset
-  const addRuleFromPreset = (family: string, preset: {label: string, lhs: string, op: string, rhs: string}) => {
-    if (entryConditions.length >= getRuleCap()) return;
+    const isCurrentlyOpen = familyTileStates[family];
     
-    const strategyKey = getSelectedStrategyKey();
-    const operands = getFamilyOperands(strategyKey, family);
-    
-    // Check if operands exist in strategy
-    const lhsExists = operands.includes(preset.lhs);
-    const rhsExists = operands.includes(preset.rhs) || !isNaN(Number(preset.rhs));
-    
-    if (!lhsExists) return; // Skip if left operand doesn't exist
-    
-    const newCondition: EntryCondition = {
-      id: Date.now().toString(),
-      family,
-      operator: preset.op,
-      leftOperand: preset.lhs,
-      rightOperand: rhsExists ? preset.rhs : (operands[1] || operands[0]),
-      enabled: true
-    };
-    
-    // Check for duplicates
-    const isDuplicate = entryConditions.some(condition => 
-      condition.family === family &&
-      condition.operator === preset.op &&
-      condition.leftOperand === preset.lhs &&
-      condition.rightOperand === newCondition.rightOperand
-    );
-    
-    if (!isDuplicate) {
-      setEntryConditions(prev => [...prev, newCondition]);
+    if (isCurrentlyOpen) {
+      // Close tile and remove all rules for this family
+      setFamilyTileStates(prev => ({
+        ...prev,
+        [family]: false
+      }));
+      setEntryConditions(prev => prev.filter(condition => condition.family !== family));
+    } else {
+      // Open tile and add default preset rules for this family
+      setFamilyTileStates(prev => ({
+        ...prev,
+        [family]: true
+      }));
+      
+      // Add default presets for this family
+      const presets = FAMILY_PRESETS[family];
+      if (presets && presets.length > 0) {
+        const strategyKey = getSelectedStrategyKey();
+        const operands = getFamilyOperands(strategyKey, family);
+        
+        const newConditions: EntryCondition[] = [];
+        
+        for (const preset of presets) {
+          // Check if we're under rule cap
+          if (entryConditions.length + newConditions.length >= getRuleCap()) break;
+          
+          // Check if operands exist in strategy
+          const lhsExists = operands.includes(preset.lhs);
+          const rhsExists = operands.includes(preset.rhs) || !isNaN(Number(preset.rhs));
+          
+          if (!lhsExists) continue; // Skip if left operand doesn't exist
+          
+          const newCondition: EntryCondition = {
+            id: (Date.now() + newConditions.length).toString(),
+            family,
+            operator: preset.op,
+            leftOperand: preset.lhs,
+            rightOperand: rhsExists ? preset.rhs : (operands[1] || operands[0]),
+            enabled: true
+          };
+          
+          // Check for duplicates
+          const isDuplicate = entryConditions.some(condition => 
+            condition.family === family &&
+            condition.operator === preset.op &&
+            condition.leftOperand === preset.lhs &&
+            condition.rightOperand === newCondition.rightOperand
+          );
+          
+          if (!isDuplicate) {
+            newConditions.push(newCondition);
+          }
+        }
+        
+        if (newConditions.length > 0) {
+          setEntryConditions(prev => [...prev, ...newConditions]);
+        }
+      }
     }
   };
 
-  // Add custom rule
-  const addCustomRule = (family: string) => {
-    if (entryConditions.length >= getRuleCap()) return;
-    
-    const strategyKey = getSelectedStrategyKey();
-    const operands = getFamilyOperands(strategyKey, family);
-    const operators = getAvailableOperators();
-    
-    const newCondition: EntryCondition = {
-      id: Date.now().toString(),
-      family,
-      operator: operators[0]?.value || 'is_above',
-      leftOperand: operands[0] || 'Price',
-      rightOperand: operands[1] || operands[0] || 'Value',
-      enabled: true
-    };
-    
-    setEntryConditions(prev => [...prev, newCondition]);
-  };
 
   // Remove rule
   const removeRule = (id: string) => {
@@ -796,39 +799,12 @@ export function StepAdvancedSettings({
                         </div>
                       </button>
                       
-                      {/* Family content - presets only */}
+                      {/* Family content - shows when tile is selected */}
                       {isOpen && (
-                        <div className="space-y-3 p-3 border rounded bg-background/30">
-                          {/* Presets */}
-                          {FAMILY_PRESETS[family] && (
-                            <div className="space-y-2">
-                              <h5 className="text-xs font-medium text-muted-foreground">Quick Presets</h5>
-                              <div className="flex flex-wrap gap-1">
-                                {FAMILY_PRESETS[family].map((preset, idx) => (
-                                  <button
-                                    key={idx}
-                                    onClick={() => addRuleFromPreset(family, preset)}
-                                    disabled={entryConditions.length >= getRuleCap()}
-                                    className="px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded disabled:opacity-50"
-                                  >
-                                    {preset.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Add custom rule button */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addCustomRule(family)}
-                            disabled={entryConditions.length >= getRuleCap()}
-                            className="w-full"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add Custom Rule
-                          </Button>
+                        <div className="p-2 border rounded bg-background/30">
+                          <div className="text-xs text-muted-foreground">
+                            {activeCount > 0 ? `${activeCount} rules active` : 'Click to add default rules'}
+                          </div>
                         </div>
                       )}
                     </div>
