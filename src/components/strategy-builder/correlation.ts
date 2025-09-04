@@ -1,4 +1,5 @@
-import { Strategy as StrategyConfig, IndicatorConfig } from '@/types/botforge';
+import { StrategyConfig, IndicatorConfig } from './types';
+import { STRATEGY_ALIASES, STRATEGY_OVERLAY, normalize } from './configOverlay';
 
 export interface Rule {
   id: string;
@@ -16,102 +17,60 @@ export interface StrategyState {
   };
 }
 
-function normalize(x: string) {
-  return (x || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s_-]/g, '')
-    .replace(/\s+/g, '_')
-    .trim();
-}
-
-// Known aliases to cover legacy/marketing names used by tiles
-const KNOWN_ALIAS_MAP: Record<string, string> = {
-  'ema crossover': 'ema-crossover',
-  'ema crossover pro': 'ema-crossover',
-  'rsi mean reversion': 'rsi-mean-reversion',
-  'macd confirmation': 'macd-confirmation',
-  'bollinger bounce': 'bollinger-bounce',
-  'bollinger band bounce': 'bollinger-bounce',
-  'stochastic swing': 'stochastic-swing',
-  'atr trailing': 'atr-trailing',
-  'vwap trend': 'vwap-trend',
-};
-
 export async function loadConfigs(): Promise<{ strategies: StrategyConfig[]; indicators: IndicatorConfig[] }> {
   const bust = Date.now();
   const res = await fetch(`/botforge_combined_config.json?v=${bust}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`Failed to load config JSON: ${res.status} ${res.statusText}`);
-  }
-  
+  if (!res.ok) throw new Error(`Failed to load config JSON: ${res.status}`);
   const data = await res.json();
-  
-  // Transform the data to match our expected format
-  const strategies = data.strategies ? Object.values(data.strategies) as StrategyConfig[] : [];
-  const indicators = data.indicators || [];
-  
+
+  const strategies: StrategyConfig[] = (data?.strategies ?? data ?? []).map((s: StrategyConfig) => {
+    const id = s.id;
+    const overlay = STRATEGY_OVERLAY[id] ?? {};
+    return {
+      ...s,
+      allowedIndicators: s.allowedIndicators?.length ? s.allowedIndicators : (overlay.allowedIndicators ?? []),
+      allowedOperators: s.allowedOperators?.length ? s.allowedOperators : (overlay.allowedOperators ?? []),
+      exitDefaults: { ...(overlay.exitDefaults ?? {}), ...(s.exitDefaults ?? {}) },
+    } as StrategyConfig;
+  });
+
+  const indicators: IndicatorConfig[] = data?.indicators ?? data?.Indicators ?? [];
+
   return { strategies, indicators };
 }
 
-function resolveByAliases(input: string, strategies: StrategyConfig[]): string | undefined {
-  const normIn = normalize(input);
-  const aliased = KNOWN_ALIAS_MAP[normIn];
-  if (!aliased) return undefined;
-  return strategies.some(s => s.id === aliased) ? aliased : undefined;
-}
-
-function resolveByLabel(input: string, strategies: StrategyConfig[]): string | undefined {
-  // exact label
-  const byExact = strategies.find(s => s.name === input);
-  if (byExact) return byExact.id;
-
-  // normalized label equality
-  const normIn = normalize(input);
-  const byNormEq = strategies.find(s => normalize(s.name) === normIn);
-  if (byNormEq) return byNormEq.id;
-
-  // startsWith/contains heuristics on normalized text
-  const candidates = strategies
-    .map(s => ({ id: s.id, label: s.name, norm: normalize(s.name) }))
-    .filter(s => s.norm.startsWith(normIn) || normIn.startsWith(s.norm) || s.norm.includes(normIn));
-
-  if (candidates.length === 1) return candidates[0].id;
-  return undefined;
-}
-
-function resolveStrategyId(input: string, strategies: StrategyConfig[]): string | undefined {
-  // 1) exact id
+function resolveId(input: string, strategies: StrategyConfig[]): string | undefined {
+  if (!input) return undefined;
+  // exact id
   if (strategies.some(s => s.id === input)) return input;
 
-  // 2) alias map (covers legacy tile names)
-  const viaAlias = resolveByAliases(input, strategies);
-  if (viaAlias) return viaAlias;
+  // alias map
+  const aliased = STRATEGY_ALIASES[normalize(input)];
+  if (aliased && strategies.some(s => s.id === aliased)) return aliased;
 
-  // 3) label-based resolution
-  const viaLabel = resolveByLabel(input, strategies);
-  if (viaLabel) return viaLabel;
+  // exact label
+  const byLabel = strategies.find(s => s.name === input);
+  if (byLabel) return byLabel.id;
 
-  // 4) normalized id fallback (if UI sends a prettified id)
-  const normIn = normalize(input);
-  const byNormId = strategies.find(s => normalize(s.id) === normIn);
-  if (byNormId) return byNormId.id;
+  // normalized label
+  const norm = normalize(input);
+  const byNormLabel = strategies.find(s => normalize(s.name) === norm);
+  if (byNormLabel) return byNormLabel.id;
 
-  // 5) id contains (last resort)
-  const byContains = strategies.find(s => normalize(s.id).includes(normIn));
+  // normalized id contains
+  const byContains = strategies.find(s => normalize(s.id).includes(norm));
   if (byContains) return byContains.id;
 
   return undefined;
 }
 
 export function getStrategy(strategies: StrategyConfig[], idOrLabel: string) {
-  const resolvedId = resolveStrategyId(idOrLabel, strategies);
-  if (!resolvedId) {
+  const resolved = resolveId(idOrLabel, strategies);
+  if (!resolved) {
     const ids = strategies.map(s => s.id).join(', ');
-    console.error('DEBUG Requested strategy (raw):', idOrLabel);
-    console.error('DEBUG Available ids:', ids);
-    throw new Error(`Strategy not found: "${idOrLabel}". Try one of: ${ids}`);
+    throw new Error(`Strategy not found: "${idOrLabel}". Known: ${ids}`);
   }
-  const s = strategies.find(x => x.id === resolvedId)!;
+  const s = strategies.find(x => x.id === resolved)!;
   return s;
 }
 

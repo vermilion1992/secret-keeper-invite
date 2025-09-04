@@ -23,6 +23,9 @@ export interface Strategy {
   tier: UserTier;
   defaultIndicators: IndicatorConfig[];
   canAddFilters: boolean;
+  allowedIndicators?: string[];
+  allowedOperators?: string[];
+  exitDefaults?: Record<string, any>;
 }
 
 export interface RiskManagement {
