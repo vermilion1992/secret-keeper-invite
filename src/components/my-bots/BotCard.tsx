@@ -18,9 +18,9 @@ type Props = {
 };
 
 const statusColor: Record<string, string> = {
-  draft: 'bg-gray-200 text-gray-800',
-  backtested: 'bg-blue-100 text-blue-800',
-  ready_to_export: 'bg-green-100 text-green-800',
+  draft: 'bg-muted text-muted-foreground',
+  backtested: 'bg-accent text-accent-foreground',
+  ready_to_export: 'bg-success/10 text-success',
 };
 
 export default function BotCard({
@@ -29,13 +29,13 @@ export default function BotCard({
 }: Props) {
   const v = bot.latest;
   return (
-    <div className="group relative rounded-2xl border border-gray-200/70 p-4 shadow-sm hover:shadow transition">
+    <div className="group relative frosted rounded-2xl p-4 shadow-sm hover:shadow transition">
       {/* Pin + Select */}
       <div className="absolute right-3 top-3 flex items-center gap-2">
         {selectable ? (
           <button
             onClick={() => onToggleSelect?.(bot.id, !selected)}
-            className={`h-6 w-6 rounded border text-xs flex items-center justify-center ${selected ? 'bg-gray-900 text-white' : 'bg-white'}`}
+            className={`h-6 w-6 rounded border text-xs flex items-center justify-center ${selected ? 'bg-primary text-primary-foreground' : 'bg-card'}`}
             aria-label="Select bot"
             title="Select"
           >
@@ -44,7 +44,7 @@ export default function BotCard({
         ) : null}
         <button
           onClick={() => onTogglePin?.(bot.id, !bot.pinned)}
-          className={`h-6 w-6 rounded ${bot.pinned ? 'bg-yellow-300' : 'bg-gray-100'} text-gray-900 text-xs`}
+          className={`h-6 w-6 rounded ${bot.pinned ? 'bg-yellow-300' : 'bg-muted'} text-foreground text-xs`}
           aria-label="Pin bot"
           title={bot.pinned ? 'Unpin' : 'Pin'}
         >★</button>
@@ -63,7 +63,7 @@ export default function BotCard({
 
       {/* Sparkline + quick stats */}
       <div className="flex items-center gap-4">
-        <div className="text-gray-700">
+        <div className="text-muted-foreground">
           <Sparkline data={v?.equityCurve ?? []} />
         </div>
         <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -78,19 +78,19 @@ export default function BotCard({
       {bot.tags && bot.tags.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {bot.tags.map(t => (
-            <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100">{t}</span>
+            <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{t}</span>
           ))}
         </div>
       ) : null}
 
       {/* Footer actions */}
       <div className="mt-4 flex flex-wrap gap-2">
-        <button className="px-2.5 py-1 rounded-md border text-sm" onClick={() => onRebacktest?.(bot.id)}>▶ Re-run</button>
-        <button className="px-2.5 py-1 rounded-md border text-sm" onClick={() => onExport?.(bot.id)}>📤 Export</button>
-        <button className="px-2.5 py-1 rounded-md border text-sm" onClick={() => onEdit?.(bot.id)}>✎ Edit</button>
-        <button className="px-2.5 py-1 rounded-md border text-sm" onClick={() => onDuplicate?.(bot.id)}>⧉ Duplicate</button>
-        <button className="px-2.5 py-1 rounded-md border text-sm text-red-600" onClick={() => onDelete?.(bot.id)}>🗑 Delete</button>
-        <button className="ml-auto px-2.5 py-1 rounded-md border text-sm" onClick={() => onOpenDetails?.(bot.id)}>Details</button>
+        <button className="px-2.5 py-1 rounded-md border border-border text-sm hover:bg-muted" onClick={() => onRebacktest?.(bot.id)}>▶ Re-run</button>
+        <button className="px-2.5 py-1 rounded-md border border-border text-sm hover:bg-muted" onClick={() => onExport?.(bot.id)}>📤 Export</button>
+        <button className="px-2.5 py-1 rounded-md border border-border text-sm hover:bg-muted" onClick={() => onEdit?.(bot.id)}>✎ Edit</button>
+        <button className="px-2.5 py-1 rounded-md border border-border text-sm hover:bg-muted" onClick={() => onDuplicate?.(bot.id)}>⧉ Duplicate</button>
+        <button className="px-2.5 py-1 rounded-md border border-border text-sm text-destructive hover:bg-destructive/10" onClick={() => onDelete?.(bot.id)}>🗑 Delete</button>
+        <button className="ml-auto px-2.5 py-1 rounded-md border border-border text-sm hover:bg-muted" onClick={() => onOpenDetails?.(bot.id)}>Details</button>
       </div>
     </div>
   );
