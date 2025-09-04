@@ -32,7 +32,7 @@ const ALIASES: Record<string,string> = {
 
 export async function loadConfigs(): Promise<{ strategies: StrategyConfig[]; indicators: IndicatorConfig[] }> {
   const bust = Date.now();
-  const res = await fetch(`/botforge_combined_config.json?v=${bust}`, { cache: 'no-store' });
+  const res = await fetch(`botforge_combined_config.json?v=${bust}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to load config JSON: ${res.status}`);
   const data = await res.json();
   const strategies: StrategyConfig[] = data?.strategies ?? [];
