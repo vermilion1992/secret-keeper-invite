@@ -10,9 +10,10 @@ export function readBuilderState(): StrategyState | null {
 export function writeBuilderState(s: StrategyState) {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {}
 }
-
 export function useBuilderState() {
-  const [state, setState] = React.useState<StrategyState>(() => readBuilderState() ?? ({ strategyId: '', direction: 'long', indicatorParams: {}, ruleGroup: { joiner:'AND', rules:[] } }));
+  const [state, setState] = React.useState<StrategyState>(() =>
+    readBuilderState() ?? ({ strategyId: '', direction: 'long', indicatorParams: {}, ruleGroup: { joiner:'AND', rules:[] } })
+  );
   React.useEffect(()=> { writeBuilderState(state); }, [state]);
   return { state, setState };
 }

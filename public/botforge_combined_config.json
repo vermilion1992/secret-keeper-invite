@@ -1,310 +1,362 @@
 {
-  "global": {
-    "ruleCap": 5,
-    "operators": [
-      {
-        "value": "crosses_above",
-        "label": "Crosses Above",
-        "tooltip": "Triggers when left-hand series moves from below to above right-hand series on bar close."
+  "indicators": [
+    {
+      "id": "ema",
+      "label": "EMA",
+      "blurb": "Exponential Moving Average — responsive trend line.",
+      "params": {
+        "period": { "type": "int", "default": 20, "min": 2, "max": 400 },
+        "source": { "type": "enum", "default": "close", "options": ["close","open","high","low"] }
       },
-      {
-        "value": "crosses_below",
-        "label": "Crosses Below",
-        "tooltip": "Triggers when left-hand series moves from above to below right-hand series on bar close."
-      },
-      {
-        "value": "is_above",
-        "label": "Is Above",
-        "tooltip": "True when left-hand value is greater than right-hand value."
-      },
-      {
-        "value": "is_below",
-        "label": "Is Below",
-        "tooltip": "True when left-hand value is less than right-hand value."
-      },
-      {
-        "value": "is_true",
-        "label": "Is True",
-        "tooltip": "Used for yes/no signals, e.g., MACD Histogram > 0 or Breadth_ok."
-      }
-    ]
-  },
-  "strategies": {
-    "EMA Crossover Pro": {
-      "indicators": ["ema"],
-      "entryTiles": [
-        {
-          "id": "ema_cross_above",
-          "name": "EMA Cross Above",
-          "tooltip": "Fast EMA crosses above Slow EMA"
-        },
-        {
-          "id": "ema_cross_below",
-          "name": "EMA Cross Below", 
-          "tooltip": "Fast EMA crosses below Slow EMA"
-        }
-      ],
-      "operands": {
-        "ema_cross_above": ["EMA Fast", "EMA Slow"],
-        "ema_cross_below": ["EMA Fast", "EMA Slow"]
-      },
-      "defaultSeeds": [
-        {
-          "operator": "crosses_above",
-          "leftOperand": "EMA Fast",
-          "rightOperand": "EMA Slow"
-        }
-      ]
+      "outputs": ["value"]
     },
-    "SMA Crossover": {
-      "indicators": ["sma"],
-      "entryTiles": [
-        {
-          "id": "sma_cross_above",
-          "name": "SMA Cross Above",
-          "tooltip": "Fast SMA crosses above Slow SMA"
-        },
-        {
-          "id": "sma_cross_below",
-          "name": "SMA Cross Below",
-          "tooltip": "Fast SMA crosses below Slow SMA"
-        }
-      ],
-      "operands": {
-        "sma_cross_above": ["SMA Fast", "SMA Slow"],
-        "sma_cross_below": ["SMA Fast", "SMA Slow"]
+    {
+      "id": "sma",
+      "label": "SMA",
+      "blurb": "Simple Moving Average — classic average; slower than EMA.",
+      "params": {
+        "period": { "type": "int", "default": 20, "min": 2, "max": 400 },
+        "source": { "type": "enum", "default": "close", "options": ["close","open","high","low"] }
       },
-      "defaultSeeds": [
-        {
-          "operator": "crosses_above",
-          "leftOperand": "SMA Fast",
-          "rightOperand": "SMA Slow"
-        }
-      ]
+      "outputs": ["value"]
     },
-    "RSI Bias": {
-      "indicators": ["rsi"],
-      "entryTiles": [
-        {
-          "id": "rsi_oversold",
-          "name": "RSI Oversold",
-          "tooltip": "RSI below oversold threshold"
-        },
-        {
-          "id": "rsi_overbought",
-          "name": "RSI Overbought",
-          "tooltip": "RSI above overbought threshold"
-        }
-      ],
-      "operands": {
-        "rsi_oversold": ["RSI", "30"],
-        "rsi_overbought": ["RSI", "70"]
-      },
-      "defaultSeeds": [
-        {
-          "operator": "is_below",
-          "leftOperand": "RSI",
-          "rightOperand": "30"
-        }
-      ]
+    {
+      "id": "rsi",
+      "label": "RSI",
+      "blurb": "Relative Strength Index — momentum/OB-OS (0–100).",
+      "params": { "length": { "type": "int", "default": 14, "min": 2, "max": 200 } },
+      "outputs": ["value"]
     },
-    "MACD Cross": {
-      "indicators": ["macd"],
-      "entryTiles": [
-        {
-          "id": "macd_cross_above",
-          "name": "MACD Cross Above",
-          "tooltip": "MACD line crosses above signal line"
-        },
-        {
-          "id": "macd_cross_below",
-          "name": "MACD Cross Below",
-          "tooltip": "MACD line crosses below signal line"
-        }
-      ],
-      "operands": {
-        "macd_cross_above": ["MACD Line", "MACD Signal"],
-        "macd_cross_below": ["MACD Line", "MACD Signal"]
+    {
+      "id": "macd",
+      "label": "MACD",
+      "blurb": "MACD — fast/slow EMA difference + signal line.",
+      "params": {
+        "fast": { "type": "int", "default": 12, "min": 2, "max": 200 },
+        "slow": { "type": "int", "default": 26, "min": 2, "max": 400 },
+        "signal": { "type": "int", "default": 9, "min": 1, "max": 200 }
       },
-      "defaultSeeds": [
-        {
-          "operator": "crosses_above",
-          "leftOperand": "MACD Line",
-          "rightOperand": "MACD Signal"
-        }
-      ]
+      "outputs": ["line","signal","hist"]
     },
-    "MACD + RSI Swing": {
-      "indicators": ["macd", "rsi"],
-      "entryTiles": [
-        {
-          "id": "macd_bullish",
-          "name": "MACD Bullish",
-          "tooltip": "MACD line crosses above signal line"
-        },
-        {
-          "id": "rsi_oversold",
-          "name": "RSI Oversold",
-          "tooltip": "RSI below oversold threshold"
-        },
-        {
-          "id": "macd_bearish",
-          "name": "MACD Bearish",
-          "tooltip": "MACD line crosses below signal line"
-        },
-        {
-          "id": "rsi_overbought",
-          "name": "RSI Overbought",
-          "tooltip": "RSI above overbought threshold"
-        }
-      ],
-      "operands": {
-        "macd_bullish": ["MACD Line", "MACD Signal"],
-        "rsi_oversold": ["RSI", "30"],
-        "macd_bearish": ["MACD Line", "MACD Signal"],
-        "rsi_overbought": ["RSI", "70"]
+    {
+      "id": "stoch",
+      "label": "Stochastic",
+      "blurb": "Stochastic oscillator based on HH/LL.",
+      "params": {
+        "k": { "type": "int", "default": 14, "min": 1, "max": 200 },
+        "d": { "type": "int", "default": 3, "min": 1, "max": 50 },
+        "smooth": { "type": "int", "default": 3, "min": 1, "max": 50 }
       },
-      "defaultSeeds": [
-        {
-          "operator": "crosses_above",
-          "leftOperand": "MACD Line",
-          "rightOperand": "MACD Signal"
-        },
-        {
-          "operator": "is_below",
-          "leftOperand": "RSI",
-          "rightOperand": "30"
-        }
-      ]
+      "outputs": ["k","d"]
     },
-    "Hybrid Momentum": {
-      "indicators": ["ema", "rsi", "macd", "breadth"],
-      "entryTiles": [
-        {
-          "id": "ema_cross_above",
-          "name": "EMA Cross Above",
-          "tooltip": "Fast EMA crosses above Slow EMA"
-        },
-        {
-          "id": "rsi_above_50",
-          "name": "RSI Above 50",
-          "tooltip": "RSI momentum above neutral"
-        },
-        {
-          "id": "macd_bullish",
-          "name": "MACD Bullish",
-          "tooltip": "MACD line above signal line"
-        },
-        {
-          "id": "breadth_ok",
-          "name": "Breadth OK",
-          "tooltip": "Market breadth is healthy"
-        }
-      ],
-      "operands": {
-        "ema_cross_above": ["EMA Fast", "EMA Slow"],
-        "rsi_above_50": ["RSI", "50"],
-        "macd_bullish": ["MACD Line", "MACD Signal"],
-        "breadth_ok": ["Breadth OK"]
-      },
-      "defaultSeeds": [
-        {
-          "operator": "crosses_above",
-          "leftOperand": "EMA Fast",
-          "rightOperand": "EMA Slow"
-        },
-        {
-          "operator": "is_above",
-          "leftOperand": "RSI",
-          "rightOperand": "50"
-        }
-      ]
+    {
+      "id": "atr",
+      "label": "ATR",
+      "blurb": "Average True Range — volatility measure.",
+      "params": { "length": { "type": "int", "default": 14, "min": 1, "max": 400 } },
+      "outputs": ["value"]
     },
-    "Trend Following Core": {
-      "indicators": ["ema", "macd"],
-      "entryTiles": [
-        {
-          "id": "ema_trend_up",
-          "name": "EMA Trend Up",
-          "tooltip": "EMA slope is positive (uptrend)"
-        },
-        {
-          "id": "ema_trend_down",
-          "name": "EMA Trend Down",
-          "tooltip": "EMA slope is negative (downtrend)"
-        },
-        {
-          "id": "macd_bullish",
-          "name": "MACD Bullish",
-          "tooltip": "MACD line above signal line"
-        },
-        {
-          "id": "macd_bearish",
-          "name": "MACD Bearish",
-          "tooltip": "MACD line below signal line"
-        }
-      ],
-      "operands": {
-        "ema_trend_up": ["EMA Slope", "0"],
-        "ema_trend_down": ["EMA Slope", "0"],
-        "macd_bullish": ["MACD Line", "MACD Signal"],
-        "macd_bearish": ["MACD Line", "MACD Signal"]
+    {
+      "id": "bb",
+      "label": "Bollinger Bands",
+      "blurb": "Mean + std-dev envelope around price.",
+      "params": {
+        "length": { "type": "int", "default": 20, "min": 2, "max": 400 },
+        "mult": { "type": "float", "default": 2.0, "min": 0.2, "max": 10.0 },
+        "source": { "type": "enum", "default": "close", "options": ["close","open","high","low"] }
       },
-      "defaultSeeds": [
-        {
-          "operator": "is_above",
-          "leftOperand": "EMA Slope",
-          "rightOperand": "0"
-        },
-        {
-          "operator": "is_above",
-          "leftOperand": "MACD Line",
-          "rightOperand": "MACD Signal"
-        }
-      ]
+      "outputs": ["basis","upper","lower"]
     },
-    "Bollinger Band Bounce": {
-      "indicators": ["bollinger", "rsi"],
-      "entryTiles": [
-        {
-          "id": "bb_lower_bounce",
-          "name": "BB Lower Bounce",
-          "tooltip": "Price bounces from lower Bollinger Band"
-        },
-        {
-          "id": "bb_upper_bounce",
-          "name": "BB Upper Bounce",
-          "tooltip": "Price bounces from upper Bollinger Band"
-        },
-        {
-          "id": "rsi_oversold",
-          "name": "RSI Oversold",
-          "tooltip": "RSI below oversold threshold"
-        },
-        {
-          "id": "rsi_overbought",
-          "name": "RSI Overbought",
-          "tooltip": "RSI above overbought threshold"
-        }
-      ],
-      "operands": {
-        "bb_lower_bounce": ["Price", "BB Lower"],
-        "bb_upper_bounce": ["Price", "BB Upper"],
-        "rsi_oversold": ["RSI", "30"],
-        "rsi_overbought": ["RSI", "70"]
+    {
+      "id": "vwap",
+      "label": "VWAP",
+      "blurb": "Volume-Weighted Average Price — fair value anchor.",
+      "params": { "session": { "type": "enum", "default": "24h", "options": ["24h","day","week"] } },
+      "outputs": ["value"]
+    },
+    {
+      "id": "obv",
+      "label": "OBV",
+      "blurb": "On-Balance Volume — cumulative volume momentum.",
+      "params": {},
+      "outputs": ["value"]
+    },
+    {
+      "id": "cci",
+      "label": "CCI",
+      "blurb": "Commodity Channel Index — deviation from mean.",
+      "params": { "length": { "type": "int", "default": 20, "min": 2, "max": 400 } },
+      "outputs": ["value"]
+    },
+    {
+      "id": "adx",
+      "label": "ADX",
+      "blurb": "Average Directional Index — trend strength (0–100).",
+      "params": { "length": { "type": "int", "default": 14, "min": 2, "max": 200 } },
+      "outputs": ["value"]
+    },
+    {
+      "id": "keltner",
+      "label": "Keltner Channels",
+      "blurb": "EMA envelope using ATR.",
+      "params": {
+        "length": { "type": "int", "default": 20, "min": 2, "max": 400 },
+        "atrLen": { "type": "int", "default": 10, "min": 1, "max": 400 },
+        "mult": { "type": "float", "default": 1.5, "min": 0.1, "max": 10.0 }
       },
-      "defaultSeeds": [
-        {
-          "operator": "crosses_above",
-          "leftOperand": "Price",
-          "rightOperand": "BB Lower"
-        },
-        {
-          "operator": "is_below",
-          "leftOperand": "RSI",
-          "rightOperand": "30"
-        }
-      ]
+      "outputs": ["basis","upper","lower"]
+    },
+    {
+      "id": "donchian",
+      "label": "Donchian Channels",
+      "blurb": "Highest-high/lowest-low channel breakout levels.",
+      "params": {
+        "upperLen": { "type": "int", "default": 20, "min": 1, "max": 400 },
+        "lowerLen": { "type": "int", "default": 10, "min": 1, "max": 400 }
+      },
+      "outputs": ["upper","lower","mid"]
+    },
+    {
+      "id": "ichimoku",
+      "label": "Ichimoku",
+      "blurb": "Full trend system (tenkan, kijun, span A/B).",
+      "params": {
+        "tenkan": { "type": "int", "default": 9, "min": 1, "max": 400 },
+        "kijun": { "type": "int", "default": 26, "min": 1, "max": 400 },
+        "spanB": { "type": "int", "default": 52, "min": 1, "max": 400 }
+      },
+      "outputs": ["tenkan","kijun","spanA","spanB"]
+    },
+    {
+      "id": "supertrend",
+      "label": "Supertrend",
+      "blurb": "Volatility-based trailing stop/flip.",
+      "params": {
+        "atrLen": { "type": "int", "default": 10, "min": 1, "max": 400 },
+        "mult": { "type": "float", "default": 3.0, "min": 0.1, "max": 10.0 }
+      },
+      "outputs": ["line","trend"]
+    },
+    {
+      "id": "mfi",
+      "label": "MFI",
+      "blurb": "Money Flow Index — volume-weighted RSI.",
+      "params": { "length": { "type": "int", "default": 14, "min": 2, "max": 200 } },
+      "outputs": ["value"]
+    },
+    {
+      "id": "roc",
+      "label": "ROC",
+      "blurb": "Rate of Change — momentum % change.",
+      "params": { "length": { "type": "int", "default": 12, "min": 1, "max": 400 } },
+      "outputs": ["value"]
+    },
+    {
+      "id": "williamsR",
+      "label": "Williams %R",
+      "blurb": "Fast overbought/oversold (-100..0).",
+      "params": { "length": { "type": "int", "default": 14, "min": 2, "max": 200 } },
+      "outputs": ["value"]
+    },
+    {
+      "id": "psar",
+      "label": "Parabolic SAR",
+      "blurb": "Trend-following dots for entries/trailing.",
+      "params": {
+        "afStart": { "type": "float", "default": 0.02, "min": 0.0, "max": 1.0 },
+        "afStep": { "type": "float", "default": 0.02, "min": 0.0, "max": 1.0 },
+        "afMax": { "type": "float", "default": 0.2, "min": 0.0, "max": 1.0 }
+      },
+      "outputs": ["value"]
+    },
+    {
+      "id": "volma",
+      "label": "Volume MA",
+      "blurb": "Moving average of volume.",
+      "params": { "period": { "type": "int", "default": 20, "min": 1, "max": 400 } },
+      "outputs": ["value"]
     }
-  }
+  ],
+  "strategies": [
+    {
+      "id": "ema_crossover_pro",
+      "label": "EMA Crossover Pro",
+      "blurb": "Enter when fast EMA crosses above slow EMA; ATR stop + trailing TP.",
+      "directionDefault": "long",
+      "allowedIndicators": ["ema","atr","sma","rsi"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "ema200_pullback",
+      "label": "EMA200 Pullback",
+      "blurb": "Trade only above 200-EMA; buy pullback to EMA20 with RSI > 50.",
+      "directionDefault": "long",
+      "allowedIndicators": ["ema","rsi","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "macd_momentum_shift",
+      "label": "MACD Momentum Shift",
+      "blurb": "Enter on MACD cross up with rising histogram.",
+      "directionDefault": "long",
+      "allowedIndicators": ["macd","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.2, "trailingTPPct": 0.8 }
+    },
+    {
+      "id": "rsi_breakout",
+      "label": "RSI Breakout",
+      "blurb": "Buy when RSI exits consolidation and crosses above 55.",
+      "directionDefault": "long",
+      "allowedIndicators": ["rsi","sma","atr","bb"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "hardTPPct": 1.2 }
+    },
+    {
+      "id": "bb_mean_revert",
+      "label": "BB Mean Revert",
+      "blurb": "Range play: buy lower Bollinger band touch with RSI filter.",
+      "directionDefault": "long",
+      "allowedIndicators": ["bb","rsi","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 1.6, "hardTPPct": 1.0 }
+    },
+    {
+      "id": "donchian_breakout",
+      "label": "Donchian Breakout",
+      "blurb": "Buy 20-bar high break with ATR stop under 10-bar low.",
+      "directionDefault": "long",
+      "allowedIndicators": ["donchian","atr","ema"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.4, "trailingTPPct": 0.9 }
+    },
+    {
+      "id": "keltner_trend",
+      "label": "Keltner Trend",
+      "blurb": "Buy close above upper Keltner with ADX > 20.",
+      "directionDefault": "long",
+      "allowedIndicators": ["keltner","adx","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.2, "trailingTPPct": 0.8 }
+    },
+    {
+      "id": "supertrend_follow",
+      "label": "Supertrend Follow",
+      "blurb": "Enter when price flips above Supertrend and above 200-EMA.",
+      "directionDefault": "long",
+      "allowedIndicators": ["supertrend","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "ichimoku_baseline",
+      "label": "Ichimoku Baseline",
+      "blurb": "Kumo break with Tenkan > Kijun and price above cloud.",
+      "directionDefault": "long",
+      "allowedIndicators": ["ichimoku","atr","ema"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.5, "trailingTPPct": 0.9 }
+    },
+    {
+      "id": "adx_swing",
+      "label": "ADX Swing",
+      "blurb": "Buy pullback to EMA34 when ADX rising > 20.",
+      "directionDefault": "long",
+      "allowedIndicators": ["adx","ema","rsi","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "vwap_reclaim",
+      "label": "VWAP Reclaim",
+      "blurb": "Mean-revert intraday: buy reclaim of anchored VWAP with volume confirmation.",
+      "directionDefault": "long",
+      "allowedIndicators": ["vwap","volma","rsi","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 1.8, "hardTPPct": 1.1 }
+    },
+    {
+      "id": "psar_flip_trend",
+      "label": "PSAR Flip Trend",
+      "blurb": "Enter on fresh PSAR flip up with positive EMA slope.",
+      "directionDefault": "long",
+      "allowedIndicators": ["psar","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.1, "trailingTPPct": 0.8 }
+    },
+    {
+      "id": "roc_momo",
+      "label": "ROC Momentum",
+      "blurb": "Buy when ROC crosses above 0 and rising, filtered by 200-EMA.",
+      "directionDefault": "long",
+      "allowedIndicators": ["roc","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "wr_reversal",
+      "label": "Williams %R Reversal",
+      "blurb": "Buy when Williams %R exits oversold (<-80 → >-60) near support.",
+      "directionDefault": "long",
+      "allowedIndicators": ["williamsR","sma","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 1.9, "hardTPPct": 1.0 }
+    },
+    {
+      "id": "cci_turbo",
+      "label": "CCI Turbo",
+      "blurb": "Buy CCI crossing above -100 with higher-low pattern.",
+      "directionDefault": "long",
+      "allowedIndicators": ["cci","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "atr_channel_break",
+      "label": "ATR Channel Break",
+      "blurb": "Buy breakout above ATR channel.",
+      "directionDefault": "long",
+      "allowedIndicators": ["atr","ema","keltner"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.3, "trailingTPPct": 0.8 }
+    },
+    {
+      "id": "triple_ema_ribbon",
+      "label": "Triple EMA Ribbon",
+      "blurb": "Buy when 9/21/55 EMAs are bullishly stacked and rising.",
+      "directionDefault": "long",
+      "allowedIndicators": ["ema","atr","adx"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.1, "trailingTPPct": 0.8 }
+    },
+    {
+      "id": "vcb_nr7",
+      "label": "VCB NR7",
+      "blurb": "Volatility Contraction Breakout: NR7/inside-bar break with rising volume.",
+      "directionDefault": "long",
+      "allowedIndicators": ["volma","sma","atr","bb"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.2, "hardTPPct": 1.3 }
+    },
+    {
+      "id": "obv_trend_confirm",
+      "label": "OBV Trend Confirm",
+      "blurb": "Buy price HH confirmed by OBV HH; avoid negative divergence.",
+      "directionDefault": "long",
+      "allowedIndicators": ["obv","ema","atr"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "trailingTPPct": 0.7 }
+    },
+    {
+      "id": "breadth_tilt_hybrid",
+      "label": "Breadth Tilt Hybrid",
+      "blurb": "Allocate to momentum sleeve when breadth is strong; long-only.",
+      "directionDefault": "long",
+      "allowedIndicators": ["ema","rsi","adx","volma"],
+      "allowedOperators": [">",">=","<","<=","==","crosses_above","crosses_below","rising","falling","within","outside"],
+      "exitDefaults": { "useATRStop": true, "atrMult": 2.0, "hardTPPct": 1.2 }
+    }
+  ]
 }

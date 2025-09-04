@@ -39,7 +39,7 @@ function PrettyRuleList({ rules, indicators }: { rules: Rule[]; indicators: Indi
       case 'constant.number': return String(ref.value ?? '?');
       default: {
         const ind = indicators.find(i => i.id === ref?.indicatorId);
-        const label = ind ? ind.name : (ref?.indicatorId ?? 'Indicator');
+        const label = ind ? ind.label : (ref?.indicatorId ?? 'Indicator');
         return ref?.path ? `${label} (${ref.path})` : label;
       }
     }
@@ -74,7 +74,7 @@ export default function StrategyReviewSummary(props: Props) {
         if (!local?.strategyId) throw new Error('No strategy selected yet.');
         const { strategies, indicators } = await loadConfigs();
         const strategy = getStrategy(strategies, local.strategyId);
-        const allowedIndicators = filterIndicators(indicators, strategy.defaultIndicators?.map(i => i.id) || []);
+        const allowedIndicators = filterIndicators(indicators, strategy.allowedIndicators || []);
         const preview = previewStrategy(local, strategy, allowedIndicators);
         if (!alive) return;
         setSummary({ state: local, strategy, indicators: allowedIndicators, preview });
@@ -99,7 +99,7 @@ export default function StrategyReviewSummary(props: Props) {
     .filter(([id]) => indicators.some(ind => ind.id === id))
     .map(([id, params]) => {
       const found = indicators.find(ind => ind.id === id);
-      return { id, label: found?.name ?? id, params };
+      return { id, label: found?.label ?? id, params };
     });
 
   const exits = { useATRStop: true, atrMult: 2.0, trailingTPPct: 0.7 }; // Default exits
@@ -114,8 +114,8 @@ export default function StrategyReviewSummary(props: Props) {
       <div className="space-y-3">
         <div>
           <div className="text-sm font-medium">Selected Strategy</div>
-          <div className="text-sm">{strategy.name} <span className="opacity-60">({strategy.id})</span></div>
-          <div className="text-xs opacity-70">{strategy.description}</div>
+          <div className="text-sm">{strategy.label} <span className="opacity-60">({strategy.id})</span></div>
+          <div className="text-xs opacity-70">{strategy.blurb}</div>
         </div>
 
         <div>
