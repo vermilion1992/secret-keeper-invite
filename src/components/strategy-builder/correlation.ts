@@ -30,13 +30,16 @@ const ALIASES: Record<string,string> = {
   'breadth tilt hybrid': 'breadth_tilt_hybrid'
 };
 
+let configData: any = null;
+
 export async function loadConfigs(): Promise<{ strategies: StrategyConfig[]; indicators: IndicatorConfig[] }> {
-  const bust = Date.now();
-  const res = await fetch(`botforge_combined_config.json?v=${bust}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Failed to load config JSON: ${res.status}`);
-  const data = await res.json();
-  const strategies: StrategyConfig[] = data?.strategies ?? [];
-  const indicators: IndicatorConfig[] = data?.indicators ?? [];
+  if (!configData) {
+    configData = await import('/botforge_combined_config.json?url').then(m => 
+      fetch(m.default).then(r => r.json())
+    );
+  }
+  const strategies: StrategyConfig[] = configData?.strategies ?? [];
+  const indicators: IndicatorConfig[] = configData?.indicators ?? [];
   if (!Array.isArray(strategies) || !Array.isArray(indicators)) {
     throw new Error('Invalid botforge_combined_config.json: expected { strategies:[], indicators:[] }');
   }
