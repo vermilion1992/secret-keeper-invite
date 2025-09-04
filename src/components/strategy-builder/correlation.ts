@@ -46,10 +46,10 @@ export async function loadConfigs(): Promise<{ strategies: StrategyConfig[]; ind
   return { strategies, indicators };
 }
 
-function resolveStrategyId(input: string, strategies: StrategyConfig[]): string | undefined {
+export function resolveStrategyId(input: string, strategies: StrategyConfig[]): string | undefined {
   if (!input) return undefined;
 
-  // 1) exact id
+  // 1) exact id (highest priority)
   if (strategies.some(s => s.id === input)) return input;
 
   // 2) alias by normalized label

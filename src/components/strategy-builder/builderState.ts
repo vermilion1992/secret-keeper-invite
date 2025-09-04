@@ -24,10 +24,25 @@ function coerceStrategyId(raw:any): string {
   return '';
 }
 
-export function upgradeLocalState(): void {
+export async function upgradeLocalState(): Promise<void> {
   try {
     const existing = localStorage.getItem(KEY);
-    if (existing) return; // already canonical
+    if (existing) {
+      // Check if existing state has a label instead of ID and migrate
+      const parsed = JSON.parse(existing);
+      if (parsed.strategyId) {
+        try {
+          const { loadConfigs, resolveStrategyId } = await import('./correlation');
+          const { strategies } = await loadConfigs();
+          const resolvedId = resolveStrategyId(parsed.strategyId, strategies);
+          if (resolvedId && resolvedId !== parsed.strategyId) {
+            parsed.strategyId = resolvedId;
+            localStorage.setItem(KEY, JSON.stringify(parsed));
+          }
+        } catch {}
+      }
+      return; // existing canonical or migrated
+    }
 
     // Look for any legacy value and convert
     for (const k of LEGACY_KEYS) {
@@ -41,6 +56,13 @@ export function upgradeLocalState(): void {
       if (k === 'selectedStrategy') strategyId = String(parsed);
       else if (k === 'strategy') strategyId = coerceStrategyId(parsed);
       else if (typeof parsed === 'object') strategyId = coerceStrategyId(parsed);
+
+      // Resolve label to canonical ID
+      try {
+        const { loadConfigs, resolveStrategyId } = await import('./correlation');
+        const { strategies } = await loadConfigs();
+        strategyId = resolveStrategyId(strategyId, strategies) || strategyId;
+      } catch {}
 
       const state: StrategyState = {
         strategyId: strategyId || '',
@@ -64,9 +86,13 @@ export function writeBuilderState(s: StrategyState) {
 
 export function useBuilderState() {
   const [state, setState] = React.useState<StrategyState>(() => {
-    upgradeLocalState();
     return readBuilderState() ?? ({ strategyId:'', direction:'long', indicatorParams:{}, ruleGroup:{ joiner:'AND', rules:[] } });
   });
+  
+  React.useEffect(() => {
+    upgradeLocalState();
+  }, []);
+  
   React.useEffect(()=> { writeBuilderState(state); }, [state]);
   return { state, setState };
 }

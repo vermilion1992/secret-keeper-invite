@@ -728,50 +728,62 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                 <Button
                   onClick={async () => {
                     if (expandedItem.type === 'strategy') {
-                      // Map UI strategy names to config keys in /botforge_combined_config.json
-                      const configKeyMap: Record<string, string> = {
-                        'EMA Crossover Pro': 'EMA Crossover Pro',
-                        'MACD Confirmation': 'MACD Cross',
-                        'RSI Mean Reversion': 'RSI Bias',
-                        'Echo Hybrid': 'Hybrid Momentum',
-                        'Breadth Monitor': 'Market Breadth Gate',
-                        'Echo Market Neutral': 'Market Neutral',
-                      };
+                      try {
+                        // Load configs and resolve strategy ID
+                        const { loadConfigs, resolveStrategyId } = await import('./correlation');
+                        const { strategies } = await loadConfigs();
+                        
+                        // Map UI strategy names to config keys
+                        const configKeyMap: Record<string, string> = {
+                          'EMA Crossover Pro': 'ema_crossover_pro',
+                          'MACD Confirmation': 'macd_momentum_shift',
+                          'RSI Mean Reversion': 'rsi_breakout',
+                          'Echo Hybrid': 'breadth_tilt_hybrid',
+                          'Breadth Monitor': 'breadth_tilt_hybrid',
+                          'Echo Market Neutral': 'breadth_tilt_hybrid',
+                        };
 
-                      const mappedKey = configKeyMap[expandedItem.name] || expandedItem.name;
-
-                      // Ensure config is available and key exists
-                      let config: any = (window as any).BF_CONFIG;
-                      if (!config) {
-                        try {
-                          const res = await fetch('/botforge_combined_config.json');
-                          config = await res.json();
-                          (window as any).BF_CONFIG = config;
-                        } catch (e) {
-                          console.error('Failed to load config', e);
+                        const mappedKey = configKeyMap[expandedItem.name] || expandedItem.id;
+                        const canonicalId = resolveStrategyId(mappedKey, strategies);
+                        
+                        if (!canonicalId) {
+                          const availableIds = strategies.map(s => s.id).join(', ');
+                          alert(`Strategy "${mappedKey}" not found in config. Available: ${availableIds}`);
+                          return;
                         }
+
+                        // Store canonical strategy ID in builder state
+                        const { writeBuilderState, readBuilderState } = await import('./builderState');
+                        const currentState = readBuilderState() || {
+                          strategyId: '',
+                          direction: 'long' as const,
+                          indicatorParams: {},
+                          ruleGroup: { joiner: 'AND' as const, rules: [] }
+                        };
+                        
+                        writeBuilderState({
+                          ...currentState,
+                          strategyId: canonicalId
+                        });
+
+                        // Also maintain legacy storage for backward compatibility
+                        localStorage.setItem('bf_selected_strategy', canonicalId);
+                        (window as any).selectedStrategyKey = canonicalId;
+
+                        onSelect({ 
+                          id: canonicalId, // Use canonical ID
+                          name: expandedItem.name, 
+                          description: expandedItem.tooltip,
+                          tier: expandedItem.tier,
+                          defaultIndicators: [],
+                          canAddFilters: expandedItem.tier !== 'basic'
+                        });
+                        
+                        navigate("/strategy-builder/advanced");
+                      } catch (e) {
+                        console.error('Failed to load strategy config:', e);
+                        alert('Failed to load strategy configuration. Please try again.');
                       }
-
-                      const isSupported = !!config?.strategies?.[mappedKey];
-                      if (!isSupported) {
-                        alert('This strategy is not wired in the configuration yet. Please choose one of the supported strategies.');
-                        return; // Stay on page 3
-                      }
-
-                      // Store strategy key in localStorage and global window
-                      localStorage.setItem('bf_selected_strategy', mappedKey);
-                      (window as any).selectedStrategyKey = mappedKey;
-
-                      onSelect({ 
-                        id: expandedItem.id, 
-                        name: expandedItem.name, 
-                        description: expandedItem.tooltip,
-                        tier: expandedItem.tier,
-                        defaultIndicators: [],
-                        canAddFilters: expandedItem.tier !== 'basic'
-                      });
-                      
-                      navigate("/strategy-builder/advanced");
                     } else {
                       closeModal();
                     }
