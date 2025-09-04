@@ -73,7 +73,7 @@ export default function StrategyReviewSummary(props: Props) {
         const local = props.state ?? readStateFallback();
         if (!local?.strategyId) throw new Error('No strategy selected yet.');
         const { strategies, indicators } = await loadConfigs();
-        const strategy = getStrategy(strategies, local.strategyId);
+        const strategy = getStrategy(strategies, indicators, local.strategyId);
         const allowedIndicators = filterIndicators(indicators, strategy.allowedIndicators || []);
         const preview = previewStrategy(local, strategy, allowedIndicators);
         if (!alive) return;

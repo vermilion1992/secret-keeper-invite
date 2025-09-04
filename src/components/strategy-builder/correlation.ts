@@ -72,13 +72,20 @@ export function resolveStrategyId(input: string, strategies: StrategyConfig[]): 
   return undefined;
 }
 
-export function getStrategy(strategies: StrategyConfig[], idOrLabel: string) {
+export function getStrategy(strategies: StrategyConfig[], indicators: IndicatorConfig[], idOrLabel: string) {
   const resolvedId = resolveStrategyId(idOrLabel, strategies);
   if (!resolvedId) {
     const ids = strategies.map(s => s.id).join(', ');
     throw new Error(`Strategy not found: "${idOrLabel}". Available: ${ids}`);
   }
-  return strategies.find(s => s.id === resolvedId)!;
+  const strategy = strategies.find(s => s.id === resolvedId)!;
+  
+  // Default allowedIndicators to all indicator IDs if missing or empty
+  if (!strategy.allowedIndicators || strategy.allowedIndicators.length === 0) {
+    strategy.allowedIndicators = indicators.map(i => i.id);
+  }
+  
+  return strategy;
 }
 
 export function filterIndicators(indicators: IndicatorConfig[], allowedIds: string[]) {

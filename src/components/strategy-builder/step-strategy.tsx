@@ -478,9 +478,44 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
     const Icon = strategy.icon;
     const isSelected = selected?.id === strategy.id;
 
-    const handleStrategyClick = () => {
+    const handleStrategyClick = async () => {
       if (!isLocked) {
-        openModal({...strategy, type: 'strategy'});
+        // Check if strategy resolves to config before opening modal
+        try {
+          const { loadConfigs, resolveStrategyId } = await import('./correlation');
+          const { strategies } = await loadConfigs();
+          
+          const configKeyMap: Record<string, string> = {
+            'EMA Crossover Pro': 'ema_crossover_pro',
+            'MACD Confirmation': 'macd_momentum_shift',
+            'RSI Mean Reversion': 'rsi_breakout',
+            'Echo Hybrid': 'breadth_tilt_hybrid',
+            'Breadth Monitor': 'breadth_tilt_hybrid',
+            'Echo Market Neutral': 'breadth_tilt_hybrid',
+          };
+
+          const mappedKey = configKeyMap[strategy.name] || strategy.id;
+          const canonicalId = resolveStrategyId(mappedKey, strategies);
+          
+          if (!canonicalId) {
+            const { toast } = await import('@/hooks/use-toast');
+            toast({
+              title: "Not configured yet",
+              description: "This strategy is not available in the current configuration.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          openModal({...strategy, type: 'strategy'});
+        } catch (e) {
+          const { toast } = await import('@/hooks/use-toast');
+          toast({
+            title: "Not configured yet",
+            description: "This strategy is not available in the current configuration.",
+            variant: "destructive"
+          });
+        }
       }
     };
 
@@ -747,8 +782,13 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         const canonicalId = resolveStrategyId(mappedKey, strategies);
                         
                         if (!canonicalId) {
-                          const availableIds = strategies.map(s => s.id).join(', ');
-                          alert(`Strategy "${mappedKey}" not found in config. Available: ${availableIds}`);
+                          const { toast } = await import('@/hooks/use-toast');
+                          toast({
+                            title: "Not configured yet",
+                            description: "This strategy is not available in the current configuration.",
+                            variant: "destructive"
+                          });
+                          closeModal();
                           return;
                         }
 
