@@ -1,1 +1,103 @@
+{
+  "schemaVersion": "1.0",
+  "version": "1",
+  "id": "rsi",
+  "label": "RSI",
+  "category": "Momentum",
+  "tier": "CORE",
+  "tags": ["Momentum", "Oscillator"],
+
+  "blurb": "Momentum oscillator scaled 0–100; useful for momentum filters and reversal signals.",
+  "longSummary": "RSI compares average gains to losses over N periods and outputs a value from 0 to 100. Above a chosen threshold (e.g., 55–60) often reflects bullish momentum; below a threshold (e.g., 40–45) reflects bearish pressure. RSI is most reliable when aligned with the broader regime (e.g., a trend filter) and when avoiding major news spikes. Common use cases: momentum breakout, pullback continuation, and mean-reversion bounce.",
+  "mathSummary": "RSI = 100 − 100 / (1 + RS), where RS = AvgGain / AvgLoss (smoothed).",
+  "references": [
+    "https://www.investopedia.com/terms/r/rsi.asp"
+  ],
+
+  "params": {
+    "length":  { "type": "int",  "default": 14, "min": 2,  "max": 200, "step": 1, "unit": "bars" },
+    "source":  { "type": "enum", "default": "close", "options": ["close", "open", "high", "low"] },
+    "obLevel": { "type": "int",  "default": 70, "min": 50, "max": 100, "step": 1 },
+    "osLevel": { "type": "int",  "default": 30, "min": 0,  "max": 50,  "step": 1 }
+  },
+
+  "outputs": ["value"],
+
+  "supportedOperators": [
+    ">", ">=", "<", "<=", "==",
+    "crosses_above", "crosses_below",
+    "rising", "falling",
+    "within", "outside"
+  ],
+
+  "signals": {
+    "bullish": [
+      { "name": "RSI crosses above threshold", "left": "rsi.value", "op": "crosses_above", "rightParam": "obLevel" }
+    ],
+    "bearish": [
+      { "name": "RSI crosses below threshold", "left": "rsi.value", "op": "crosses_below", "rightParam": "osLevel" }
+    ]
+  },
+
+  "ui": {
+    "tooltips": {
+      "_indicator": "RSI measures momentum on a 0–100 scale.",
+      "length": "Higher = smoother, slower.",
+      "source": "Price source used to compute RSI.",
+      "obLevel": "Common overbought ~70; momentum filters often use 55–60.",
+      "osLevel": "Common oversold ~30; bearish filters often use 40–45."
+    },
+    "badges": ["Momentum"]
+  },
+
+  "constraints": {
+    "recommendedTimeframes": ["15m", "1h", "4h"]
+  },
+
+  "examples": [
+    {
+      "name": "Momentum pop",
+      "setup": "Sideways → narrowing range; RSI length 14; threshold 55",
+      "entry": "Long when RSI crosses above 55 after ≥10 bars below 55",
+      "exit": "Use strategy risk exits; indicator itself doesn’t define exits."
+    },
+    {
+      "name": "Mean-reversion bounce",
+      "setup": "Range; RSI dips < 30",
+      "entry": "Long when RSI crosses back above 30–35 within last 3 bars",
+      "exit": "Use strategy risk exits."
+    },
+    {
+      "name": "Pullback continuation",
+      "setup": "Uptrend; optional EMA filter",
+      "entry": "RSI dips 40–50 then crosses back above 50",
+      "exit": "Use strategy risk exits."
+    }
+  ],
+
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "params": { "atrLength": 14, "mult": 2.0 },
+      "tooltip": "ATR-scaled protective stop; increases with volatility."
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "params": { "trailPct": 0.7, "activationR": 1.0 },
+      "tooltip": "Trail profit after the trade moves in your favor."
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "params": { "activationR": 1.0 },
+      "tooltip": "Move stop to entry after reaching +R."
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "params": { "bars": 30 },
+      "tooltip": "Exit after a maximum number of bars if neither SL/TP hits."
+    }
+  },
+
+  "deprecated": false
+}
 
