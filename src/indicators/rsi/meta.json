@@ -7,8 +7,8 @@
   "tier": "CORE",
   "tags": ["Momentum", "Oscillator"],
 
-  "blurb": "Momentum oscillator scaled 0–100; useful for momentum filters and reversal signals.",
-  "longSummary": "RSI compares average gains to losses over N periods and outputs a value from 0 to 100. Above a chosen threshold (e.g., 55–60) often reflects bullish momentum; below a threshold (e.g., 40–45) reflects bearish pressure. RSI is most reliable when aligned with the broader regime (e.g., a trend filter) and when avoiding major news spikes. Common use cases: momentum breakout, pullback continuation, and mean-reversion bounce.",
+  "blurb": "Momentum oscillator scaled 0–100; useful for momentum filters, pullback continuations, and mean-reversion bounces.",
+  "longSummary": "The Relative Strength Index (RSI) compares the magnitude of recent gains to losses over a configurable length and outputs a 0–100 value. Momentum traders often require RSI to reclaim a threshold (e.g., 55–60) after a quiet phase; pullback traders look for dips into 40–50 that turn back up; mean-reversion entries watch for rebounds from oversold. RSI is more reliable when aligned with a broader trend filter (e.g., EMA 200) and when avoiding high-volatility news spikes.",
   "mathSummary": "RSI = 100 − 100 / (1 + RS), where RS = AvgGain / AvgLoss (smoothed).",
   "references": [
     "https://www.investopedia.com/terms/r/rsi.asp"
@@ -42,10 +42,10 @@
   "ui": {
     "tooltips": {
       "_indicator": "RSI measures momentum on a 0–100 scale.",
-      "length": "Higher = smoother, slower.",
-      "source": "Price source used to compute RSI.",
-      "obLevel": "Common overbought ~70; momentum filters often use 55–60.",
-      "osLevel": "Common oversold ~30; bearish filters often use 40–45."
+      "length": "Higher = smoother but slower.",
+      "source": "Price field used to compute RSI.",
+      "obLevel": "Momentum/overbought threshold; filters often use 55–60.",
+      "osLevel": "Oversold threshold; bearish filters often use 40–45."
     },
     "badges": ["Momentum"]
   },
@@ -55,46 +55,32 @@
   },
 
   "examples": [
-    {
-      "name": "Momentum pop",
-      "setup": "Sideways → narrowing range; RSI length 14; threshold 55",
-      "entry": "Long when RSI crosses above 55 after ≥10 bars below 55",
-      "exit": "Use strategy risk exits; indicator itself doesn’t define exits."
-    },
-    {
-      "name": "Mean-reversion bounce",
-      "setup": "Range; RSI dips < 30",
-      "entry": "Long when RSI crosses back above 30–35 within last 3 bars",
-      "exit": "Use strategy risk exits."
-    },
-    {
-      "name": "Pullback continuation",
-      "setup": "Uptrend; optional EMA filter",
-      "entry": "RSI dips 40–50 then crosses back above 50",
-      "exit": "Use strategy risk exits."
-    }
+    { "name": "RSI Trend Pop", "presetRef": "rsi_trend_pop" },
+    { "name": "RSI Mean-Reversion Bounce", "presetRef": "rsi_mean_reversion_bounce" },
+    { "name": "RSI Pullback Continuation", "presetRef": "rsi_pullback_continuation" },
+    { "name": "RSI Momentum Stack", "presetRef": "rsi_momentum_stack" }
   ],
 
   "riskTemplates": {
     "atrStop": {
       "enabledDefault": false,
       "params": { "atrLength": 14, "mult": 2.0 },
-      "tooltip": "ATR-scaled protective stop; increases with volatility."
+      "tooltip": "ATR-scaled protective stop; widens in high volatility and tightens when quiet."
     },
     "trailingTP": {
       "enabledDefault": false,
       "params": { "trailPct": 0.7, "activationR": 1.0 },
-      "tooltip": "Trail profit after the trade moves in your favor."
+      "tooltip": "Trailing take-profit to lock gains once the trade moves in your favor."
     },
     "breakeven": {
       "enabledDefault": false,
       "params": { "activationR": 1.0 },
-      "tooltip": "Move stop to entry after reaching +R."
+      "tooltip": "Move stop to entry after reaching the activation R multiple."
     },
     "timeStop": {
       "enabledDefault": false,
       "params": { "bars": 30 },
-      "tooltip": "Exit after a maximum number of bars if neither SL/TP hits."
+      "tooltip": "Exit after a maximum number of bars if neither SL nor TP is hit."
     }
   },
 
@@ -118,9 +104,8 @@
       },
       "riskDefaults": {
         "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
-        "trailingTP":  { "params": { "trailPct": 0.7, "activationR": 1.0 } },
-        "breakeven":   { "params": { "activationR": 1.0 } },
-        "timeStop":    { "params": { "bars": 30 } }
+        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } },
+        "breakeven":   { "params": { "activationR": 1.0 } }
       },
       "badges": ["Momentum", "Trend Filter"]
     },
@@ -175,6 +160,32 @@
         "timeStop":    { "params": { "bars": 30 } }
       },
       "badges": ["Trend", "Pullback"]
+    },
+    {
+      "id": "rsi_momentum_stack",
+      "label": "RSI Momentum Stack",
+      "blurb": "Sustained momentum regime: RSI holds >50 then pushes above 60.",
+      "indicators": ["rsi", "ema", "atr"],
+      "seedParams": {
+        "rsi": { "length": 14 },
+        "ema": { "period": 200 },
+        "atr": { "length": 14 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": ">", "right": "ema.value", "optional": true },
+          { "left": "rsi.value", "op": ">", "right": 50, "lookback": 5, "mode": "consecutive" },
+          { "left": "rsi.value", "op": ">", "right": 60 },
+          { "left": "rsi.value", "op": "rising", "right": null, "optional": true }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
+        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } },
+        "breakeven":   { "params": { "activationR": 1.0 } }
+      },
+      "badges": ["Momentum", "Regime"]
     }
   ],
 
