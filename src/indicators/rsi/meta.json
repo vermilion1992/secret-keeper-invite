@@ -98,6 +98,85 @@
     }
   },
 
+  "presets": [
+    {
+      "id": "rsi_trend_pop",
+      "label": "RSI Trend Pop",
+      "blurb": "Momentum kick after a quiet patch, in an uptrend.",
+      "indicators": ["rsi", "ema"],
+      "seedParams": {
+        "rsi": { "length": 14 },
+        "ema": { "period": 200 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "rsi.value", "op": "<", "right": 55, "lookback": 10, "mode": "consecutive" },
+          { "left": "rsi.value", "op": "crosses_above", "right": 55 },
+          { "left": "close", "op": ">", "right": "ema.value", "optional": true }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
+        "trailingTP":  { "params": { "trailPct": 0.7, "activationR": 1.0 } },
+        "breakeven":   { "params": { "activationR": 1.0 } },
+        "timeStop":    { "params": { "bars": 30 } }
+      },
+      "badges": ["Momentum", "Trend Filter"]
+    },
+    {
+      "id": "rsi_mean_reversion_bounce",
+      "label": "RSI Mean-Reversion Bounce",
+      "blurb": "Rebound out of oversold for a quick snap-back.",
+      "indicators": ["rsi", "sma"],
+      "seedParams": {
+        "rsi": { "length": 14 },
+        "sma": { "period": 20 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "rsi.value", "op": "<", "right": 32, "lookback": 3 },
+          { "left": "rsi.value", "op": "crosses_above", "right": 32 },
+          { "left": "close", "op": "<", "right": "sma.value", "optional": true }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":     { "params": { "atrLength": 14, "mult": 1.8 } },
+        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } },
+        "breakeven":   { "params": { "activationR": 1.0 } },
+        "timeStop":    { "params": { "bars": 25 } }
+      },
+      "badges": ["Mean Reversion"]
+    },
+    {
+      "id": "rsi_pullback_continuation",
+      "label": "RSI Pullback Continuation",
+      "blurb": "Buy the dip in an uptrend when RSI turns back up.",
+      "indicators": ["rsi", "ema", "atr"],
+      "seedParams": {
+        "rsi": { "length": 14 },
+        "ema": { "period": 200 },
+        "atr": { "length": 14 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": ">", "right": "ema.value" },
+          { "left": "rsi.value", "op": "within", "right": [40, 50], "lookback": 5 },
+          { "left": "rsi.value", "op": "crosses_above", "right": 50 },
+          { "left": "atr.value", "op": ">", "right": 0, "optional": true }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":     { "params": { "atrLength": 14, "mult": 2.1 } },
+        "trailingTP":  { "params": { "trailPct": 0.7, "activationR": 1.0 } },
+        "breakeven":   { "params": { "activationR": 1.0 } },
+        "timeStop":    { "params": { "bars": 30 } }
+      },
+      "badges": ["Trend", "Pullback"]
+    }
+  ],
+
   "deprecated": false
 }
-
