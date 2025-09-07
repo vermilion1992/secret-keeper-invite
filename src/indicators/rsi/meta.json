@@ -7,8 +7,8 @@
   "tier": "CORE",
   "tags": ["Momentum", "Oscillator"],
 
-  "blurb": "Momentum oscillator scaled 0–100; useful for momentum filters, pullback continuations, and mean-reversion bounces.",
-  "longSummary": "The Relative Strength Index (RSI) compares the magnitude of recent gains to losses over a configurable length and outputs a 0–100 value. Momentum traders often require RSI to reclaim a threshold (e.g., 55–60) after a quiet phase; pullback traders look for dips into 40–50 that turn back up; mean-reversion entries watch for rebounds from oversold. RSI is more reliable when aligned with a broader trend filter (e.g., EMA 200) and when avoiding high-volatility news spikes.",
+  "blurb": "Momentum oscillator scaled 0–100; useful for momentum filters, reversals, and pullback confirmations.",
+  "longSummary": "The Relative Strength Index (RSI) compares average gains to losses over a lookback window and outputs a value between 0 and 100. It reacts faster than many trend filters and is commonly used for overbought/oversold bounces, momentum gates (e.g., RSI > 55), and pullback continuations when aligned with a broader uptrend. Typical settings range from 7–21 periods; thresholds near 30/70 are classic for reversals while 45–60/40–55 are often used as regime or momentum bands. RSI signals benefit from context such as a rising long-term EMA or rising volatility (ATR) in breakout styles.",
   "mathSummary": "RSI = 100 − 100 / (1 + RS), where RS = AvgGain / AvgLoss (smoothed).",
   "references": [
     "https://www.investopedia.com/terms/r/rsi.asp"
@@ -41,11 +41,11 @@
 
   "ui": {
     "tooltips": {
-      "_indicator": "RSI measures momentum on a 0–100 scale.",
-      "length": "Higher = smoother but slower.",
+      "_indicator": "RSI measures momentum on a 0–100 scale; higher = stronger upward momentum.",
+      "length": "Higher = smoother but slower; common: 14.",
       "source": "Price field used to compute RSI.",
-      "obLevel": "Momentum/overbought threshold; filters often use 55–60.",
-      "osLevel": "Oversold threshold; bearish filters often use 40–45."
+      "obLevel": "Upper band used as momentum/overbought threshold (e.g., 55–70).",
+      "osLevel": "Lower band used as momentum/oversold threshold (e.g., 30–45)."
     },
     "badges": ["Momentum"]
   },
@@ -55,64 +55,46 @@
   },
 
   "examples": [
-    { "name": "RSI Trend Pop", "presetRef": "rsi_trend_pop" },
     { "name": "RSI Mean-Reversion Bounce", "presetRef": "rsi_mean_reversion_bounce" },
     { "name": "RSI Pullback Continuation", "presetRef": "rsi_pullback_continuation" },
-    { "name": "RSI Momentum Stack", "presetRef": "rsi_momentum_stack" }
+    { "name": "RSI Range Momentum Filter", "presetRef": "rsi_range_momentum_filter" },
+    { "name": "RSI Trend Pop (Hero)", "presetRef": "rsi_trend_pop_hero" },
+    { "name": "RSI Momentum Stack (Hero)", "presetRef": "rsi_momentum_stack_hero" },
+    { "name": "RSI Donchian Breakout Guard (Hero)", "presetRef": "rsi_donchian_breakout_guard_hero" }
   ],
 
   "riskTemplates": {
     "atrStop": {
       "enabledDefault": false,
       "params": { "atrLength": 14, "mult": 2.0 },
-      "tooltip": "ATR-scaled protective stop; widens in high volatility and tightens when quiet."
+      "tooltip": "ATR-sized protective stop; widens in volatility, tightens when quiet."
     },
     "trailingTP": {
       "enabledDefault": false,
-      "params": { "trailPct": 0.7, "activationR": 1.0 },
-      "tooltip": "Trailing take-profit to lock gains once the trade moves in your favor."
+      "params": { "trailPct": 0.6, "activationR": 1.0 },
+      "tooltip": "Trail profits after a minimum move in your favor."
     },
     "breakeven": {
       "enabledDefault": false,
       "params": { "activationR": 1.0 },
-      "tooltip": "Move stop to entry after reaching the activation R multiple."
+      "tooltip": "Move stop to entry after reaching the activation threshold."
     },
     "timeStop": {
       "enabledDefault": false,
       "params": { "bars": 30 },
-      "tooltip": "Exit after a maximum number of bars if neither SL nor TP is hit."
+      "tooltip": "Exit after a maximum number of bars if neither SL/TP is hit."
     }
   },
 
   "presets": [
     {
-      "id": "rsi_trend_pop",
-      "label": "RSI Trend Pop",
-      "blurb": "Momentum kick after a quiet patch, in an uptrend.",
-      "indicators": ["rsi", "ema"],
-      "seedParams": {
-        "rsi": { "length": 14 },
-        "ema": { "period": 200 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "rsi.value", "op": "<", "right": 55, "lookback": 10, "mode": "consecutive" },
-          { "left": "rsi.value", "op": "crosses_above", "right": 55 },
-          { "left": "close", "op": ">", "right": "ema.value", "optional": true }
-        ]
-      },
-      "riskDefaults": {
-        "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
-        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } },
-        "breakeven":   { "params": { "activationR": 1.0 } }
-      },
-      "badges": ["Momentum", "Trend Filter"]
-    },
-    {
       "id": "rsi_mean_reversion_bounce",
       "label": "RSI Mean-Reversion Bounce",
-      "blurb": "Rebound out of oversold for a quick snap-back.",
+      "blurb": "Oversold dip resolves with an RSI cross back above 32; optional SMA context.",
+      "designIntent": "retest",
+      "riskProfile": "Conservative",
+      "badges": ["Mean Reversion"],
+      "tags": ["Close-only", "RSI<32", "Within-3", "Bounce", "Conservative"],
       "indicators": ["rsi", "sma"],
       "seedParams": {
         "rsi": { "length": 14 },
@@ -127,65 +109,149 @@
         ]
       },
       "riskDefaults": {
-        "atrStop":     { "params": { "atrLength": 14, "mult": 1.8 } },
-        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } },
-        "breakeven":   { "params": { "activationR": 1.0 } },
-        "timeStop":    { "params": { "bars": 25 } }
-      },
-      "badges": ["Mean Reversion"]
+        "atrStop":  { "params": { "atrLength": 14, "mult": 1.9 } },
+        "timeStop": { "params": { "bars": 25 } }
+      }
     },
     {
       "id": "rsi_pullback_continuation",
       "label": "RSI Pullback Continuation",
-      "blurb": "Buy the dip in an uptrend when RSI turns back up.",
-      "indicators": ["rsi", "ema", "atr"],
+      "blurb": "Uptrend dip where RSI stabilizes 40–50 then turns back up through 50.",
+      "designIntent": "slope_confirm",
+      "riskProfile": "Balanced",
+      "badges": ["Trend", "Pullback"],
+      "tags": ["Close-only", "EMA200", "RSI 40–50", "Cross>50", "Balanced"],
+      "indicators": ["rsi", "ema"],
       "seedParams": {
         "rsi": { "length": 14 },
-        "ema": { "period": 200 },
-        "atr": { "length": 14 }
+        "ema": { "period": 200 }
       },
       "rules": {
         "joiner": "AND",
         "rules": [
           { "left": "close", "op": ">", "right": "ema.value" },
           { "left": "rsi.value", "op": "within", "right": [40, 50], "lookback": 5 },
-          { "left": "rsi.value", "op": "crosses_above", "right": 50 },
-          { "left": "atr.value", "op": ">", "right": 0, "optional": true }
+          { "left": "rsi.value", "op": "crosses_above", "right": 50 }
         ]
       },
       "riskDefaults": {
-        "atrStop":     { "params": { "atrLength": 14, "mult": 2.1 } },
-        "trailingTP":  { "params": { "trailPct": 0.7, "activationR": 1.0 } },
-        "breakeven":   { "params": { "activationR": 1.0 } },
-        "timeStop":    { "params": { "bars": 30 } }
-      },
-      "badges": ["Trend", "Pullback"]
+        "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
+        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } }
+      }
     },
     {
-      "id": "rsi_momentum_stack",
-      "label": "RSI Momentum Stack",
-      "blurb": "Sustained momentum regime: RSI holds >50 then pushes above 60.",
-      "indicators": ["rsi", "ema", "atr"],
+      "id": "rsi_range_momentum_filter",
+      "label": "RSI Range Momentum Filter",
+      "blurb": "Simple momentum gate: RSI > 55 while price is above a medium SMA.",
+      "designIntent": "momentum_filter",
+      "riskProfile": "Balanced",
+      "badges": ["Momentum", "Regime"],
+      "tags": ["Close-only", "RSI>55", "SMA100", "Filter", "Balanced"],
+      "indicators": ["rsi", "sma"],
       "seedParams": {
         "rsi": { "length": 14 },
-        "ema": { "period": 200 },
+        "sma": { "period": 100 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "rsi.value", "op": ">", "right": 55 },
+          { "left": "close", "op": ">", "right": "sma.value" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":    { "params": { "atrLength": 14, "mult": 1.9 } },
+        "trailingTP": { "params": { "trailPct": 0.7, "activationR": 1.0 } }
+      }
+    },
+
+    {
+      "id": "rsi_trend_pop_hero",
+      "label": "RSI Trend Pop (Hero)",
+      "blurb": "After ≥10 consecutive bars at/below 55, RSI pops back above 55 in an uptrend.",
+      "designIntent": "reclaim",
+      "riskProfile": "Balanced",
+      "isHero": true,
+      "badges": ["Momentum", "Reclaim"],
+      "tags": ["Close-only", "RSI 55 Reclaim", "Consecutive-10", "EMA200", "Balanced"],
+      "indicators": ["rsi", "ema"],
+      "seedParams": {
+        "rsi": { "length": 14 },
+        "ema": { "period": 200 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "rsi.value", "op": "<=", "right": 55, "lookback": 10, "mode": "consecutive" },
+          { "left": "rsi.value", "op": "crosses_above", "right": 55 },
+          { "left": "close", "op": ">", "right": "ema.value", "optional": true }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":   { "params": { "atrLength": 14, "mult": 2.0 } },
+        "breakeven": { "params": { "activationR": 1.0 } }
+      },
+      "priority": 18,
+      "context": { "trend": { "indicator": "ema", "period": 200, "state": "above_and_rising" } }
+    },
+    {
+      "id": "rsi_momentum_stack_hero",
+      "label": "RSI Momentum Stack (Hero)",
+      "blurb": "Sustained momentum: RSI > 50 for 5 consecutive bars then pushes above 60.",
+      "designIntent": "momentum_filter",
+      "riskProfile": "Balanced",
+      "isHero": true,
+      "badges": ["Momentum", "Regime"],
+      "tags": ["Close-only", "RSI>50x5", ">60 Push", "EMA200", "Balanced"],
+      "indicators": ["rsi", "ema"],
+      "seedParams": {
+        "rsi": { "length": 14 },
+        "ema": { "period": 200 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "rsi.value", "op": ">", "right": 50, "lookback": 5, "mode": "consecutive" },
+          { "left": "rsi.value", "op": "crosses_above", "right": 60 },
+          { "left": "close", "op": ">", "right": "ema.value", "optional": true }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
+        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } }
+      },
+      "priority": 16,
+      "minSeparationBars": 6
+    },
+    {
+      "id": "rsi_donchian_breakout_guard_hero",
+      "label": "RSI Donchian Breakout Guard (Hero)",
+      "blurb": "Breakout above Donchian upper, gated by RSI > 55 and rising volatility.",
+      "designIntent": "breakout",
+      "riskProfile": "Aggressive",
+      "isHero": true,
+      "badges": ["Breakout", "Vol Expansion"],
+      "tags": ["Close-only", "Donchian20", "RSI>55", "ATR Rising", "Aggressive"],
+      "indicators": ["donchian_channels", "rsi", "atr"],
+      "seedParams": {
+        "donchian_channels": { "period": 20 },
+        "rsi": { "length": 14 },
         "atr": { "length": 14 }
       },
       "rules": {
         "joiner": "AND",
         "rules": [
-          { "left": "close", "op": ">", "right": "ema.value", "optional": true },
-          { "left": "rsi.value", "op": ">", "right": 50, "lookback": 5, "mode": "consecutive" },
-          { "left": "rsi.value", "op": ">", "right": 60 },
-          { "left": "rsi.value", "op": "rising", "right": null, "optional": true }
+          { "left": "close", "op": "crosses_above", "right": "donchian_channels.upper" },
+          { "left": "rsi.value", "op": ">", "right": 55 },
+          { "left": "atr.value", "op": "rising", "right": null }
         ]
       },
       "riskDefaults": {
-        "atrStop":     { "params": { "atrLength": 14, "mult": 2.0 } },
-        "trailingTP":  { "params": { "trailPct": 0.6, "activationR": 1.0 } },
-        "breakeven":   { "params": { "activationR": 1.0 } }
+        "atrStop":     { "params": { "atrLength": 14, "mult": 2.1 } },
+        "trailingTP":  { "params": { "trailPct": 0.7, "activationR": 1.0 } }
       },
-      "badges": ["Momentum", "Regime"]
+      "entryConfirmationBars": 1,
+      "context": { "volatility": { "indicator": "atr", "length": 14, "state": "rising_or_high", "percentile": 60 } }
     }
   ],
 
