@@ -13,7 +13,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, Search, Plus, X, Filter, RotateCcw, Zap } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
+import rsiMeta from '@/indicators/rsi/meta.json';
 
 interface StepAdvancedSettingsProps {
   strategy: Strategy | null;
@@ -83,6 +84,7 @@ export function StepAdvancedSettings({
     maType: 'EMA',
     rsiOverbought: 70,
     rsiOversold: 30,
+    rsiSource: 'close',
     reentryBars: 1,
     confirmBars: 1,
     oneTradePerSession: false
@@ -204,157 +206,135 @@ export function StepAdvancedSettings({
     loadConfig();
   }, []);
 
-  // Load RSI meta.json and hydrate form from URL params (no localStorage)
-  useEffect(() => {
-    const loadFromURL = async () => {
-      try {
-        // Parse URL params
-        const urlParams = new URLSearchParams(window.location.search);
-        const indicator = urlParams.get('indicator');
-        const presetId = urlParams.get('preset');
-        
-        if (indicator !== 'rsi') return; // Only handle RSI
-        
-        // Import RSI meta.json synchronously
-        const rsiMeta = await import('@/indicators/rsi/meta.json');
-        console.log("Page4 meta:", rsiMeta);
-        
-        // Build params from meta.json defaults
-        const baseParams = {
-          length: rsiMeta.params.length.default,
-          source: rsiMeta.params.source.default,
-          obLevel: rsiMeta.params.obLevel.default,
-          osLevel: rsiMeta.params.osLevel.default
-        };
-        
-        let finalParams = { ...baseParams };
-        let rules: any[] = [];
-        let riskPrefills: any = {};
-        
-        if (presetId && presetId.trim() !== '') {
-          // Find preset in meta.json
-          const preset = rsiMeta.presets.find((p: any) => p.id === presetId);
-          if (preset) {
-            // Overlay preset seedParams.rsi if present
-            if (preset.seedParams?.rsi) {
-              finalParams = { ...finalParams, ...preset.seedParams.rsi };
-            }
-            
-            // Get rules from preset
-            rules = preset.rules?.rules || [];
-            
-            // Get risk prefills from preset riskDefaults
-            riskPrefills = preset.riskDefaults || {};
-          }
-        } else {
-          // Use indicator-level riskTemplates for non-preset
-          riskPrefills = rsiMeta.riskTemplates || {};
-        }
-        
-        console.log("Page4 params:", finalParams);
-        
-        // Set RSI indicator settings (controlled values)
-        setStrategySettings(prev => ({
-          ...prev,
-          rsiLength: finalParams.length,
-          rsiOverbought: finalParams.obLevel,
-          rsiOversold: finalParams.osLevel
-        }));
-        
-        // Map rules to entry conditions
-        if (rules.length > 0) {
-          const mapOp = (op: string) => {
-            if (op === '>' || op === '>=') return 'is_above';
-            if (op === '<' || op === '<=') return 'is_below';
-            if (op === 'crosses_above' || op === 'crosses_below') return op;
-            return 'is_above';
-          };
-          
-          const nearestRSI = (n: number) => {
-            const bands = [30, 50, 70];
-            let best = 30;
-            let diff = Infinity;
-            for (const b of bands) { 
-              const d = Math.abs(b - n); 
-              if (d < diff) { diff = d; best = b; }
-            }
-            return String(best);
-          };
-          
-          const toFamily = (left: string, right: any) => {
-            if (String(left).includes('rsi')) return 'rsi';
-            if (String(right).includes('ema')) return 'ema';
-            if (String(right).includes('sma')) return 'sma';
-            return 'rsi';
-          };
-          
-          const toLeftOperand = (family: string, left: string) => {
-            if (family === 'rsi') return 'RSI';
-            if (family === 'ema') return 'Price';
-            if (family === 'sma') return 'Price';
-            return 'RSI';
-          };
-          
-          const toRightOperand = (family: string, right: any) => {
-            if (family === 'rsi') {
-              if (Array.isArray(right)) return nearestRSI(Number(right[0] ?? 50));
-              if (typeof right === 'number') return nearestRSI(right);
-              return '50';
-            }
-            if (family === 'ema') return 'EMA Slow';
-            if (family === 'sma') return 'SMA';
-            return '50';
-          };
+  // Seed from URL + meta.json before first paint
+  useLayoutEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const indicator = urlParams.get('indicator');
+      const presetId = (urlParams.get('preset') || '').trim();
+      if (indicator !== 'rsi') return;
 
-          const mapped = rules.map((r: any, idx: number) => {
-            const family = toFamily(r.left, r.right);
-            const operator = r.op === 'within' ? 'is_above' : mapOp(r.op);
-            const right = r.op === 'within' && Array.isArray(r.right) ? r.right[0] : r.right;
-            return {
-              id: String(Date.now() + idx),
-              family,
-              operator,
-              leftOperand: toLeftOperand(family, r.left),
-              rightOperand: toRightOperand(family, right),
-              enabled: true,
-            } as EntryCondition;
-          });
-          
-          setEntryConditions(mapped);
-          setEntryLogic('all_true'); // Default to AND
-        }
-        
-        // Apply risk prefills (values only, toggles OFF)
-        const applyRiskParams = (source: any) => {
-          if (!source) return;
-          if (source.atrStop?.params) {
-            const p = source.atrStop.params;
-            setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength || prev.atrLength }));
-            setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult || prev.atrMultiplier, atrStopEnabled: false }));
-          }
-          if (source.trailingTP?.params) {
-            const p = source.trailingTP.params;
-            setExitSettings(prev => ({ ...prev, trailingPercent: (typeof p.trailPct === 'number' ? p.trailPct * 100 : prev.trailingPercent), trailingType: 'none' }));
-          }
-          if (source.breakeven?.params) {
-            const p = source.breakeven.params;
-            setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR || prev.breakEvenTrigger, breakEvenEnabled: false }));
-          }
-          if (source.timeStop?.params) {
-            const p = source.timeStop.params;
-            setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars || prev.timeExitCandles, timeExitType: 'none' }));
-          }
-        };
+      console.log('Page4 meta:', rsiMeta);
 
-        applyRiskParams(riskPrefills);
-        
-      } catch (error) {
-        console.error('Failed to load from URL:', error);
+      const baseParams = {
+        length: rsiMeta.params.length.default,
+        source: rsiMeta.params.source.default,
+        obLevel: rsiMeta.params.obLevel.default,
+        osLevel: rsiMeta.params.osLevel.default,
+      } as any;
+
+      let finalParams = { ...baseParams } as any;
+      let rules: any[] = [];
+      let riskPrefills: any = {};
+
+      if (presetId) {
+        const preset = (rsiMeta as any).presets.find((p: any) => p.id === presetId);
+        if (preset) {
+          if (preset.seedParams?.rsi) {
+            finalParams = { ...finalParams, ...preset.seedParams.rsi };
+          }
+          rules = preset.rules?.rules || [];
+          riskPrefills = preset.riskDefaults || {};
+        }
+      } else {
+        riskPrefills = (rsiMeta as any).riskTemplates || {};
       }
-    };
 
-    loadFromURL();
-  }, []); // Only run once on mount
+      console.log('Page4 params:', finalParams);
+
+      // Indicator Params
+      setStrategySettings(prev => ({
+        ...prev,
+        rsiLength: finalParams.length,
+        rsiOverbought: finalParams.obLevel,
+        rsiOversold: finalParams.osLevel,
+        // store source as rsiSource for binding
+        rsiSource: finalParams.source,
+      }));
+
+      // Entry Rules (preserve attributes)
+      if (rules.length > 0) {
+        const mapOp = (op: string) => {
+          if (op === '>' || op === '>=') return 'is_above';
+          if (op === '<' || op === '<=') return 'is_below';
+          if (op === 'crosses_above' || op === 'crosses_below') return op;
+          return 'is_above';
+        };
+        const nearestRSI = (n: number) => {
+          const bands = [30, 50, 70];
+          let best = 30, diff = Infinity;
+          for (const b of bands) { const d = Math.abs(b - n); if (d < diff) { diff = d; best = b; } }
+          return String(best);
+        };
+        const toFamily = (left: string, right: any) => {
+          if (String(left).includes('rsi')) return 'rsi';
+          if (String(right).includes('ema')) return 'ema';
+          if (String(right).includes('sma')) return 'sma';
+          return 'rsi';
+        };
+        const toLeftOperand = (family: string) => (family === 'rsi' ? 'RSI' : 'Price');
+        const toRightOperand = (family: string, right: any) => {
+          if (family === 'rsi') {
+            if (Array.isArray(right)) return nearestRSI(Number(right[0] ?? 50));
+            if (typeof right === 'number') return nearestRSI(right);
+            return '50';
+          }
+          if (family === 'ema') return 'EMA Slow';
+          if (family === 'sma') return 'SMA';
+          return '50';
+        };
+
+        const mapped = rules.map((r: any, idx: number) => {
+          const family = toFamily(r.left, r.right);
+          const operator = r.op === 'within' ? 'is_above' : mapOp(r.op);
+          const right = r.op === 'within' && Array.isArray(r.right) ? r.right[0] : r.right;
+          return {
+            id: String(Date.now() + idx),
+            family,
+            operator,
+            leftOperand: toLeftOperand(family),
+            rightOperand: toRightOperand(family, right),
+            enabled: true,
+          } as EntryCondition;
+        });
+        setEntryConditions(mapped);
+        setEntryLogic('all_true');
+      }
+
+      // Risk values (toggles OFF)
+      const applyRiskParams = (source: any) => {
+        if (!source) return;
+        if (source.atrStop?.params) {
+          const p = source.atrStop.params;
+          setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength ?? prev.atrLength }));
+          setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult ?? prev.atrMultiplier, atrStopEnabled: false }));
+        }
+        if (source.trailingTP?.params) {
+          const p = source.trailingTP.params;
+          setExitSettings(prev => ({ ...prev, trailingPercent: (typeof p.trailPct === 'number' ? p.trailPct * 100 : prev.trailingPercent), trailingType: 'none' }));
+        }
+        if (source.breakeven?.params) {
+          const p = source.breakeven.params;
+          setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR ?? prev.breakEvenTrigger, breakEvenEnabled: false }));
+        }
+        if (source.timeStop?.params) {
+          const p = source.timeStop.params;
+          setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars ?? prev.timeExitCandles, timeExitType: 'none' }));
+        }
+      };
+
+      applyRiskParams(riskPrefills);
+    } catch {}
+  }, []);
+
+  // Debug logs
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const presetId = urlParams.get('preset');
+    console.log('Page4 meta:', rsiMeta);
+    console.log('Page4 params:', { length: strategySettings.rsiLength, source: strategySettings.rsiSource, obLevel: strategySettings.rsiOverbought, osLevel: strategySettings.rsiOversold, presetId });
+  }, [strategySettings.rsiLength, strategySettings.rsiOverbought, strategySettings.rsiOversold, strategySettings.rsiSource]);
+
 
   // Get selected strategy key from localStorage with fallback
   const getSelectedStrategyKey = () => {
@@ -685,7 +665,7 @@ export function StepAdvancedSettings({
   // Debug readout (temporary)
   const urlParams = new URLSearchParams(window.location.search);
   const debugLength = strategySettings.rsiLength;
-  const debugSource = 'close'; // Fixed for now
+  const debugSource = strategySettings.rsiSource;
   const debugOB = strategySettings.rsiOverbought;
   const debugOS = strategySettings.rsiOversold;
 
@@ -819,7 +799,7 @@ export function StepAdvancedSettings({
                       </div>
                       <div className="space-y-3 mt-6">
                         <Label className="font-medium">Source</Label>
-                        <Select value="close" onValueChange={() => {}}>
+                        <Select value={strategySettings.rsiSource as any} onValueChange={(val) => setStrategySettings(prev => ({ ...prev, rsiSource: val }))}>
                           <SelectTrigger className="bg-background/50">
                             <SelectValue />
                           </SelectTrigger>
