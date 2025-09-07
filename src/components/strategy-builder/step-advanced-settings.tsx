@@ -204,7 +204,7 @@ export function StepAdvancedSettings({
     loadConfig();
   }, []);
 
-  // Load builder state to pre-fill RSI parameters and risk settings
+  // Load builder state to pre-fill RSI parameters and risk settings from meta.json
   useEffect(() => {
     const loadBuilderState = async () => {
       try {
@@ -214,40 +214,111 @@ export function StepAdvancedSettings({
         if (builderState?.metadata) {
           const { metadata, indicatorParams } = builderState;
           
-          // Pre-fill RSI indicator parameters if available
-          if (metadata.indicatorId === 'rsi' && indicatorParams.rsi) {
-            const rsiParams = indicatorParams.rsi;
+          // Pre-fill RSI indicator parameters from src/indicators/rsi/meta.json -> params
+          if (metadata.indicatorId === 'rsi' && metadata.params) {
+            const { params } = metadata;
             setStrategySettings(prev => ({
               ...prev,
-              rsiLength: typeof rsiParams.length === 'number' ? rsiParams.length : prev.rsiLength,
-              rsiOverbought: typeof rsiParams.obLevel === 'number' ? rsiParams.obLevel : prev.rsiOverbought,
-              rsiOversold: typeof rsiParams.osLevel === 'number' ? rsiParams.osLevel : prev.rsiOversold
+              rsiLength: params.length?.default || prev.rsiLength,
+              rsiOverbought: params.obLevel?.default || prev.rsiOverbought,
+              rsiOversold: params.osLevel?.default || prev.rsiOversold
             }));
           }
           
-          // Pre-fill risk settings from preset riskDefaults
+          // Pre-fill risk settings from preset riskDefaults (preset-specific)
           if (metadata.riskDefaults) {
-            const riskDefaults = metadata.riskDefaults;
-            setExitSettings(prev => ({
-              ...prev,
-              stopLoss: typeof riskDefaults.stopLoss === 'number' ? riskDefaults.stopLoss : prev.stopLoss,
-              takeProfit: typeof riskDefaults.takeProfit === 'number' ? riskDefaults.takeProfit : prev.takeProfit,
-              atrStopEnabled: typeof riskDefaults.atrStopEnabled === 'boolean' ? riskDefaults.atrStopEnabled : prev.atrStopEnabled,
-              atrMultiplier: typeof riskDefaults.atrMultiplier === 'number' ? riskDefaults.atrMultiplier : prev.atrMultiplier,
-              trailingType: typeof riskDefaults.trailingType === 'string' ? riskDefaults.trailingType : prev.trailingType,
-              trailingPercent: typeof riskDefaults.trailingPercent === 'number' ? riskDefaults.trailingPercent : prev.trailingPercent
-            }));
-          }
-          
-          // Pre-fill risk settings from riskTemplates
-          if (metadata.riskTemplates) {
-            const riskTemplates = metadata.riskTemplates;
-            if (riskTemplates.conservative) {
-              const conservative = riskTemplates.conservative;
+            const { riskDefaults } = metadata;
+            
+            // Extract ATR stop settings from riskDefaults.atrStop.params
+            if (riskDefaults.atrStop?.params) {
+              const atrParams = riskDefaults.atrStop.params;
               setExitSettings(prev => ({
                 ...prev,
-                stopLoss: typeof conservative.stopLoss === 'number' ? conservative.stopLoss : prev.stopLoss,
-                takeProfit: typeof conservative.takeProfit === 'number' ? conservative.takeProfit : prev.takeProfit
+                atrStopEnabled: true,
+                atrMultiplier: atrParams.mult || prev.atrMultiplier
+              }));
+              setStrategySettings(prev => ({
+                ...prev,
+                atrLength: atrParams.atrLength || prev.atrLength
+              }));
+            }
+            
+            // Extract trailing TP settings from riskDefaults.trailingTP.params
+            if (riskDefaults.trailingTP?.params) {
+              const trailingParams = riskDefaults.trailingTP.params;
+              setExitSettings(prev => ({
+                ...prev,
+                trailingType: 'percent',
+                trailingPercent: (trailingParams.trailPct * 100) || prev.trailingPercent
+              }));
+            }
+            
+            // Extract breakeven settings from riskDefaults.breakeven.params
+            if (riskDefaults.breakeven?.params) {
+              const breakevenParams = riskDefaults.breakeven.params;
+              setExitSettings(prev => ({
+                ...prev,
+                breakEvenEnabled: true,
+                breakEvenTrigger: breakevenParams.activationR || prev.breakEvenTrigger
+              }));
+            }
+            
+            // Extract time stop settings from riskDefaults.timeStop.params
+            if (riskDefaults.timeStop?.params) {
+              const timeParams = riskDefaults.timeStop.params;
+              setExitSettings(prev => ({
+                ...prev,
+                timeExitType: 'candles',
+                timeExitCandles: timeParams.bars || prev.timeExitCandles
+              }));
+            }
+          }
+          
+          // Pre-fill risk settings from indicator-level riskTemplates
+          if (metadata.riskTemplates) {
+            const { riskTemplates } = metadata;
+            
+            // Apply ATR stop defaults from riskTemplates.atrStop.params
+            if (riskTemplates.atrStop?.params && !metadata.riskDefaults?.atrStop) {
+              const atrParams = riskTemplates.atrStop.params;
+              setExitSettings(prev => ({
+                ...prev,
+                atrStopEnabled: riskTemplates.atrStop.enabledDefault || false,
+                atrMultiplier: atrParams.mult || prev.atrMultiplier
+              }));
+              setStrategySettings(prev => ({
+                ...prev,
+                atrLength: atrParams.atrLength || prev.atrLength
+              }));
+            }
+            
+            // Apply trailing TP defaults from riskTemplates.trailingTP.params
+            if (riskTemplates.trailingTP?.params && !metadata.riskDefaults?.trailingTP) {
+              const trailingParams = riskTemplates.trailingTP.params;
+              setExitSettings(prev => ({
+                ...prev,
+                trailingType: riskTemplates.trailingTP.enabledDefault ? 'percent' : 'none',
+                trailingPercent: (trailingParams.trailPct * 100) || prev.trailingPercent
+              }));
+            }
+            
+            // Apply breakeven defaults from riskTemplates.breakeven.params
+            if (riskTemplates.breakeven?.params && !metadata.riskDefaults?.breakeven) {
+              const breakevenParams = riskTemplates.breakeven.params;
+              setExitSettings(prev => ({
+                ...prev,
+                breakEvenEnabled: riskTemplates.breakeven.enabledDefault || false,
+                breakEvenTrigger: breakevenParams.activationR || prev.breakEvenTrigger
+              }));
+            }
+            
+            // Apply time stop defaults from riskTemplates.timeStop.params
+            if (riskTemplates.timeStop?.params && !metadata.riskDefaults?.timeStop) {
+              const timeParams = riskTemplates.timeStop.params;
+              setExitSettings(prev => ({
+                ...prev,
+                timeExitType: riskTemplates.timeStop.enabledDefault ? 'candles' : 'none',
+                timeExitCandles: timeParams.bars || prev.timeExitCandles
               }));
             }
           }
