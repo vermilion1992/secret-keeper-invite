@@ -749,12 +749,53 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
     );
   };
 
+  const handleRSIIndicatorSelect = async () => {
+    try {
+      // Store RSI indicator selection in builder state
+      const { writeBuilderState, readBuilderState } = await import('./builderState');
+      const currentState = readBuilderState() || {
+        strategyId: '',
+        direction: 'long' as const,
+        indicatorParams: {},
+        ruleGroup: { joiner: 'AND' as const, rules: [] }
+      };
+      
+      // Store indicator ID with special prefix to distinguish from presets
+      writeBuilderState({
+        ...currentState,
+        strategyId: `indicator:${rsiData?.indicator.id}` // Store as indicator:rsi
+      });
+
+      // Also maintain legacy storage for backward compatibility
+      localStorage.setItem('bf_selected_strategy', `indicator:${rsiData?.indicator.id}`);
+      (window as any).selectedStrategyKey = `indicator:${rsiData?.indicator.id}`;
+
+      onSelect({ 
+        id: `indicator:${rsiData?.indicator.id}`,
+        name: rsiData?.indicator.label || 'RSI', 
+        description: rsiData?.indicator.blurb || '',
+        tier: 'basic', // RSI indicator is accessible to all tiers
+        defaultIndicators: [],
+        canAddFilters: true
+      });
+      
+      navigate("/strategy-builder/advanced");
+    } catch (e) {
+      console.error('Failed to select RSI indicator:', e);
+      toast({
+        title: "Selection failed",
+        description: "Could not select the RSI indicator. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Choose a strategy</h2>
-          <p className="text-muted-foreground text-sm">Select from RSI indicator presets with pre-configured rules you can tweak later.</p>
+          <p className="text-muted-foreground text-sm">Select from RSI indicator or its presets with pre-configured rules you can tweak later.</p>
         </div>
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
@@ -829,14 +870,14 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
-                    {(() => { const Icon = expandedItem.icon; return <Icon className="h-6 w-6 text-primary" />; })()}
+                    <Activity className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">
-                      {expandedItem.name}
+                      {expandedItem.label || expandedItem.name}
                     </h2>
                     <Badge variant="default" className="text-sm font-semibold uppercase">
-                      {expandedItem.tier} TIER
+                      BASIC TIER
                     </Badge>
                   </div>
                 </div>
@@ -1022,15 +1063,24 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
             </div>
           ) : (
             <div className="space-y-6">
-              {/* RSI Indicator Block */}
+              {/* RSI Indicator Card */}
               <Card className="border-l-4 border-l-primary">
                 <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Activity className="h-6 w-6 text-primary" />
-                    <div>
-                      <h4 className="font-semibold">{rsiData.indicator.label}</h4>
-                      <p className="text-sm text-muted-foreground">{rsiData.indicator.blurb}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Activity className="h-6 w-6 text-primary" />
+                      <div>
+                        <h4 className="font-semibold">{rsiData.indicator.label}</h4>
+                        <p className="text-sm text-muted-foreground">{rsiData.indicator.blurb}</p>
+                      </div>
                     </div>
+                    <Button
+                      onClick={handleRSIIndicatorSelect}
+                      size="sm"
+                      className="px-4"
+                    >
+                      Use RSI
+                    </Button>
                   </div>
                   {rsiData.indicator.tags && rsiData.indicator.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
@@ -1043,7 +1093,26 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                   )}
                 </CardHeader>
               </Card>
-              
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Prebuilt Strategies Section */}
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Prebuilt Strategies</h3>
+          
+          {loadError ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Failed to load RSI presets.</p>
+            </div>
+          ) : !rsiData ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading RSI presets...</p>
+            </div>
+          ) : (
+            <div>
               {/* RSI Presets */}
               {rsiData.presets.length === 0 ? (
                 <div className="text-center py-8">
