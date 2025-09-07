@@ -800,6 +800,92 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
 
+      <Tabs defaultValue="indicators" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="indicators">Indicators</TabsTrigger>
+          <TabsTrigger value="strategies">Prebuilt Strategies</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="indicators" className="space-y-4">
+          {/* RSI Indicator Section */}
+          {rsiData && rsiData.indicator && (
+            <div className="space-y-4">
+              <Card className="cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale hover:border-primary hover:bg-primary/10">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Activity className="h-6 w-6 text-primary" />
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold">{rsiData.indicator.label}</h3>
+                      <p className="text-muted-foreground text-sm">{rsiData.indicator.blurb}</p>
+                      {rsiData.indicator.tags && rsiData.indicator.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {rsiData.indicator.tags.map((tag: string) => (
+                            <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={handleRSIIndicatorSelect} className="w-full">
+                    Use RSI
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Error state */}
+          {loadError && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Failed to load RSI indicator data.</p>
+            </div>
+          )}
+
+          {/* Loading state */}
+          {!rsiData && !loadError && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading RSI indicator...</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="strategies" className="space-y-4">
+          {/* RSI Presets Section */}
+          {rsiData && rsiData.presets && rsiData.presets.length > 0 && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {rsiData.presets.map((preset) => renderRSIPresetTile(preset))}
+              </div>
+            </div>
+          )}
+
+          {/* Empty state for presets */}
+          {rsiData && (!rsiData.presets || rsiData.presets.length === 0) && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No presets found.</p>
+            </div>
+          )}
+
+          {/* Error state */}
+          {loadError && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Failed to load RSI presets.</p>
+            </div>
+          )}
+
+          {/* Loading state */}
+          {!rsiData && !loadError && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading RSI presets...</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
       {/* Centered Modal with Animation, Blur and Particles */}
       {expandedItem && createPortal(
         <div 
@@ -1048,87 +1134,6 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
         document.body
       )}
 
-      {/* Indicators Section */}
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Indicators</h3>
-          
-          {loadError ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Failed to load RSI indicator data.</p>
-            </div>
-          ) : !rsiData ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading RSI indicator...</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* RSI Indicator Card */}
-              <Card className="border-l-4 border-l-primary">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Activity className="h-6 w-6 text-primary" />
-                      <div>
-                        <h4 className="font-semibold">{rsiData.indicator.label}</h4>
-                        <p className="text-sm text-muted-foreground">{rsiData.indicator.blurb}</p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={handleRSIIndicatorSelect}
-                      size="sm"
-                      className="px-4"
-                    >
-                      Use RSI
-                    </Button>
-                  </div>
-                  {rsiData.indicator.tags && rsiData.indicator.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {rsiData.indicator.tags.map((tag: string) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardHeader>
-              </Card>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Prebuilt Strategies Section */}
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Prebuilt Strategies</h3>
-          
-          {loadError ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Failed to load RSI presets.</p>
-            </div>
-          ) : !rsiData ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading RSI presets...</p>
-            </div>
-          ) : (
-            <div>
-              {/* RSI Presets */}
-              {rsiData.presets.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No presets found.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rsiData.presets.map((preset) => 
-                    renderRSIPresetTile(preset, selected?.id === preset.id)
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
       <div className="flex justify-between pt-6">
         <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
