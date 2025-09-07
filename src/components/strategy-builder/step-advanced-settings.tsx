@@ -189,7 +189,7 @@ export function StepAdvancedSettings({
   // Global config state
   const [BF_CONFIG, setBF_CONFIG] = useState<any>(null);
 
-  // Load the JSON config once
+  // Load the JSON config and builder state to pre-fill parameters
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -202,6 +202,62 @@ export function StepAdvancedSettings({
       }
     };
     loadConfig();
+  }, []);
+
+  // Load builder state to pre-fill RSI parameters and risk settings
+  useEffect(() => {
+    const loadBuilderState = async () => {
+      try {
+        const { readBuilderState } = await import('./builderState');
+        const builderState = readBuilderState();
+        
+        if (builderState?.metadata) {
+          const { metadata, indicatorParams } = builderState;
+          
+          // Pre-fill RSI indicator parameters if available
+          if (metadata.indicatorId === 'rsi' && indicatorParams.rsi) {
+            const rsiParams = indicatorParams.rsi;
+            setStrategySettings(prev => ({
+              ...prev,
+              rsiLength: typeof rsiParams.length === 'number' ? rsiParams.length : prev.rsiLength,
+              rsiOverbought: typeof rsiParams.obLevel === 'number' ? rsiParams.obLevel : prev.rsiOverbought,
+              rsiOversold: typeof rsiParams.osLevel === 'number' ? rsiParams.osLevel : prev.rsiOversold
+            }));
+          }
+          
+          // Pre-fill risk settings from preset riskDefaults
+          if (metadata.riskDefaults) {
+            const riskDefaults = metadata.riskDefaults;
+            setExitSettings(prev => ({
+              ...prev,
+              stopLoss: typeof riskDefaults.stopLoss === 'number' ? riskDefaults.stopLoss : prev.stopLoss,
+              takeProfit: typeof riskDefaults.takeProfit === 'number' ? riskDefaults.takeProfit : prev.takeProfit,
+              atrStopEnabled: typeof riskDefaults.atrStopEnabled === 'boolean' ? riskDefaults.atrStopEnabled : prev.atrStopEnabled,
+              atrMultiplier: typeof riskDefaults.atrMultiplier === 'number' ? riskDefaults.atrMultiplier : prev.atrMultiplier,
+              trailingType: typeof riskDefaults.trailingType === 'string' ? riskDefaults.trailingType : prev.trailingType,
+              trailingPercent: typeof riskDefaults.trailingPercent === 'number' ? riskDefaults.trailingPercent : prev.trailingPercent
+            }));
+          }
+          
+          // Pre-fill risk settings from riskTemplates
+          if (metadata.riskTemplates) {
+            const riskTemplates = metadata.riskTemplates;
+            if (riskTemplates.conservative) {
+              const conservative = riskTemplates.conservative;
+              setExitSettings(prev => ({
+                ...prev,
+                stopLoss: typeof conservative.stopLoss === 'number' ? conservative.stopLoss : prev.stopLoss,
+                takeProfit: typeof conservative.takeProfit === 'number' ? conservative.takeProfit : prev.takeProfit
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load builder state:', error);
+      }
+    };
+    
+    loadBuilderState();
   }, []);
 
   // Get selected strategy key from localStorage with fallback

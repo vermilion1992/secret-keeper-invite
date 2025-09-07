@@ -53,6 +53,18 @@ export interface StrategyState {
   direction: Direction;
   indicatorParams: Record<string, Record<string, number|boolean|string>>;
   ruleGroup: RuleGroup;
+  metadata?: {
+    indicatorId?: string;
+    indicatorLabel?: string;
+    presetId?: string | null;
+    presetLabel?: string;
+    riskDefaults?: Record<string, any>;
+    riskTemplates?: Record<string, any>;
+    params?: Record<string, any>;
+    seedParams?: Record<string, any>;
+    designIntent?: string;
+    riskProfile?: string;
+  };
 }
 
 export interface PythonExportPayload {

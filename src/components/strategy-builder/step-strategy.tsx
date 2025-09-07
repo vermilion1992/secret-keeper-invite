@@ -751,30 +751,49 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
 
   const handleRSIIndicatorSelect = async () => {
     try {
+      if (!rsiData?.indicator) return;
+      
+      // Build comprehensive state object from RSI metadata
+      const rsiParams = rsiData.indicator.params || {};
+      const riskTemplates = rsiData.indicator.riskTemplates || {};
+      
       // Store RSI indicator selection in builder state
-      const { writeBuilderState, readBuilderState } = await import('./builderState');
-      const currentState = readBuilderState() || {
-        strategyId: '',
+      const { writeBuilderState } = await import('./builderState');
+      
+      const builderState = {
+        strategyId: `indicator:${rsiData.indicator.id}`,
         direction: 'long' as const,
-        indicatorParams: {},
-        ruleGroup: { joiner: 'AND' as const, rules: [] }
+        indicatorParams: {
+          [rsiData.indicator.id]: {
+            length: rsiParams.length?.default || 14,
+            source: rsiParams.source?.default || 'close',
+            obLevel: rsiParams.obLevel?.default || 70,
+            osLevel: rsiParams.osLevel?.default || 30
+          }
+        },
+        ruleGroup: { joiner: 'AND' as const, rules: [] },
+        // Add metadata for Page 4 to consume
+        metadata: {
+          indicatorId: rsiData.indicator.id,
+          indicatorLabel: rsiData.indicator.label,
+          presetId: null,
+          riskTemplates: riskTemplates,
+          params: rsiParams
+        }
       };
       
-      // Store indicator ID with special prefix to distinguish from presets
-      writeBuilderState({
-        ...currentState,
-        strategyId: `indicator:${rsiData?.indicator.id}` // Store as indicator:rsi
-      });
+      writeBuilderState(builderState);
 
       // Also maintain legacy storage for backward compatibility
-      localStorage.setItem('bf_selected_strategy', `indicator:${rsiData?.indicator.id}`);
-      (window as any).selectedStrategyKey = `indicator:${rsiData?.indicator.id}`;
+      localStorage.setItem('bf_selected_strategy', `indicator:${rsiData.indicator.id}`);
+      localStorage.setItem('bf:builderState', JSON.stringify(builderState));
+      (window as any).selectedStrategyKey = `indicator:${rsiData.indicator.id}`;
 
       onSelect({ 
-        id: `indicator:${rsiData?.indicator.id}`,
-        name: rsiData?.indicator.label || 'RSI', 
-        description: rsiData?.indicator.blurb || '',
-        tier: 'basic', // RSI indicator is accessible to all tiers
+        id: `indicator:${rsiData.indicator.id}`,
+        name: rsiData.indicator.label || 'RSI', 
+        description: rsiData.indicator.blurb || '',
+        tier: 'basic',
         defaultIndicators: [],
         canAddFilters: true
       });
@@ -1008,30 +1027,58 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                   onClick={async () => {
                     if (expandedItem.type === 'preset') {
                       try {
+                        if (!rsiData?.indicator || !expandedItem) return;
+                        
+                        // Build comprehensive state object from RSI preset + indicator metadata
+                        const seedParams = expandedItem.seedParams || {};
+                        const riskDefaults = expandedItem.riskDefaults || {};
+                        const ruleTemplates = expandedItem.rules || {};
+                        const rsiParams = rsiData.indicator.params || {};
+                        const riskTemplates = rsiData.indicator.riskTemplates || {};
+                        
                         // Store RSI preset selection in builder state
-                        const { writeBuilderState, readBuilderState } = await import('./builderState');
-                        const currentState = readBuilderState() || {
-                          strategyId: '',
+                        const { writeBuilderState } = await import('./builderState');
+                        
+                        const builderState = {
+                          strategyId: expandedItem.id,
                           direction: 'long' as const,
-                          indicatorParams: {},
-                          ruleGroup: { joiner: 'AND' as const, rules: [] }
+                          indicatorParams: {
+                            [rsiData.indicator.id]: {
+                              ...seedParams,
+                              length: seedParams.length || rsiParams.length?.default || 14,
+                              source: seedParams.source || rsiParams.source?.default || 'close',
+                              obLevel: seedParams.obLevel || rsiParams.obLevel?.default || 70,
+                              osLevel: seedParams.osLevel || rsiParams.osLevel?.default || 30
+                            }
+                          },
+                          ruleGroup: ruleTemplates.ruleGroup || { joiner: 'AND' as const, rules: [] },
+                          // Add metadata for Page 4 to consume
+                          metadata: {
+                            indicatorId: rsiData.indicator.id,
+                            indicatorLabel: rsiData.indicator.label,
+                            presetId: expandedItem.id,
+                            presetLabel: expandedItem.label,
+                            riskDefaults: riskDefaults,
+                            riskTemplates: riskTemplates,
+                            params: rsiParams,
+                            seedParams: seedParams,
+                            designIntent: expandedItem.designIntent,
+                            riskProfile: expandedItem.riskProfile
+                          }
                         };
                         
-                        // Store preset ID as strategy ID
-                        writeBuilderState({
-                          ...currentState,
-                          strategyId: expandedItem.id // Store preset ID as strategy ID
-                        });
+                        writeBuilderState(builderState);
 
                         // Also maintain legacy storage for backward compatibility
                         localStorage.setItem('bf_selected_strategy', expandedItem.id);
+                        localStorage.setItem('bf:builderState', JSON.stringify(builderState));
                         (window as any).selectedStrategyKey = expandedItem.id;
 
                         onSelect({ 
                           id: expandedItem.id,
                           name: expandedItem.label, 
                           description: expandedItem.blurb,
-                          tier: 'basic', // RSI presets are accessible to all tiers
+                          tier: 'basic',
                           defaultIndicators: [],
                           canAddFilters: true
                         });
