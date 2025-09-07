@@ -25,6 +25,8 @@ import {
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { loadRSIIndicator } from '@/lib/indicators/loader';
+import { useToast } from '@/hooks/use-toast';
 
 interface StepStrategyProps {
   selected: Strategy | null;
@@ -426,6 +428,9 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
   const navigate = useNavigate();
   const [expandedItem, setExpandedItem] = useState<any>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [rsiData, setRsiData] = useState<{ indicator: any; presets: any[] } | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const { toast } = useToast();
 
   const openModal = (item: any) => {
     setExpandedItem(item);
@@ -444,11 +449,37 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
     }, 200); // Match animation duration
   };
 
+  // Load RSI indicator data on mount
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const loaded = await loadRSIIndicator();
+        if (loaded) {
+          setRsiData(loaded);
+        } else {
+          setLoadError(true);
+          toast({
+            title: "Couldn't load RSI indicator",
+            description: "Check src/indicators/rsi/meta.json.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        setLoadError(true);
+        toast({
+          title: "Couldn't load RSI indicator", 
+          description: "Check src/indicators/rsi/meta.json.",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    loadData();
+    
     return () => {
       document.body.style.overflow = '';
     };
-  }, []);
+  }, [toast]);
 
   const accessibleStrategies = ENHANCED_STRATEGIES.filter((s) => {
     if (userTier === 'expert') return true;
@@ -632,12 +663,98 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
     );
   };
 
+  const renderRSIPresetTile = (preset: any, isSelected = false) => {
+    const handlePresetClick = async () => {
+      try {
+        openModal({...preset, type: 'preset', indicator: rsiData?.indicator});
+      } catch (error) {
+        toast({
+          title: "Not configured yet",
+          description: "This preset is not available.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    const getRiskProfileColor = (profile: string) => {
+      switch (profile?.toLowerCase()) {
+        case 'conservative': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        case 'balanced': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        case 'aggressive': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      }
+    };
+
+    return (
+      <TooltipProvider key={preset.id}>
+        <Card 
+          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
+            isSelected
+            ? 'ring-2 ring-success border-success bg-success/10'
+            : 'hover:border-primary hover:bg-primary/10'
+          }`}
+          onClick={handlePresetClick}
+        >
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Activity className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-success' : 'text-primary'}`} />
+              <div className="flex-1 min-w-0 flex items-center justify-between">
+                <div className="flex items-center gap-1 min-w-0">
+                  <h3 className="font-medium text-sm leading-tight truncate">
+                    {preset.label}
+                  </h3>
+                  {preset.isHero && (
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                      Hero
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="pt-0 space-y-2">
+            <p className="text-xs text-muted-foreground line-clamp-2">{preset.blurb}</p>
+            
+            <div className="flex flex-wrap gap-1">
+              {preset.badges?.slice(0, 2).map((badge: string) => (
+                <Badge key={badge} variant="outline" className="text-xs px-1.5 py-0.5">
+                  {badge}
+                </Badge>
+              ))}
+              {preset.riskProfile && (
+                <Badge className={`text-xs px-1.5 py-0.5 ${getRiskProfileColor(preset.riskProfile)}`}>
+                  {preset.riskProfile}
+                </Badge>
+              )}
+            </div>
+            
+            {preset.tags && preset.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {preset.tags.slice(0, 4).map((tag: string) => (
+                  <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">
+                    {tag}
+                  </Badge>
+                ))}
+                {preset.tags.length > 4 && (
+                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                    +{preset.tags.length - 4}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TooltipProvider>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Choose a strategy</h2>
-          <p className="text-muted-foreground text-sm">Strategies come with pre-configured indicators you can tweak later.</p>
+          <p className="text-muted-foreground text-sm">Select from RSI indicator presets with pre-configured rules you can tweak later.</p>
         </div>
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
@@ -762,7 +879,46 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={async () => {
-                    if (expandedItem.type === 'strategy') {
+                    if (expandedItem.type === 'preset') {
+                      try {
+                        // Store RSI preset selection in builder state
+                        const { writeBuilderState, readBuilderState } = await import('./builderState');
+                        const currentState = readBuilderState() || {
+                          strategyId: '',
+                          direction: 'long' as const,
+                          indicatorParams: {},
+                          ruleGroup: { joiner: 'AND' as const, rules: [] }
+                        };
+                        
+                        // Store preset ID as strategy ID
+                        writeBuilderState({
+                          ...currentState,
+                          strategyId: expandedItem.id // Store preset ID as strategy ID
+                        });
+
+                        // Also maintain legacy storage for backward compatibility
+                        localStorage.setItem('bf_selected_strategy', expandedItem.id);
+                        (window as any).selectedStrategyKey = expandedItem.id;
+
+                        onSelect({ 
+                          id: expandedItem.id,
+                          name: expandedItem.label, 
+                          description: expandedItem.blurb,
+                          tier: 'basic', // RSI presets are accessible to all tiers
+                          defaultIndicators: [],
+                          canAddFilters: true
+                        });
+                        
+                        navigate("/strategy-builder/advanced");
+                      } catch (e) {
+                        console.error('Failed to select preset:', e);
+                        toast({
+                          title: "Selection failed",
+                          description: "Could not select this preset. Please try again.",
+                          variant: "destructive"
+                        });
+                      }
+                    } else if (expandedItem.type === 'strategy') {
                       try {
                         // Load configs and resolve strategy ID
                         const { loadConfigs, resolveStrategyId } = await import('./correlation');
@@ -782,7 +938,6 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         const canonicalId = resolveStrategyId(mappedKey, strategies);
                         
                         if (!canonicalId) {
-                          const { toast } = await import('@/hooks/use-toast');
                           toast({
                             title: "Not configured yet",
                             description: "This strategy is not available in the current configuration.",
@@ -830,7 +985,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                   }}
                   className="flex-1"
                 >
-                  Select {expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
+                  Select {expandedItem.type === 'preset' ? 'Preset' : expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
                 </Button>
                 <Button
                   variant="outline"
@@ -852,30 +1007,59 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
         document.body
       )}
 
-      <Tabs defaultValue="strategies" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="strategies" className="gap-2">
-            📊 Strategies ({accessibleStrategies.length})
-          </TabsTrigger>
-          <TabsTrigger value="indicators" className="gap-2">
-            ⚙️ Indicators ({accessibleIndicators.length})
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="strategies" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accessibleStrategies.map((strategy) => renderStrategyTile(strategy))}
-            {lockedStrategies.map((strategy) => renderStrategyTile(strategy, true))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="indicators" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {accessibleIndicators.map((indicator) => renderIndicatorTile(indicator))}
-            {lockedIndicators.map((indicator) => renderIndicatorTile(indicator, true))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Indicators Section */}
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Indicators</h3>
+          
+          {loadError ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Failed to load RSI indicator data.</p>
+            </div>
+          ) : !rsiData ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading RSI indicator...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* RSI Indicator Block */}
+              <Card className="border-l-4 border-l-primary">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Activity className="h-6 w-6 text-primary" />
+                    <div>
+                      <h4 className="font-semibold">{rsiData.indicator.label}</h4>
+                      <p className="text-sm text-muted-foreground">{rsiData.indicator.blurb}</p>
+                    </div>
+                  </div>
+                  {rsiData.indicator.tags && rsiData.indicator.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {rsiData.indicator.tags.map((tag: string) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </CardHeader>
+              </Card>
+              
+              {/* RSI Presets */}
+              {rsiData.presets.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No presets found.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {rsiData.presets.map((preset) => 
+                    renderRSIPresetTile(preset, selected?.id === preset.id)
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="flex justify-between pt-6">
         <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
