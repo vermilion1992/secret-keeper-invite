@@ -798,7 +798,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
         canAddFilters: true
       });
       
-      navigate("/strategy-builder/advanced");
+      navigate("/strategy-builder/advanced?indicator=rsi&preset=");
     } catch (e) {
       console.error('Failed to select RSI indicator:', e);
       toast({
@@ -1083,7 +1083,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                           canAddFilters: true
                         });
                         
-                        navigate("/strategy-builder/advanced");
+                        navigate(`/strategy-builder/advanced?indicator=rsi&preset=${expandedItem.id}`);
                       } catch (e) {
                         console.error('Failed to select preset:', e);
                         toast({

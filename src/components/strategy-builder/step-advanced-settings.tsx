@@ -204,58 +204,97 @@ export function StepAdvancedSettings({
     loadConfig();
   }, []);
 
-  // Load builder state to pre-fill RSI parameters, entry rules, and risk settings from meta.json
+  // Load RSI meta.json and hydrate form from URL params (no localStorage)
   useEffect(() => {
-    const loadBuilderState = async () => {
+    const loadFromURL = async () => {
       try {
-        const { readBuilderState } = await import('./builderState');
-        const builderState = readBuilderState();
-        if (!builderState?.metadata) return;
-        const { metadata, indicatorParams, ruleGroup } = builderState as any;
-
-        // 1) Indicator Settings (prefer seed/indicatorParams; fallback to meta params defaults)
-        if (metadata.indicatorId === 'rsi') {
-          const seed = (indicatorParams && indicatorParams.rsi) || (metadata.seedParams && metadata.seedParams.rsi) || {};
-          const params = metadata.params || {};
-          const length = typeof seed.length === 'number' ? seed.length : (params.length?.default ?? undefined);
-          const ob = typeof seed.obLevel === 'number' ? seed.obLevel : (params.obLevel?.default ?? undefined);
-          const os = typeof seed.osLevel === 'number' ? seed.osLevel : (params.osLevel?.default ?? undefined);
-          setStrategySettings(prev => ({
-            ...prev,
-            rsiLength: length ?? prev.rsiLength,
-            rsiOverbought: ob ?? prev.rsiOverbought,
-            rsiOversold: os ?? prev.rsiOversold,
-          }));
+        // Parse URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const indicator = urlParams.get('indicator');
+        const presetId = urlParams.get('preset');
+        
+        if (indicator !== 'rsi') return; // Only handle RSI
+        
+        // Import RSI meta.json synchronously
+        const rsiMeta = await import('@/indicators/rsi/meta.json');
+        console.log("Page4 meta:", rsiMeta);
+        
+        // Build params from meta.json defaults
+        const baseParams = {
+          length: rsiMeta.params.length.default,
+          source: rsiMeta.params.source.default,
+          obLevel: rsiMeta.params.obLevel.default,
+          osLevel: rsiMeta.params.osLevel.default
+        };
+        
+        let finalParams = { ...baseParams };
+        let rules: any[] = [];
+        let riskPrefills: any = {};
+        
+        if (presetId && presetId.trim() !== '') {
+          // Find preset in meta.json
+          const preset = rsiMeta.presets.find((p: any) => p.id === presetId);
+          if (preset) {
+            // Overlay preset seedParams.rsi if present
+            if (preset.seedParams?.rsi) {
+              finalParams = { ...finalParams, ...preset.seedParams.rsi };
+            }
+            
+            // Get rules from preset
+            rules = preset.rules?.rules || [];
+            
+            // Get risk prefills from preset riskDefaults
+            riskPrefills = preset.riskDefaults || {};
+          }
+        } else {
+          // Use indicator-level riskTemplates for non-preset
+          riskPrefills = rsiMeta.riskTemplates || {};
         }
-
-        // 2) Entry Conditions from preset rules -> map into UI-friendly conditions
-        if (ruleGroup && Array.isArray(ruleGroup.rules) && ruleGroup.rules.length > 0) {
+        
+        console.log("Page4 params:", finalParams);
+        
+        // Set RSI indicator settings (controlled values)
+        setStrategySettings(prev => ({
+          ...prev,
+          rsiLength: finalParams.length,
+          rsiOverbought: finalParams.obLevel,
+          rsiOversold: finalParams.osLevel
+        }));
+        
+        // Map rules to entry conditions
+        if (rules.length > 0) {
           const mapOp = (op: string) => {
             if (op === '>' || op === '>=') return 'is_above';
             if (op === '<' || op === '<=') return 'is_below';
             if (op === 'crosses_above' || op === 'crosses_below') return op;
-            // Fallback
             return 'is_above';
           };
+          
           const nearestRSI = (n: number) => {
             const bands = [30, 50, 70];
             let best = 30;
             let diff = Infinity;
-            for (const b of bands) { const d = Math.abs(b - n); if (d < diff) { diff = d; best = b; } }
+            for (const b of bands) { 
+              const d = Math.abs(b - n); 
+              if (d < diff) { diff = d; best = b; }
+            }
             return String(best);
           };
+          
           const toFamily = (left: string, right: any) => {
             if (String(left).includes('rsi')) return 'rsi';
             if (String(right).includes('ema')) return 'ema';
             if (String(right).includes('sma')) return 'sma';
             return 'rsi';
           };
+          
           const toLeftOperand = (family: string, left: string) => {
             if (family === 'rsi') return 'RSI';
             if (family === 'ema') return 'Price';
             if (family === 'sma') return 'Price';
             return 'RSI';
           };
+          
           const toRightOperand = (family: string, right: any) => {
             if (family === 'rsi') {
               if (Array.isArray(right)) return nearestRSI(Number(right[0] ?? 50));
@@ -267,7 +306,7 @@ export function StepAdvancedSettings({
             return '50';
           };
 
-          const mapped = ruleGroup.rules.map((r: any, idx: number) => {
+          const mapped = rules.map((r: any, idx: number) => {
             const family = toFamily(r.left, r.right);
             const operator = r.op === 'within' ? 'is_above' : mapOp(r.op);
             const right = r.op === 'within' && Array.isArray(r.right) ? r.right[0] : r.right;
@@ -280,17 +319,18 @@ export function StepAdvancedSettings({
               enabled: true,
             } as EntryCondition;
           });
+          
           setEntryConditions(mapped);
-          setEntryLogic((ruleGroup.joiner === 'OR') ? 'any_true' : 'all_true');
+          setEntryLogic('all_true'); // Default to AND
         }
-
-        // 3) Risk - prefill numeric values but keep toggles OFF
+        
+        // Apply risk prefills (values only, toggles OFF)
         const applyRiskParams = (source: any) => {
           if (!source) return;
           if (source.atrStop?.params) {
             const p = source.atrStop.params;
-            setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength ?? prev.atrLength }));
-            setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult ?? prev.atrMultiplier, atrStopEnabled: false }));
+            setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength || prev.atrLength }));
+            setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult || prev.atrMultiplier, atrStopEnabled: false }));
           }
           if (source.trailingTP?.params) {
             const p = source.trailingTP.params;
@@ -298,25 +338,23 @@ export function StepAdvancedSettings({
           }
           if (source.breakeven?.params) {
             const p = source.breakeven.params;
-            setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR ?? prev.breakEvenTrigger, breakEvenEnabled: false }));
+            setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR || prev.breakEvenTrigger, breakEvenEnabled: false }));
           }
           if (source.timeStop?.params) {
             const p = source.timeStop.params;
-            setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars ?? prev.timeExitCandles, timeExitType: 'none' }));
+            setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars || prev.timeExitCandles, timeExitType: 'none' }));
           }
         };
 
-        // Preset-specific overrides
-        if (metadata.riskDefaults) applyRiskParams(metadata.riskDefaults);
-        // Indicator-level templates as fallback
-        if (metadata.riskTemplates) applyRiskParams(metadata.riskTemplates);
+        applyRiskParams(riskPrefills);
+        
       } catch (error) {
-        console.error('Failed to load builder state:', error);
+        console.error('Failed to load from URL:', error);
       }
     };
 
-    loadBuilderState();
-  }, []);
+    loadFromURL();
+  }, []); // Only run once on mount
 
   // Get selected strategy key from localStorage with fallback
   const getSelectedStrategyKey = () => {
@@ -644,11 +682,12 @@ export function StepAdvancedSettings({
 
   const conflicts = hasConflicts();
 
-  // Initialize empty on load
-  useEffect(() => {
-    setEntryConditions([]);
-    setFamilyTileStates({});
-  }, [BF_CONFIG]);
+  // Debug readout (temporary)
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugLength = strategySettings.rsiLength;
+  const debugSource = 'close'; // Fixed for now
+  const debugOB = strategySettings.rsiOverbought;
+  const debugOS = strategySettings.rsiOversold;
 
   const strategyKey = getSelectedStrategyKey();
   const families = getStrategyFamilies(strategyKey);
@@ -676,6 +715,11 @@ export function StepAdvancedSettings({
             Configure strategy parameters, entry logic, and exit controls for your bot
           </p>
         </header>
+
+        {/* Debug readout (temporary) */}
+        <div className="p-3 bg-muted/50 rounded text-sm">
+          <strong>Incoming:</strong> length={debugLength}, source={debugSource}, obLevel={debugOB}, osLevel={debugOS}
+        </div>
 
         <div className="space-y-6">
           {/* 1. Indicator Settings - One panel per family */}
@@ -737,41 +781,57 @@ export function StepAdvancedSettings({
                   )}
                   
                   {family === 'rsi' && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-3">
-                        <Label className="font-medium">RSI Length</Label>
-                        <Input
-                          type="number"
-                          value={strategySettings.rsiLength}
-                          onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiLength: Number(e.target.value) }))}
-                          min="5"
-                          max="50"
-                          className="bg-background/50"
-                        />
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-3">
+                          <Label className="font-medium">RSI Length</Label>
+                          <Input
+                            type="number"
+                            value={strategySettings.rsiLength}
+                            onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiLength: Number(e.target.value) }))}
+                            min="5"
+                            max="50"
+                            className="bg-background/50"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="font-medium">Overbought</Label>
+                          <Input
+                            type="number"
+                            value={strategySettings.rsiOverbought}
+                            onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiOverbought: Number(e.target.value) }))}
+                            min="60"
+                            max="90"
+                            className="bg-background/50"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="font-medium">Oversold</Label>
+                          <Input
+                            type="number"
+                            value={strategySettings.rsiOversold}
+                            onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiOversold: Number(e.target.value) }))}
+                            min="10"
+                            max="40"
+                            className="bg-background/50"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-3">
-                        <Label className="font-medium">Overbought</Label>
-                        <Input
-                          type="number"
-                          value={strategySettings.rsiOverbought}
-                          onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiOverbought: Number(e.target.value) }))}
-                          min="60"
-                          max="90"
-                          className="bg-background/50"
-                        />
+                      <div className="space-y-3 mt-6">
+                        <Label className="font-medium">Source</Label>
+                        <Select value="close" onValueChange={() => {}}>
+                          <SelectTrigger className="bg-background/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="close">Close</SelectItem>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="space-y-3">
-                        <Label className="font-medium">Oversold</Label>
-                        <Input
-                          type="number"
-                          value={strategySettings.rsiOversold}
-                          onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiOversold: Number(e.target.value) }))}
-                          min="10"
-                          max="40"
-                          className="bg-background/50"
-                        />
-                      </div>
-                    </div>
+                    </>
                   )}
                   
                   {family === 'macd' && (
