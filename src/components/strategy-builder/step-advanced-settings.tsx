@@ -58,6 +58,10 @@ export function StepAdvancedSettings({
   onPrevious,
   userTier 
 }: StepAdvancedSettingsProps) {
+  // Hydration gate state
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [hydrationData, setHydrationData] = useState<any>(null);
+  
   const [isAdvancedStrategyOpen, setIsAdvancedStrategyOpen] = useState(false);
   const [isAdvancedExitOpen, setIsAdvancedExitOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
@@ -206,134 +210,168 @@ export function StepAdvancedSettings({
     loadConfig();
   }, []);
 
-  // Seed from URL + meta.json before first paint
+  // Hydration gate - block until RSI data loaded and form filled
   useLayoutEffect(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const indicator = urlParams.get('indicator');
-      const presetId = (urlParams.get('preset') || '').trim();
-      if (indicator !== 'rsi') return;
-
-      console.log('Page4 meta:', rsiMeta);
-
-      const baseParams = {
-        length: rsiMeta.params.length.default,
-        source: rsiMeta.params.source.default,
-        obLevel: rsiMeta.params.obLevel.default,
-        osLevel: rsiMeta.params.osLevel.default,
-      } as any;
-
-      let finalParams = { ...baseParams } as any;
-      let rules: any[] = [];
-      let riskPrefills: any = {};
-
-      if (presetId) {
-        const preset = (rsiMeta as any).presets.find((p: any) => p.id === presetId);
-        if (preset) {
-          if (preset.seedParams?.rsi) {
-            finalParams = { ...finalParams, ...preset.seedParams.rsi };
-          }
-          rules = preset.rules?.rules || [];
-          riskPrefills = preset.riskDefaults || {};
+    const hydrateFromURL = () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const indicator = urlParams.get('indicator');
+        const presetId = (urlParams.get('preset') || '').trim();
+        
+        if (indicator !== 'rsi') {
+          setIsHydrated(true);
+          return;
         }
-      } else {
-        riskPrefills = (rsiMeta as any).riskTemplates || {};
-      }
 
-      console.log('Page4 params:', finalParams);
+        console.log('Hydrating from URL:', { indicator, presetId });
+        console.log('RSI meta:', rsiMeta);
 
-      // Indicator Params
-      setStrategySettings(prev => ({
-        ...prev,
-        rsiLength: finalParams.length,
-        rsiOverbought: finalParams.obLevel,
-        rsiOversold: finalParams.osLevel,
-        // store source as rsiSource for binding
-        rsiSource: finalParams.source,
-      }));
+        // Build base params from meta defaults
+        const baseParams = {
+          length: rsiMeta.params.length.default,
+          source: rsiMeta.params.source.default,
+          obLevel: rsiMeta.params.obLevel.default,
+          osLevel: rsiMeta.params.osLevel.default,
+        };
 
-      // Entry Rules (preserve attributes)
-      if (rules.length > 0) {
-        const mapOp = (op: string) => {
-          if (op === '>' || op === '>=') return 'is_above';
-          if (op === '<' || op === '<=') return 'is_below';
-          if (op === 'crosses_above' || op === 'crosses_below') return op;
-          return 'is_above';
-        };
-        const nearestRSI = (n: number) => {
-          const bands = [30, 50, 70];
-          let best = 30, diff = Infinity;
-          for (const b of bands) { const d = Math.abs(b - n); if (d < diff) { diff = d; best = b; } }
-          return String(best);
-        };
-        const toFamily = (left: string, right: any) => {
-          if (String(left).includes('rsi')) return 'rsi';
-          if (String(right).includes('ema')) return 'ema';
-          if (String(right).includes('sma')) return 'sma';
-          return 'rsi';
-        };
-        const toLeftOperand = (family: string) => (family === 'rsi' ? 'RSI' : 'Price');
-        const toRightOperand = (family: string, right: any) => {
-          if (family === 'rsi') {
-            if (Array.isArray(right)) return nearestRSI(Number(right[0] ?? 50));
-            if (typeof right === 'number') return nearestRSI(right);
+        let finalParams = { ...baseParams };
+        let rules: any[] = [];
+        let riskPrefills: any = {};
+
+        // If preset, overlay preset data
+        if (presetId) {
+          const preset = (rsiMeta as any).presets.find((p: any) => p.id === presetId);
+          if (preset) {
+            if (preset.seedParams?.rsi) {
+              finalParams = { ...finalParams, ...preset.seedParams.rsi };
+            }
+            rules = preset.rules?.rules || [];
+            riskPrefills = preset.riskDefaults || {};
+          }
+        } else {
+          riskPrefills = (rsiMeta as any).riskTemplates || {};
+        }
+
+        console.log('Final params:', finalParams);
+        console.log('Rules:', rules);
+        console.log('Risk prefills:', riskPrefills);
+
+        // Store hydration data
+        setHydrationData({ finalParams, rules, riskPrefills });
+
+        // Apply indicator settings immediately
+        setStrategySettings(prev => ({
+          ...prev,
+          rsiLength: finalParams.length,
+          rsiOverbought: finalParams.obLevel,
+          rsiOversold: finalParams.osLevel,
+          rsiSource: finalParams.source,
+        }));
+
+        // Map and apply rules
+        if (rules.length > 0) {
+          const mapOp = (op: string) => {
+            if (op === '>' || op === '>=') return 'is_above';
+            if (op === '<' || op === '<=') return 'is_below';
+            if (op === 'crosses_above' || op === 'crosses_below') return op;
+            return 'is_above';
+          };
+          
+          const nearestRSI = (n: number) => {
+            const bands = [30, 50, 70];
+            let best = 30, diff = Infinity;
+            for (const b of bands) { 
+              const d = Math.abs(b - n); 
+              if (d < diff) { diff = d; best = b; }
+            }
+            return String(best);
+          };
+          
+          const toFamily = (left: string, right: any) => {
+            if (String(left).includes('rsi')) return 'rsi';
+            if (String(right).includes('ema')) return 'ema';
+            if (String(right).includes('sma')) return 'sma';
+            return 'rsi';
+          };
+          
+          const toLeftOperand = (family: string) => (family === 'rsi' ? 'RSI' : 'Price');
+          const toRightOperand = (family: string, right: any) => {
+            if (family === 'rsi') {
+              if (Array.isArray(right)) return nearestRSI(Number(right[0] ?? 50));
+              if (typeof right === 'number') return nearestRSI(right);
+              return '50';
+            }
+            if (family === 'ema') return 'EMA Slow';
+            if (family === 'sma') return 'SMA';
             return '50';
+          };
+
+          const mapped = rules.map((r: any, idx: number) => {
+            const family = toFamily(r.left, r.right);
+            const operator = r.op === 'within' ? 'is_above' : mapOp(r.op);
+            const right = r.op === 'within' && Array.isArray(r.right) ? r.right[0] : r.right;
+            return {
+              id: String(Date.now() + idx),
+              family,
+              operator,
+              leftOperand: toLeftOperand(family),
+              rightOperand: toRightOperand(family, right),
+              enabled: true,
+            } as EntryCondition;
+          });
+          
+          setEntryConditions(mapped);
+          setEntryLogic('all_true');
+        }
+
+        // Apply risk settings (values only, toggles OFF)
+        const applyRiskParams = (source: any) => {
+          if (!source) return;
+          if (source.atrStop?.params) {
+            const p = source.atrStop.params;
+            setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength ?? prev.atrLength }));
+            setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult ?? prev.atrMultiplier, atrStopEnabled: false }));
           }
-          if (family === 'ema') return 'EMA Slow';
-          if (family === 'sma') return 'SMA';
-          return '50';
+          if (source.trailingTP?.params) {
+            const p = source.trailingTP.params;
+            setExitSettings(prev => ({ ...prev, trailingPercent: (typeof p.trailPct === 'number' ? p.trailPct * 100 : prev.trailingPercent), trailingType: 'none' }));
+          }
+          if (source.breakeven?.params) {
+            const p = source.breakeven.params;
+            setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR ?? prev.breakEvenTrigger, breakEvenEnabled: false }));
+          }
+          if (source.timeStop?.params) {
+            const p = source.timeStop.params;
+            setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars ?? prev.timeExitCandles, timeExitType: 'none' }));
+          }
         };
 
-        const mapped = rules.map((r: any, idx: number) => {
-          const family = toFamily(r.left, r.right);
-          const operator = r.op === 'within' ? 'is_above' : mapOp(r.op);
-          const right = r.op === 'within' && Array.isArray(r.right) ? r.right[0] : r.right;
-          return {
-            id: String(Date.now() + idx),
-            family,
-            operator,
-            leftOperand: toLeftOperand(family),
-            rightOperand: toRightOperand(family, right),
-            enabled: true,
-          } as EntryCondition;
-        });
-        setEntryConditions(mapped);
-        setEntryLogic('all_true');
+        applyRiskParams(riskPrefills);
+
+        // Hydration complete
+        setIsHydrated(true);
+      } catch (error) {
+        console.error('Hydration failed:', error);
+        setIsHydrated(true); // Fail gracefully
       }
+    };
 
-      // Risk values (toggles OFF)
-      const applyRiskParams = (source: any) => {
-        if (!source) return;
-        if (source.atrStop?.params) {
-          const p = source.atrStop.params;
-          setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength ?? prev.atrLength }));
-          setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult ?? prev.atrMultiplier, atrStopEnabled: false }));
-        }
-        if (source.trailingTP?.params) {
-          const p = source.trailingTP.params;
-          setExitSettings(prev => ({ ...prev, trailingPercent: (typeof p.trailPct === 'number' ? p.trailPct * 100 : prev.trailingPercent), trailingType: 'none' }));
-        }
-        if (source.breakeven?.params) {
-          const p = source.breakeven.params;
-          setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR ?? prev.breakEvenTrigger, breakEvenEnabled: false }));
-        }
-        if (source.timeStop?.params) {
-          const p = source.timeStop.params;
-          setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars ?? prev.timeExitCandles, timeExitType: 'none' }));
-        }
-      };
-
-      applyRiskParams(riskPrefills);
-    } catch {}
+    hydrateFromURL();
   }, []);
 
   // Debug logs
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const presetId = urlParams.get('preset');
-    console.log('Page4 meta:', rsiMeta);
-    console.log('Page4 params:', { length: strategySettings.rsiLength, source: strategySettings.rsiSource, obLevel: strategySettings.rsiOverbought, osLevel: strategySettings.rsiOversold, presetId });
-  }, [strategySettings.rsiLength, strategySettings.rsiOverbought, strategySettings.rsiOversold, strategySettings.rsiSource]);
+    if (isHydrated && hydrationData) {
+      console.log('Page4 hydrated with:', {
+        length: strategySettings.rsiLength,
+        source: strategySettings.rsiSource,
+        obLevel: strategySettings.rsiOverbought,
+        osLevel: strategySettings.rsiOversold,
+        rules: entryConditions.length,
+        hydrationData
+      });
+    }
+  }, [isHydrated, hydrationData, strategySettings.rsiLength, strategySettings.rsiSource, strategySettings.rsiOverbought, strategySettings.rsiOversold, entryConditions.length]);
 
 
   // Get selected strategy key from localStorage with fallback
@@ -672,6 +710,29 @@ export function StepAdvancedSettings({
   const strategyKey = getSelectedStrategyKey();
   const families = getStrategyFamilies(strategyKey);
   const operators = getAvailableOperators();
+
+  // Hydration gate - show loading until ready
+  if (!isHydrated) {
+    return (
+      <TooltipProvider>
+        <div className="space-y-6">
+          <header className="text-center space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <Settings className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl font-semibold">Advanced Settings</h2>
+            </div>
+            <p className="text-muted-foreground">Loading RSI configuration...</p>
+          </header>
+          <Card className="p-8 text-center">
+            <div className="animate-pulse">
+              <div className="h-4 bg-muted rounded w-3/4 mx-auto mb-2"></div>
+              <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+            </div>
+          </Card>
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   if (!strategyKey) {
     return (
