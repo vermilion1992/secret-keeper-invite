@@ -783,6 +783,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
       };
       
       writeBuilderState(builderState);
+      try { sessionStorage.setItem('bf:builderState', JSON.stringify(builderState)); } catch {}
 
       // Legacy storage for backward compatibility
       localStorage.setItem('bf_selected_strategy', `indicator:${rsiData.indicator.id}`);
@@ -1050,7 +1051,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                               osLevel: seedParams.osLevel || rsiParams.osLevel?.default || 30
                             }
                           },
-                          ruleGroup: ruleTemplates.ruleGroup || { joiner: 'AND' as const, rules: [] },
+                          ruleGroup: ruleTemplates || { joiner: 'AND' as const, rules: [] },
                           // Add metadata for Page 4 to consume
                           metadata: {
                             indicatorId: rsiData.indicator.id,
@@ -1067,6 +1068,7 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         };
                         
                         writeBuilderState(builderState);
+                        try { sessionStorage.setItem('bf:builderState', JSON.stringify(builderState)); } catch {}
 
                          // Legacy storage for backward compatibility
                          localStorage.setItem('bf_selected_strategy', expandedItem.id);

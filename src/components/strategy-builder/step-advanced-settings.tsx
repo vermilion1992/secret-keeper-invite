@@ -204,130 +204,117 @@ export function StepAdvancedSettings({
     loadConfig();
   }, []);
 
-  // Load builder state to pre-fill RSI parameters and risk settings from meta.json
+  // Load builder state to pre-fill RSI parameters, entry rules, and risk settings from meta.json
   useEffect(() => {
     const loadBuilderState = async () => {
       try {
         const { readBuilderState } = await import('./builderState');
         const builderState = readBuilderState();
-        
-        if (builderState?.metadata) {
-          const { metadata, indicatorParams } = builderState;
-          
-          // Pre-fill RSI indicator parameters from src/indicators/rsi/meta.json -> params
-          if (metadata.indicatorId === 'rsi' && metadata.params) {
-            const { params } = metadata;
-            setStrategySettings(prev => ({
-              ...prev,
-              rsiLength: params.length?.default || prev.rsiLength,
-              rsiOverbought: params.obLevel?.default || prev.rsiOverbought,
-              rsiOversold: params.osLevel?.default || prev.rsiOversold
-            }));
-          }
-          
-          // Pre-fill risk settings from preset riskDefaults (preset-specific)
-          if (metadata.riskDefaults) {
-            const { riskDefaults } = metadata;
-            
-            // Extract ATR stop settings from riskDefaults.atrStop.params
-            if (riskDefaults.atrStop?.params) {
-              const atrParams = riskDefaults.atrStop.params;
-              setExitSettings(prev => ({
-                ...prev,
-                atrStopEnabled: true,
-                atrMultiplier: atrParams.mult || prev.atrMultiplier
-              }));
-              setStrategySettings(prev => ({
-                ...prev,
-                atrLength: atrParams.atrLength || prev.atrLength
-              }));
-            }
-            
-            // Extract trailing TP settings from riskDefaults.trailingTP.params
-            if (riskDefaults.trailingTP?.params) {
-              const trailingParams = riskDefaults.trailingTP.params;
-              setExitSettings(prev => ({
-                ...prev,
-                trailingType: 'percent',
-                trailingPercent: (trailingParams.trailPct * 100) || prev.trailingPercent
-              }));
-            }
-            
-            // Extract breakeven settings from riskDefaults.breakeven.params
-            if (riskDefaults.breakeven?.params) {
-              const breakevenParams = riskDefaults.breakeven.params;
-              setExitSettings(prev => ({
-                ...prev,
-                breakEvenEnabled: true,
-                breakEvenTrigger: breakevenParams.activationR || prev.breakEvenTrigger
-              }));
-            }
-            
-            // Extract time stop settings from riskDefaults.timeStop.params
-            if (riskDefaults.timeStop?.params) {
-              const timeParams = riskDefaults.timeStop.params;
-              setExitSettings(prev => ({
-                ...prev,
-                timeExitType: 'candles',
-                timeExitCandles: timeParams.bars || prev.timeExitCandles
-              }));
-            }
-          }
-          
-          // Pre-fill risk settings from indicator-level riskTemplates
-          if (metadata.riskTemplates) {
-            const { riskTemplates } = metadata;
-            
-            // Apply ATR stop defaults from riskTemplates.atrStop.params
-            if (riskTemplates.atrStop?.params && !metadata.riskDefaults?.atrStop) {
-              const atrParams = riskTemplates.atrStop.params;
-              setExitSettings(prev => ({
-                ...prev,
-                atrStopEnabled: riskTemplates.atrStop.enabledDefault || false,
-                atrMultiplier: atrParams.mult || prev.atrMultiplier
-              }));
-              setStrategySettings(prev => ({
-                ...prev,
-                atrLength: atrParams.atrLength || prev.atrLength
-              }));
-            }
-            
-            // Apply trailing TP defaults from riskTemplates.trailingTP.params
-            if (riskTemplates.trailingTP?.params && !metadata.riskDefaults?.trailingTP) {
-              const trailingParams = riskTemplates.trailingTP.params;
-              setExitSettings(prev => ({
-                ...prev,
-                trailingType: riskTemplates.trailingTP.enabledDefault ? 'percent' : 'none',
-                trailingPercent: (trailingParams.trailPct * 100) || prev.trailingPercent
-              }));
-            }
-            
-            // Apply breakeven defaults from riskTemplates.breakeven.params
-            if (riskTemplates.breakeven?.params && !metadata.riskDefaults?.breakeven) {
-              const breakevenParams = riskTemplates.breakeven.params;
-              setExitSettings(prev => ({
-                ...prev,
-                breakEvenEnabled: riskTemplates.breakeven.enabledDefault || false,
-                breakEvenTrigger: breakevenParams.activationR || prev.breakEvenTrigger
-              }));
-            }
-            
-            // Apply time stop defaults from riskTemplates.timeStop.params
-            if (riskTemplates.timeStop?.params && !metadata.riskDefaults?.timeStop) {
-              const timeParams = riskTemplates.timeStop.params;
-              setExitSettings(prev => ({
-                ...prev,
-                timeExitType: riskTemplates.timeStop.enabledDefault ? 'candles' : 'none',
-                timeExitCandles: timeParams.bars || prev.timeExitCandles
-              }));
-            }
-          }
+        if (!builderState?.metadata) return;
+        const { metadata, indicatorParams, ruleGroup } = builderState as any;
+
+        // 1) Indicator Settings (prefer seed/indicatorParams; fallback to meta params defaults)
+        if (metadata.indicatorId === 'rsi') {
+          const seed = (indicatorParams && indicatorParams.rsi) || (metadata.seedParams && metadata.seedParams.rsi) || {};
+          const params = metadata.params || {};
+          const length = typeof seed.length === 'number' ? seed.length : (params.length?.default ?? undefined);
+          const ob = typeof seed.obLevel === 'number' ? seed.obLevel : (params.obLevel?.default ?? undefined);
+          const os = typeof seed.osLevel === 'number' ? seed.osLevel : (params.osLevel?.default ?? undefined);
+          setStrategySettings(prev => ({
+            ...prev,
+            rsiLength: length ?? prev.rsiLength,
+            rsiOverbought: ob ?? prev.rsiOverbought,
+            rsiOversold: os ?? prev.rsiOversold,
+          }));
         }
+
+        // 2) Entry Conditions from preset rules -> map into UI-friendly conditions
+        if (ruleGroup && Array.isArray(ruleGroup.rules) && ruleGroup.rules.length > 0) {
+          const mapOp = (op: string) => {
+            if (op === '>' || op === '>=') return 'is_above';
+            if (op === '<' || op === '<=') return 'is_below';
+            if (op === 'crosses_above' || op === 'crosses_below') return op;
+            // Fallback
+            return 'is_above';
+          };
+          const nearestRSI = (n: number) => {
+            const bands = [30, 50, 70];
+            let best = 30;
+            let diff = Infinity;
+            for (const b of bands) { const d = Math.abs(b - n); if (d < diff) { diff = d; best = b; } }
+            return String(best);
+          };
+          const toFamily = (left: string, right: any) => {
+            if (String(left).includes('rsi')) return 'rsi';
+            if (String(right).includes('ema')) return 'ema';
+            if (String(right).includes('sma')) return 'sma';
+            return 'rsi';
+          };
+          const toLeftOperand = (family: string, left: string) => {
+            if (family === 'rsi') return 'RSI';
+            if (family === 'ema') return 'Price';
+            if (family === 'sma') return 'Price';
+            return 'RSI';
+          };
+          const toRightOperand = (family: string, right: any) => {
+            if (family === 'rsi') {
+              if (Array.isArray(right)) return nearestRSI(Number(right[0] ?? 50));
+              if (typeof right === 'number') return nearestRSI(right);
+              return '50';
+            }
+            if (family === 'ema') return 'EMA Slow';
+            if (family === 'sma') return 'SMA';
+            return '50';
+          };
+
+          const mapped = ruleGroup.rules.map((r: any, idx: number) => {
+            const family = toFamily(r.left, r.right);
+            const operator = r.op === 'within' ? 'is_above' : mapOp(r.op);
+            const right = r.op === 'within' && Array.isArray(r.right) ? r.right[0] : r.right;
+            return {
+              id: String(Date.now() + idx),
+              family,
+              operator,
+              leftOperand: toLeftOperand(family, r.left),
+              rightOperand: toRightOperand(family, right),
+              enabled: true,
+            } as EntryCondition;
+          });
+          setEntryConditions(mapped);
+          setEntryLogic((ruleGroup.joiner === 'OR') ? 'any_true' : 'all_true');
+        }
+
+        // 3) Risk - prefill numeric values but keep toggles OFF
+        const applyRiskParams = (source: any) => {
+          if (!source) return;
+          if (source.atrStop?.params) {
+            const p = source.atrStop.params;
+            setStrategySettings(prev => ({ ...prev, atrLength: p.atrLength ?? prev.atrLength }));
+            setExitSettings(prev => ({ ...prev, atrMultiplier: p.mult ?? prev.atrMultiplier, atrStopEnabled: false }));
+          }
+          if (source.trailingTP?.params) {
+            const p = source.trailingTP.params;
+            setExitSettings(prev => ({ ...prev, trailingPercent: (typeof p.trailPct === 'number' ? p.trailPct * 100 : prev.trailingPercent), trailingType: 'none' }));
+          }
+          if (source.breakeven?.params) {
+            const p = source.breakeven.params;
+            setExitSettings(prev => ({ ...prev, breakEvenTrigger: p.activationR ?? prev.breakEvenTrigger, breakEvenEnabled: false }));
+          }
+          if (source.timeStop?.params) {
+            const p = source.timeStop.params;
+            setExitSettings(prev => ({ ...prev, timeExitCandles: p.bars ?? prev.timeExitCandles, timeExitType: 'none' }));
+          }
+        };
+
+        // Preset-specific overrides
+        if (metadata.riskDefaults) applyRiskParams(metadata.riskDefaults);
+        // Indicator-level templates as fallback
+        if (metadata.riskTemplates) applyRiskParams(metadata.riskTemplates);
       } catch (error) {
         console.error('Failed to load builder state:', error);
       }
     };
-    
+
     loadBuilderState();
   }, []);
 
