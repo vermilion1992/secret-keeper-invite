@@ -77,16 +77,29 @@ export async function upgradeLocalState(): Promise<void> {
 }
 
 export function readBuilderState(): StrategyState | null {
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as StrategyState : null; } catch { return null; }
+  try { 
+    // Try sessionStorage first (for navigation persistence)
+    let raw = sessionStorage.getItem('bf:builderState');
+    if (raw) return JSON.parse(raw) as StrategyState;
+    
+    // Fallback to localStorage
+    raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) as StrategyState : null;
+  } catch { return null; }
 }
 
 export function writeBuilderState(s: StrategyState) {
-  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch {}
+  try { 
+    localStorage.setItem(KEY, JSON.stringify(s)); 
+    sessionStorage.setItem('bf:builderState', JSON.stringify(s));
+  } catch {}
 }
 
 export function useBuilderState() {
   const [state, setState] = React.useState<StrategyState>(() => {
-    return readBuilderState() ?? ({ strategyId:'', direction:'long', indicatorParams:{}, ruleGroup:{ joiner:'AND', rules:[] } });
+    // Hydrate from storage before first render
+    const stored = readBuilderState();
+    return stored ?? ({ strategyId:'', direction:'long', indicatorParams:{}, ruleGroup:{ joiner:'AND', rules:[] } });
   });
   
   React.useEffect(() => {

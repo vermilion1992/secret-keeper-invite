@@ -784,9 +784,8 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
       
       writeBuilderState(builderState);
 
-      // Also maintain legacy storage for backward compatibility
+      // Legacy storage for backward compatibility
       localStorage.setItem('bf_selected_strategy', `indicator:${rsiData.indicator.id}`);
-      localStorage.setItem('bf:builderState', JSON.stringify(builderState));
       (window as any).selectedStrategyKey = `indicator:${rsiData.indicator.id}`;
 
       onSelect({ 
@@ -1069,10 +1068,9 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
                         
                         writeBuilderState(builderState);
 
-                        // Also maintain legacy storage for backward compatibility
-                        localStorage.setItem('bf_selected_strategy', expandedItem.id);
-                        localStorage.setItem('bf:builderState', JSON.stringify(builderState));
-                        (window as any).selectedStrategyKey = expandedItem.id;
+                         // Legacy storage for backward compatibility
+                         localStorage.setItem('bf_selected_strategy', expandedItem.id);
+                         (window as any).selectedStrategyKey = expandedItem.id;
 
                         onSelect({ 
                           id: expandedItem.id,
