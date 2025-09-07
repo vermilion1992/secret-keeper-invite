@@ -12,7 +12,7 @@ const StrategyBuilder = () => {
   const [filterIndicators, setFilterIndicators] = useState([]);
 
   // Determine which page to show based on route
-  const isAdvancedPage = location.pathname === '/strategy-builder/advanced';
+  const isAdvancedPage = location.pathname === '/strategy-builder/advanced' || location.pathname === '/builder/step-advanced';
 
   if (isAdvancedPage) {
     return (

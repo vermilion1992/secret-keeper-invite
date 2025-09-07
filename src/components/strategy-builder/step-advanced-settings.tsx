@@ -224,7 +224,7 @@ export function StepAdvancedSettings({
         }
 
         console.log('Hydrating from URL:', { indicator, presetId });
-        console.log('RSI meta:', rsiMeta);
+        console.log('RSI meta', rsiMeta);
 
         // Build base params from meta defaults
         const baseParams = {
@@ -252,9 +252,9 @@ export function StepAdvancedSettings({
           riskPrefills = (rsiMeta as any).riskTemplates || {};
         }
 
-        console.log('Final params:', finalParams);
-        console.log('Rules:', rules);
-        console.log('Risk prefills:', riskPrefills);
+        console.log('Hydrated params', finalParams);
+        console.log('Hydrated rules', rules);
+        console.log('Hydrated risk', riskPrefills);
 
         // Store hydration data
         setHydrationData({ finalParams, rules, riskPrefills });
@@ -347,6 +347,12 @@ export function StepAdvancedSettings({
         };
 
         applyRiskParams(riskPrefills);
+
+        // Dev-only bound values proof
+        console.log('params.length', finalParams.length);
+        console.log('params.source', finalParams.source);
+        console.log('params.obLevel', finalParams.obLevel);
+        console.log('params.osLevel', finalParams.osLevel);
 
         // Hydration complete
         setIsHydrated(true);
@@ -708,7 +714,8 @@ export function StepAdvancedSettings({
   const debugOS = strategySettings.rsiOversold;
 
   const strategyKey = getSelectedStrategyKey();
-  const families = getStrategyFamilies(strategyKey);
+  const indicatorFromURL = new URLSearchParams(window.location.search).get('indicator');
+  const families = indicatorFromURL === 'rsi' ? ['rsi'] : getStrategyFamilies(strategyKey);
   const operators = getAvailableOperators();
 
   // Hydration gate - show loading until ready
@@ -721,7 +728,7 @@ export function StepAdvancedSettings({
               <Settings className="w-6 h-6 text-primary" />
               <h2 className="text-2xl font-semibold">Advanced Settings</h2>
             </div>
-            <p className="text-muted-foreground">Loading RSI configuration...</p>
+            <p className="text-muted-foreground">Preparing configuration...</p>
           </header>
           <Card className="p-8 text-center">
             <div className="animate-pulse">
