@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "1.0",
+  "version": "1",
+  "id": "sma",
+  "label": "SMA",
+  "category": "Trend",
+  "tier": "CORE",
+  "tags": ["Trend", "Moving Average"],
+  "blurb": "Simple Moving Average (SMA) is the unweighted average price over N periods, often used as a trend filter and dynamic support/resistance.",
+  "longSummary": "SMA smooths price by averaging the last N closes (or chosen source) equally. Longer SMAs (e.g., 200) act as higher-timeframe regime filters, while shorter SMAs (e.g., 20–50) track nearer-term bias. Traders often look for price reclaiming or losing a key SMA, or use pullbacks toward an SMA to align entries with trend. SMA is slower than EMA but can reduce noise for swing styles.",
+  "mathSummary": "SMA_N(t) = (1/N) · Σ_{i=0}^{N-1} price(t-i).",
+  "references": [
+    "https://www.investopedia.com/terms/s/sma.asp"
+  ],
+  "params": {
+    "period": { "type": "int", "default": 200, "min": 2, "max": 500, "step": 1, "unit": "bars" },
+    "source": { "type": "enum", "default": "close", "options": ["close", "open", "high", "low"] },
+    "offset": { "type": "int", "default": 0, "min": -50, "max": 50, "step": 1, "unit": "bars" }
+  },
+  "outputs": ["value"],
+  "supportedOperators": [
+    ">",
+    ">=",
+    "<",
+    "<=",
+    "==",
+    "crosses_above",
+    "crosses_below",
+    "rising",
+    "falling",
+    "within",
+    "outside"
+  ],
+  "signals": {
+    "bullish": [
+      { "name": "Price crosses above SMA", "left": "close", "op": "crosses_above", "right": "sma.value" },
+      { "name": "SMA rising", "left": "sma.value", "op": "rising", "lookback": 3 }
+    ],
+    "bearish": [
+      { "name": "Price crosses below SMA", "left": "close", "op": "crosses_below", "right": "sma.value" },
+      { "name": "SMA falling", "left": "sma.value", "op": "falling", "lookback": 3 }
+    ]
+  },
+  "ui": {
+    "tooltips": {
+      "_indicator": "Simple Moving Average over N periods; longer = smoother, slower.",
+      "period": "Number of periods to average. Common: 20, 50, 200.",
+      "source": "Price source used to compute SMA.",
+      "offset": "Shift the SMA forward/backward for visualization or testing."
+    },
+    "badges": ["Trend"]
+  },
+  "constraints": {
+    "recommendedTimeframes": ["15m", "1h", "4h"]
+  },
+  "examples": [
+    { "name": "SMA Reclaim (Normal)", "presetRef": "sma_reclaim_normal" },
+    { "name": "SMA Pullback Re-entry (Normal)", "presetRef": "sma_pullback_normal" },
+    { "name": "SMA Rising Filter (Normal)", "presetRef": "sma_rising_filter_normal" },
+    { "name": "SMA + RSI Momentum (Hero)", "presetRef": "sma_rsi_momentum_hero" },
+    { "name": "SMA Breakout Confirm (Hero)", "presetRef": "sma_breakout_confirm_hero" },
+    { "name": "SMA Volatility Bias (Hero)", "presetRef": "sma_volatility_bias_hero" }
+  ],
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "params": { "atrLength": 14, "mult": 2.0 },
+      "tooltip": "Protective stop at ATR × multiple; adapts to volatility."
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "params": { "trailPct": 0.7, "activationR": 1.0 },
+      "tooltip": "Trail profit once trade reaches a threshold."
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "params": { "activationR": 1.0 },
+      "tooltip": "Move stop to entry after reaching +R."
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "params": { "bars": 30 },
+      "tooltip": "Exit after a maximum number of bars."
+    }
+  },
+  "presets": [
+    {
+      "id": "sma_reclaim_normal",
+      "label": "SMA Reclaim (Normal)",
+      "blurb": "Enter when price reclaims a long SMA.",
+      "indicators": ["sma"],
+      "seedParams": {
+        "sma": { "period": 200, "source": "close", "offset": 0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": "crosses_above", "right": "sma.value" }
+        ]
+      },
+      "riskDefaults": {},
+      "badges": ["Trend", "Reclaim"]
+    },
+    {
+      "id": "sma_pullback_normal",
+      "label": "SMA Pullback Re-entry (Normal)",
+      "blurb": "Buy the dip: brief dip below SMA then reclaim.",
+      "indicators": ["sma"],
+      "seedParams": {
+        "sma": { "period": 200, "source": "close", "offset": 0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": "<", "right": "sma.value", "lookback": 3 },
+          { "left": "close", "op": "crosses_above", "right": "sma.value" }
+        ]
+      },
+      "riskDefaults": {},
+      "badges": ["Trend", "Pullback"]
+    },
+    {
+      "id": "sma_rising_filter_normal",
+      "label": "SMA Rising Filter (Normal)",
+      "blurb": "Trade only when SMA is rising.",
+      "indicators": ["sma"],
+      "seedParams": {
+        "sma": { "period": 50, "source": "close", "offset": 0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "sma.value", "op": "rising", "lookback": 3 },
+          { "left": "close", "op": ">", "right": "sma.value" }
+        ]
+      },
+      "riskDefaults": {},
+      "badges": ["Trend", "Filter"]
+    },
+    {
+      "id": "sma_rsi_momentum_hero",
+      "label": "SMA + RSI Momentum (Hero)",
+      "blurb": "SMA trend plus RSI momentum confirmation with cooldown.",
+      "indicators": ["sma", "rsi"],
+      "seedParams": {
+        "sma": { "period": 200, "source": "close", "offset": 0 },
+        "rsi": { "length": 14, "source": "close", "obLevel": 55, "osLevel": 45 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": ">", "right": "sma.value" },
+          { "left": "rsi.value", "op": ">", "right": 55 },
+          { "left": "signalCooldown.bars", "op": ">=", "right": 10 }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "params": { "atrLength": 14, "mult": 2.0 } },
+        "breakeven": { "params": { "activationR": 1.0 } }
+      },
+      "badges": ["Hero", "Momentum", "Cooldown"]
+    },
+    {
+      "id": "sma_breakout_confirm_hero",
+      "label": "SMA Breakout Confirm (Hero)",
+      "blurb": "Above SMA with Donchian breakout and session filter.",
+      "indicators": ["sma", "donchian_channels"],
+      "seedParams": {
+        "sma": { "period": 200, "source": "close", "offset": 0 },
+        "donchian_channels": { "period": 20 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": ">", "right": "sma.value" },
+          { "left": "close", "op": ">", "right": "donchian_channels.upper" },
+          { "left": "sessionFilter.window", "op": "within", "right": ["09:00", "17:00"] }
+        ]
+      },
+      "riskDefaults": {
+        "trailingTP": { "params": { "trailPct": 0.6, "activationR": 1.0 } },
+        "timeStop": { "params": { "bars": 40 } }
+      },
+      "badges": ["Hero", "Breakout", "Session"]
+    },
+    {
+      "id": "sma_volatility_bias_hero",
+      "label": "SMA Volatility Bias (Hero)",
+      "blurb": "Trade with SMA trend only within a volatility band and long bias.",
+      "indicators": ["sma", "atr"],
+      "seedParams": {
+        "sma": { "period": 200, "source": "close", "offset": 0 },
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "close", "op": ">", "right": "sma.value" },
+          { "left": "atr.value", "op": "within", "right": [0.3, 0.8] },
+          { "left": "directionBias", "op": "==", "right": "long" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "params": { "atrLength": 14, "mult": 2.2 } }
+      },
+      "badges": ["Hero", "Volatility", "Bias"]
+    }
+  ],
+  "deprecated": false
+}
