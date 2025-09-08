@@ -764,10 +764,6 @@ export function StepAdvancedSettings({
           </p>
         </header>
 
-        {/* Debug readout (temporary) */}
-        <div className="p-3 bg-muted/50 rounded text-sm">
-          <strong>Incoming:</strong> length={debugLength}, source={debugSource}, obLevel={debugOB}, osLevel={debugOS}
-        </div>
 
         <div className="space-y-6">
           {/* 1. Indicator Settings - One panel per family */}
@@ -1243,8 +1239,8 @@ export function StepAdvancedSettings({
                       checked={entryInverse}
                       onCheckedChange={setEntryInverse}
                     />
-                    <Label htmlFor="inverse-logic" className="text-sm text-muted-foreground">
-                      Also allow the opposite of your rules (e.g., if RSI &gt; 50 goes long, RSI &lt; 50 can go short).
+                    <Label htmlFor="inverse-logic" className="text-sm">
+                      Enable inverse signals
                     </Label>
                   </div>
                 </div>
