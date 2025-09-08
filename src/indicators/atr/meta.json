@@ -5,179 +5,205 @@
   "label": "ATR",
   "category": "Volatility",
   "tier": "CORE",
-  "tags": ["Volatility", "Risk"],
-
-  "blurb": "Average True Range measures typical price movement size to gauge volatility and scale risk.",
-  "longSummary": "Average True Range (ATR) estimates typical bar movement by smoothing true range over N periods. It does not indicate direction, only volatility. Traders use ATR as a volatility floor (avoid dead markets), to size stops/position risk, and to time breakouts when volatility expands. Common setups include EMA reclaims with rising ATR, Donchian breakouts during expansion, and momentum shifts confirmed by ATR upticks. Combine ATR with a trend or momentum filter to reduce whipsaw.",
-  "mathSummary": "TR = max(high−low, |high−prevClose|, |low−prevClose|); ATR = Wilder’s RMA(TR, N).",
+  "tags": ["Volatility", "Risk", "Range"],
+  "blurb": "Average True Range (ATR) measures market volatility as the average of true ranges over N periods.",
+  "longSummary": "ATR captures how much price typically moves per bar by averaging the True Range (max of high−low, |high−prevClose|, |low−prevClose|). It does not indicate direction; it quantifies volatility for filters, sizing, and dynamic stops. Many traders normalize ATR by price to compare across assets. Common uses include identifying expansions/contractions, gating breakouts during high volatility, and scaling stop-loss distances.",
+  "mathSummary": "ATR_t = MA_N( TR_t ), where TR_t = max( high−low, |high−close_{t−1}|, |low−close_{t−1}| ). Wilder smoothing is commonly used.",
   "references": [
     "https://www.investopedia.com/terms/a/atr.asp"
   ],
-
   "params": {
-    "length": { "type": "int", "default": 14, "min": 1, "max": 400, "step": 1, "unit": "bars" },
-    "method": { "type": "enum", "default": "wilder", "options": ["wilder", "sma", "ema"] }
+    "length": { "type": "int", "default": 14, "min": 2, "max": 200, "step": 1, "unit": "bars" },
+    "smoothing": { "type": "enum", "default": "wilder", "options": ["wilder", "ema"], "unit": "" },
+    "outputMode": { "type": "enum", "default": "percent", "options": ["raw", "percent"], "unit": "mode" },
+    "percentScale": { "type": "float", "default": 100.0, "min": 1.0, "max": 100.0, "step": 1.0, "unit": "× (for percent output)" }
   },
-
   "outputs": ["value"],
-
   "supportedOperators": [
-    ">", ">=", "<", "<=", "==",
-    "crosses_above", "crosses_below",
-    "rising", "falling",
-    "within", "outside"
+    ">",
+    ">=",
+    "<",
+    "<=",
+    "==",
+    "crosses_above",
+    "crosses_below",
+    "rising",
+    "falling",
+    "within",
+    "outside"
   ],
-
   "signals": {
     "bullish": [
-      { "name": "ATR rising (vol expansion)", "left": "atr.value", "op": "rising", "right": null }
+      { "name": "ATR expansion", "left": "atr.value", "op": "rising", "lookback": 3 }
     ],
     "bearish": [
-      { "name": "ATR falling (vol contraction)", "left": "atr.value", "op": "falling", "right": null }
+      { "name": "ATR contraction", "left": "atr.value", "op": "falling", "lookback": 3 }
     ]
   },
-
   "ui": {
     "tooltips": {
-      "_indicator": "ATR measures typical price movement size; higher ATR = more volatility.",
-      "length": "Longer = steadier ATR; shorter reacts faster.",
-      "method": "Smoothing method: Wilder (default), SMA or EMA variants."
+      "_indicator": "Average True Range (ATR) quantifies volatility; higher = wider ranges.",
+      "length": "Periods used to average true range. Higher = smoother.",
+      "smoothing": "Wilder (classic) or EMA-style averaging.",
+      "outputMode": "Raw ATR units or percent of price (ATR/Close × percentScale).",
+      "percentScale": "Multiplier when outputMode=percent (e.g., 100 → percent)."
     },
     "badges": ["Volatility"]
   },
-
   "constraints": {
-    "recommendedTimeframes": ["15m", "1h", "4h"]
+    "recommendedTimeframes": ["5m", "15m", "1h"]
   },
-
   "examples": [
-    { "name": "ATR Trend Break", "presetRef": "atr_trend_break" },
-    { "name": "ATR Reclaim Continuation", "presetRef": "atr_reclaim_continuation" },
-    { "name": "ATR Donchian Breakout", "presetRef": "atr_donchian_breakout" },
-    { "name": "ATR Momentum Shift", "presetRef": "atr_momentum_shift" }
+    { "name": "ATR Expansion (Normal)", "presetRef": "atr_expansion_normal" },
+    { "name": "ATR Contraction (Normal)", "presetRef": "atr_contraction_normal" },
+    { "name": "ATR Rising Streak (Normal)", "presetRef": "atr_rising_streak_normal" },
+    { "name": "ATR Trend Break (Hero)", "presetRef": "atr_trend_break_hero" },
+    { "name": "ATR Squeeze Release (Hero)", "presetRef": "atr_squeeze_release_hero" },
+    { "name": "ATR Session Momentum (Hero)", "presetRef": "atr_session_momentum_hero" }
   ],
-
   "riskTemplates": {
     "atrStop": {
       "enabledDefault": false,
       "params": { "atrLength": 14, "mult": 2.0 },
-      "tooltip": "Protective stop sized by ATR; widens in high volatility, tightens when quiet."
+      "tooltip": "Protective stop at ATR × multiple; adapts to volatility."
     },
     "trailingTP": {
       "enabledDefault": false,
       "params": { "trailPct": 0.7, "activationR": 1.0 },
-      "tooltip": "Trail profit after the trade reaches the activation threshold."
+      "tooltip": "Trail profit once trade reaches a threshold."
     },
     "breakeven": {
       "enabledDefault": false,
       "params": { "activationR": 1.0 },
-      "tooltip": "Move stop to entry after achieving +R."
+      "tooltip": "Move stop to entry after reaching +R."
     },
     "timeStop": {
       "enabledDefault": false,
       "params": { "bars": 30 },
-      "tooltip": "Exit after N bars if neither stop nor target is hit."
+      "tooltip": "Exit after a maximum number of bars."
     }
   },
-
   "presets": [
     {
-      "id": "atr_trend_break",
-      "label": "ATR Trend Break",
-      "blurb": "Trade with trend when ATR expands and price is above EMA.",
-      "indicators": ["atr", "ema", "rsi"],
+      "id": "atr_expansion_normal",
+      "label": "ATR Expansion (Normal)",
+      "blurb": "Enter only when volatility exceeds a minimal threshold.",
+      "indicators": ["atr"],
       "seedParams": {
-        "atr": { "length": 14, "method": "wilder" },
-        "ema": { "period": 200 },
-        "rsi": { "length": 14 }
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "atr.value", "op": ">", "right": 0.7 }
+        ]
+      },
+      "riskDefaults": {},
+      "badges": ["Volatility", "Filter"]
+    },
+    {
+      "id": "atr_contraction_normal",
+      "label": "ATR Contraction (Normal)",
+      "blurb": "Gate entries during quiet conditions (low ATR).",
+      "indicators": ["atr"],
+      "seedParams": {
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "atr.value", "op": "<", "right": 0.3 }
+        ]
+      },
+      "riskDefaults": {},
+      "badges": ["Volatility", "Conservative"]
+    },
+    {
+      "id": "atr_rising_streak_normal",
+      "label": "ATR Rising Streak (Normal)",
+      "blurb": "Require a short rising streak in ATR before enabling entries.",
+      "indicators": ["atr"],
+      "seedParams": {
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 }
+      },
+      "rules": {
+        "joiner": "AND",
+        "rules": [
+          { "left": "atr.value", "op": "rising", "lookback": 3 }
+        ]
+      },
+      "riskDefaults": {},
+      "badges": ["Volatility", "Expansion"]
+    },
+    {
+      "id": "atr_trend_break_hero",
+      "label": "ATR Trend Break (Hero)",
+      "blurb": "Volatility expansion with trend regime and breakout confirmation.",
+      "indicators": ["atr", "ema", "donchian_channels"],
+      "seedParams": {
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 },
+        "ema": { "period": 200, "source": "close", "offset": 0 },
+        "donchian_channels": { "period": 20 }
       },
       "rules": {
         "joiner": "AND",
         "rules": [
           { "left": "close", "op": ">", "right": "ema.value" },
-          { "left": "rsi.value", "op": ">", "right": 55 },
-          { "left": "atr.value", "op": "rising", "right": null }
+          { "left": "atr.value", "op": ">", "right": 0.6 },
+          { "left": "close", "op": ">", "right": "donchian_channels.upper" }
         ]
       },
       "riskDefaults": {
-        "atrStop":    { "params": { "atrLength": 14, "mult": 2.0 } },
+        "atrStop": { "params": { "atrLength": 14, "mult": 2.0 } },
         "trailingTP": { "params": { "trailPct": 0.6, "activationR": 1.0 } }
       },
-      "badges": ["Trend", "Vol Expansion"]
+      "badges": ["Hero", "Regime", "Breakout"]
     },
     {
-      "id": "atr_reclaim_continuation",
-      "label": "ATR Reclaim Continuation",
-      "blurb": "Reclaim above EMA after a brief dip; ATR expansion optional.",
-      "indicators": ["atr", "ema"],
+      "id": "atr_squeeze_release_hero",
+      "label": "ATR Squeeze Release (Hero)",
+      "blurb": "Low-volatility squeeze followed by ATR pop; cooldown to avoid noise.",
+      "indicators": ["atr", "bollinger_bandwidth"],
       "seedParams": {
-        "atr": { "length": 14, "method": "wilder" },
-        "ema": { "period": 100 }
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 },
+        "bollinger_bandwidth": { "period": 20 }
       },
       "rules": {
         "joiner": "AND",
         "rules": [
-          { "left": "close", "op": "<", "right": "ema.value", "lookback": 3, "mode": "consecutive" },
-          { "left": "close", "op": "crosses_above", "right": "ema.value" },
-          { "left": "atr.value", "op": "rising", "right": null, "optional": true }
+          { "left": "bollinger_bandwidth.value", "op": "<", "right": 6.0 },
+          { "left": "atr.value", "op": "crosses_above", "right": 0.5 },
+          { "left": "signalCooldown.bars", "op": ">=", "right": 10 }
         ]
       },
       "riskDefaults": {
-        "atrStop":  { "params": { "atrLength": 14, "mult": 2.1 } },
-        "timeStop": { "params": { "bars": 30 } }
+        "atrStop": { "params": { "atrLength": 14, "mult": 1.8 } },
+        "timeStop": { "params": { "bars": 40 } }
       },
-      "badges": ["Trend", "Reclaim"]
+      "badges": ["Hero", "Squeeze", "Cooldown"]
     },
     {
-      "id": "atr_donchian_breakout",
-      "label": "ATR Donchian Breakout",
-      "blurb": "Break above Donchian upper band with ATR expansion.",
-      "indicators": ["atr", "donchian", "ema"],
+      "id": "atr_session_momentum_hero",
+      "label": "ATR Session Momentum (Hero)",
+      "blurb": "Trade only during a configured session window with ATR expansion and long bias.",
+      "indicators": ["atr"],
       "seedParams": {
-        "atr": { "length": 14, "method": "wilder" },
-        "donchian": { "length": 20 },
-        "ema": { "period": 200 }
+        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 }
       },
       "rules": {
         "joiner": "AND",
         "rules": [
-          { "left": "close", "op": "crosses_above", "right": "donchian.upper" },
-          { "left": "atr.value", "op": "rising", "right": null },
-          { "left": "close", "op": ">", "right": "ema.value", "optional": true }
+          { "left": "sessionFilter.window", "op": "within", "right": ["09:00", "17:00"] },
+          { "left": "directionBias", "op": "==", "right": "long" },
+          { "left": "atr.value", "op": ">", "right": 0.5 }
         ]
       },
       "riskDefaults": {
-        "atrStop":    { "params": { "atrLength": 14, "mult": 2.0 } },
-        "trailingTP": { "params": { "trailPct": 0.6, "activationR": 1.0 } }
+        "atrStop": { "params": { "atrLength": 14, "mult": 2.2 } },
+        "breakeven": { "params": { "activationR": 1.0 } }
       },
-      "badges": ["Breakout", "Vol Expansion"]
-    },
-    {
-      "id": "atr_momentum_shift",
-      "label": "ATR Momentum Shift",
-      "blurb": "Momentum confirm: RSI crosses 50 while ATR is rising.",
-      "indicators": ["atr", "rsi", "ema"],
-      "seedParams": {
-        "atr": { "length": 14, "method": "wilder" },
-        "rsi": { "length": 14 },
-        "ema": { "period": 200 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "atr.value", "op": "rising", "right": null },
-          { "left": "rsi.value", "op": "crosses_above", "right": 50 },
-          { "left": "close", "op": ">", "right": "ema.value", "optional": true }
-        ]
-      },
-      "riskDefaults": {
-        "atrStop":    { "params": { "atrLength": 14, "mult": 1.9 } },
-        "trailingTP": { "params": { "trailPct": 0.6, "activationR": 1.0 } },
-        "breakeven":  { "params": { "activationR": 1.0 } }
-      },
-      "badges": ["Momentum", "Vol Expansion"]
+      "badges": ["Hero", "Session", "Momentum"]
     }
   ],
-
   "deprecated": false
 }
