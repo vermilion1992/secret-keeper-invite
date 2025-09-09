@@ -1,0 +1,321 @@
+{
+  "identity": {
+    "id": "tema",
+    "label": "TEMA (Triple Exponential Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Moving Average", "Support/Resistance", "Filter"]
+  },
+  "docs": {
+    "blurb": "The Triple Exponential Moving Average (TEMA) reduces lag more than EMA/DEMA while remaining smooth for trend detection.",
+    "longSummary": "TEMA combines multiple EMAs to minimize lag and better track swift trend shifts. It is constructed by a linear combination of EMA, EMA of EMA, and EMA of EMA of EMA, canceling much of the smoothing delay. Traders use price/TEMA crosses for entries, dual/stacked TEMAs for momentum alignment, and higher-length TEMAs as regime filters. TEMA can provide earlier signals than SMA/EMA at the cost of potentially more noise on fast charts.",
+    "mathSummary": "TEMAₙ = 3·EMA(price, n) − 3·EMA(EMA(price, n), n) + EMA(EMA(EMA(price, n), n), n).",
+    "references": [
+      {
+        "label": "Investopedia — Triple Exponential Moving Average (TEMA)",
+        "url": "https://www.investopedia.com/terms/t/triple-exponential-moving-average-tema.asp"
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "length",
+      "label": "TEMA Length",
+      "type": "integer",
+      "default": 50,
+      "min": 2,
+      "max": 500,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    }
+  ],
+  "outputs": ["tema"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "bull_price_cross",
+      "label": "Bullish Price Crosses Above TEMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "tema" }
+      ]
+    },
+    {
+      "id": "bear_price_cross",
+      "label": "Bearish Price Crosses Below TEMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "tema" }
+      ]
+    }
+  ],
+  "ui": {
+    "tooltips": {
+      "_indicator": "TEMA blends multiple EMAs to reduce lag and enhance responsiveness to trend changes.",
+      "length": "Bars used for TEMA. Shorter = faster, more noise; longer = smoother, slower.",
+      "source": "Price series used to compute the TEMA."
+    }
+  },
+  "constraints": {
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "On highly volatile instruments, consider longer lengths or add a secondary filter."
+  },
+  "examples": [
+    { "name": "TEMA 50 Trend-Follow (Price Cross)", "presetRef": "tema_normal_trend_50" },
+    { "name": "TEMA 9/21 Crossover Momentum", "presetRef": "tema_normal_cross_9_21" },
+    { "name": "TEMA 200 Regime Filter", "presetRef": "tema_normal_filter_200" },
+    { "name": "TEMA Hero: Breakout + RSI Confirm", "presetRef": "tema_hero_breakout_rsi" },
+    { "name": "TEMA Hero: Momentum Stack (9/21/50)", "presetRef": "tema_hero_stack_momentum" },
+    { "name": "TEMA Hero: Pullback + MTF Align", "presetRef": "tema_hero_pullback_mtf" }
+  ],
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
+    }
+  },
+  "presets": [
+    {
+      "id": "tema_normal_trend_50",
+      "name": "TEMA 50 Trend-Follow (Price Cross)",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "tema", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "tema" },
+          { "left": "tema", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "tema" },
+          { "left": "tema", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "tema" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "tema" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "tema_normal_cross_9_21",
+      "name": "TEMA 9/21 Crossover Momentum",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "tema", "params": { "length": 9, "source": "close" } },
+        { "id": "tema", "params": { "length": 21, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "tema[9]", "op": "crosses_above", "right": "tema[21]" },
+          { "left": "price", "op": ">", "right": "tema[9]" }
+        ],
+        "short": [
+          { "left": "tema[9]", "op": "crosses_below", "right": "tema[21]" },
+          { "left": "price", "op": "<", "right": "tema[9]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "tema[9]", "op": "<", "right": "tema[21]" }
+        ],
+        "short": [
+          { "left": "tema[9]", "op": ">", "right": "tema[21]" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "tema_normal_filter_200",
+      "name": "TEMA 200 Regime Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "tema", "params": { "length": 200, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "tema" },
+          { "left": "tema", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "tema" },
+          { "left": "tema", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "tema" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "tema" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "tema_hero_breakout_rsi",
+      "name": "TEMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "tema", "params": { "length": 20, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "tema" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "tema" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "tema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "tema" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "tema_hero_stack_momentum",
+      "name": "TEMA Hero: Momentum Stack (9/21/50)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "tema", "params": { "length": 9, "source": "close" } },
+        { "id": "tema", "params": { "length": 21, "source": "close" } },
+        { "id": "tema", "params": { "length": 50, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
+      },
+      "entry": {
+        "long": [
+          { "left": "tema[9]", "op": ">", "right": "tema[21]" },
+          { "left": "tema[21]", "op": ">", "right": "tema[50]" },
+          { "left": "price", "op": ">", "right": "tema[9]" }
+        ],
+        "short": [
+          { "left": "tema[9]", "op": "<", "right": "tema[21]" },
+          { "left": "tema[21]", "op": "<", "right": "tema[50]" },
+          { "left": "price", "op": "<", "right": "tema[9]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "tema[21]" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "tema[21]" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "tema_hero_pullback_mtf",
+      "name": "TEMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "tema", "params": { "length": 34, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "tema" }
+        },
+        "timeWindow": { "session": "Any", "active": true }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "tema" },
+          { "left": "tema", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "tema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "tema" },
+          { "left": "tema", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "tema" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<", "right": "tema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">", "right": "tema" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
+    }
+  ],
+  "deprecated": false
+}
