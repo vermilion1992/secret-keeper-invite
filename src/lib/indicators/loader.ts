@@ -4,16 +4,11 @@
 
 interface IndicatorPreset {
   id: string;
-  label: string;
-  blurb: string;
-  designIntent: string;
+  name: string;
+  presetTier: string;
   riskProfile: string;
-  badges: string[];
-  tags: string[];
-  isHero?: boolean;
-  seedParams: Record<string, any>;
-  rules: any;
-  riskDefaults: Record<string, any>;
+  designIntent: string;
+  [key: string]: any; // Allow additional properties from meta.json
 }
 
 interface IndicatorMetadata {
@@ -36,13 +31,14 @@ export async function loadRSIIndicator(): Promise<LoadedIndicator | null> {
   try {
     // Import RSI metadata statically
     const rsiMeta = await import('@/indicators/rsi/meta.json');
+    const meta = rsiMeta;
     
     const indicator: IndicatorMetadata = {
-      id: rsiMeta.id,
-      label: rsiMeta.label,
-      blurb: rsiMeta.blurb,
-      tags: rsiMeta.tags,
-      presets: rsiMeta.presets || []
+      id: meta.identity.id,
+      label: meta.identity.label,
+      blurb: meta.docs.blurb,
+      tags: meta.identity.tags,
+      presets: meta.presets || []
     };
 
     return {

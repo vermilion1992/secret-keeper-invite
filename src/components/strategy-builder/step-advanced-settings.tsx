@@ -227,11 +227,16 @@ export function StepAdvancedSettings({
         console.log('RSI meta', rsiMeta);
 
         // Build base params from meta defaults
+        const meta = rsiMeta;
+        const paramsArray = meta.params || [];
+        
+        const findParam = (key: string) => paramsArray.find((p: any) => p.key === key);
+        
         const baseParams = {
-          length: rsiMeta.params.length.default,
-          source: rsiMeta.params.source.default,
-          obLevel: rsiMeta.params.obLevel.default,
-          osLevel: rsiMeta.params.osLevel.default,
+          length: findParam('length')?.default || 14,
+          source: findParam('source')?.default || 'close',
+          obLevel: findParam('upper')?.default || 70,
+          osLevel: findParam('lower')?.default || 30,
         };
 
         let finalParams = { ...baseParams };
@@ -262,10 +267,10 @@ export function StepAdvancedSettings({
         // Apply indicator settings immediately
         setStrategySettings(prev => ({
           ...prev,
-          rsiLength: finalParams.length,
-          rsiOverbought: finalParams.obLevel,
-          rsiOversold: finalParams.osLevel,
-          rsiSource: finalParams.source,
+          rsiLength: Number(finalParams.length) || 14,
+          rsiOverbought: Number(finalParams.obLevel) || 70,
+          rsiOversold: Number(finalParams.osLevel) || 30,
+          rsiSource: String(finalParams.source) || 'close',
         }));
 
         // Map and apply rules
