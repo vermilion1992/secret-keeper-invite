@@ -1,0 +1,359 @@
+{
+  "identity": {
+    "id": "macd",
+    "label": "MACD (Moving Average Convergence/Divergence)",
+    "category": "Momentum",
+    "tier": "CORE",
+    "tags": ["Momentum", "Trend", "Oscillator", "Crossover", "Filter"]
+  },
+  "docs": {
+    "blurb": "MACD tracks momentum by comparing two EMAs and smoothing the result with a signal line.",
+    "longSummary": "MACD measures the distance between a fast and slow exponential moving average. A signal line (EMA of MACD) highlights turns, and the histogram displays the difference between MACD and its signal. Traders look for signal-line crossovers, zero-line crosses, and histogram inflections to time entries and exits. MACD can confirm trend direction with higher-timeframe filters or long MAs and is useful for spotting momentum acceleration and deceleration.",
+    "mathSummary": "MACD = EMA(price, fast) − EMA(price, slow); Signal = EMA(MACD, signalLen); Histogram = MACD − Signal.",
+    "references": [
+      {
+        "label": "Investopedia — Moving Average Convergence Divergence (MACD)",
+        "url": "https://www.investopedia.com/terms/m/macd.asp"
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "fastLength",
+      "label": "Fast EMA Length",
+      "type": "integer",
+      "default": 12,
+      "min": 2,
+      "max": 200,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "slowLength",
+      "label": "Slow EMA Length",
+      "type": "integer",
+      "default": 26,
+      "min": 3,
+      "max": 300,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "signalLength",
+      "label": "Signal EMA Length",
+      "type": "integer",
+      "default": 9,
+      "min": 1,
+      "max": 100,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    },
+    {
+      "key": "maType",
+      "label": "MA Type",
+      "type": "enum",
+      "options": ["ema"],
+      "default": "ema"
+    }
+  ],
+  "outputs": ["macd", "signal", "histogram"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "bull_signal_cross",
+      "label": "MACD Crosses Above Signal",
+      "when": [
+        { "left": "macd", "op": "crosses_above", "right": "signal" }
+      ]
+    },
+    {
+      "id": "bear_signal_cross",
+      "label": "MACD Crosses Below Signal",
+      "when": [
+        { "left": "macd", "op": "crosses_below", "right": "signal" }
+      ]
+    },
+    {
+      "id": "zero_line_bull",
+      "label": "MACD Crosses Above Zero",
+      "when": [
+        { "left": "macd", "op": "crosses_above", "right": 0 }
+      ]
+    },
+    {
+      "id": "zero_line_bear",
+      "label": "MACD Crosses Below Zero",
+      "when": [
+        { "left": "macd", "op": "crosses_below", "right": 0 }
+      ]
+    }
+  ],
+  "ui": {
+    "tooltips": {
+      "_indicator": "MACD compares two EMAs to gauge momentum; the signal line smooths MACD and the histogram shows their difference.",
+      "fastLength": "Shorter EMA period (faster reaction).",
+      "slowLength": "Longer EMA period (trend baseline).",
+      "signalLength": "EMA applied to MACD line for crossover signals.",
+      "source": "Price input for EMAs.",
+      "maType": "Smoothing method (EMA for classic MACD)."
+    }
+  },
+  "constraints": {
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "Consider a trend/regime filter to avoid whipsaws in ranges."
+  },
+  "examples": [
+    { "name": "MACD Classic (12/26/9) Signal Cross", "presetRef": "macd_normal_classic_12_26_9" },
+    { "name": "MACD Zero-Line with SMA200 Filter", "presetRef": "macd_normal_zero_sma200" },
+    { "name": "MACD Fast (8/21/5) Momentum", "presetRef": "macd_normal_fast_8_21_5" },
+    { "name": "MACD Hero: Breakout + RSI Confirm", "presetRef": "macd_hero_breakout_rsi" },
+    { "name": "MACD Hero: Trend Stack + Priority", "presetRef": "macd_hero_trend_stack" },
+    { "name": "MACD Hero: MTF Confirm + Cooldown", "presetRef": "macd_hero_mtf_cooldown" }
+  ],
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
+    }
+  },
+  "presets": [
+    {
+      "id": "macd_normal_classic_12_26_9",
+      "name": "MACD Classic (12/26/9) Signal Cross",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "macd", "params": { "fastLength": 12, "slowLength": 26, "signalLength": 9, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "macd", "op": "crosses_above", "right": "signal" }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_below", "right": "signal" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "macd", "op": "crosses_below", "right": "signal" }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_above", "right": "signal" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "macd_normal_zero_sma200",
+      "name": "MACD Zero-Line with SMA200 Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "macd", "params": { "fastLength": 12, "slowLength": 26, "signalLength": 9, "source": "close" } },
+        { "id": "sma", "params": { "length": 200, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "sma" },
+          { "left": "macd", "op": "crosses_above", "right": 0 }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "sma" },
+          { "left": "macd", "op": "crosses_below", "right": 0 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "macd", "op": "crosses_below", "right": 0 }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_above", "right": 0 }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "macd_normal_fast_8_21_5",
+      "name": "MACD Fast (8/21/5) Momentum",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "macd", "params": { "fastLength": 8, "slowLength": 21, "signalLength": 5, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "macd", "op": "crosses_above", "right": "signal" },
+          { "left": "histogram", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_below", "right": "signal" },
+          { "left": "histogram", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "histogram", "op": "falling", "right": null }
+        ],
+        "short": [
+          { "left": "histogram", "op": "rising", "right": null }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "macd_hero_breakout_rsi",
+      "name": "MACD Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "macd", "params": { "fastLength": 12, "slowLength": 26, "signalLength": 9, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 8 }
+      },
+      "entry": {
+        "long": [
+          { "left": "macd", "op": "crosses_above", "right": "signal" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_below", "right": "signal" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "macd", "op": "<=", "right": "signal" }
+        ],
+        "short": [
+          { "left": "macd", "op": ">=", "right": "signal" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "macd_hero_trend_stack",
+      "name": "MACD Hero: Trend Stack + Priority",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "macd", "params": { "fastLength": 12, "slowLength": 26, "signalLength": 9, "source": "close" } },
+        { "id": "ema", "params": { "length": 50, "source": "close" } },
+        { "id": "ema", "params": { "length": 200, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
+      },
+      "entry": {
+        "long": [
+          { "left": "ema[50]", "op": ">", "right": "ema[200]" },
+          { "left": "macd", "op": ">", "right": 0 },
+          { "left": "macd", "op": "crosses_above", "right": "signal" }
+        ],
+        "short": [
+          { "left": "ema[50]", "op": "<", "right": "ema[200]" },
+          { "left": "macd", "op": "<", "right": 0 },
+          { "left": "macd", "op": "crosses_below", "right": "signal" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "macd", "op": "crosses_below", "right": "signal" }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_above", "right": "signal" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "macd_hero_mtf_cooldown",
+      "name": "MACD Hero: MTF Confirm + Cooldown",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": ["multiTFConfirm", "signalCooldown"],
+      "indicators": [
+        { "id": "macd", "params": { "fastLength": 12, "slowLength": 26, "signalLength": 9, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "macd", "op": ">", "right": 0 }
+        },
+        "signalCooldown": { "bars": 12 }
+      },
+      "entry": {
+        "long": [
+          { "left": "macd", "op": "crosses_above", "right": "signal" }
+        ],
+        "short": [
+          { "left": "macd", "op": "crosses_below", "right": "signal" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "macd", "op": "<=", "right": "signal" }
+        ],
+        "short": [
+          { "left": "macd", "op": ">=", "right": "signal" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
+    }
+  ],
+  "deprecated": false
+}
