@@ -1,0 +1,323 @@
+{
+  "identity": {
+    "id": "wma",
+    "label": "WMA (Weighted Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Moving Average", "Support/Resistance", "Filter"]
+  },
+  "docs": {
+    "blurb": "The Weighted Moving Average (WMA) gives more weight to recent prices than older ones, improving responsiveness over SMA.",
+    "longSummary": "WMA is a linear-weighted moving average where newer prices receive higher weights. This makes WMA more responsive to recent changes than a simple average, while remaining smoother than very short EMAs. Traders use price/WMA crosses, dual-WMA crossovers, and WMA stacks to define trend, pullback entries, and regime filters. WMA can also serve as a confirmation layer alongside volatility or momentum indicators to reduce whipsaws.",
+    "mathSummary": "WMAₙ(t) = [Σ_{i=1..n}(i · Price(t−n+i))] / [n(n+1)/2].",
+    "references": [
+      {
+        "label": "Investopedia — Weighted Moving Average (WMA)",
+        "url": "https://www.investopedia.com/terms/w/wma.asp"
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "length",
+      "label": "WMA Length",
+      "type": "integer",
+      "default": 50,
+      "min": 2,
+      "max": 500,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    }
+  ],
+  "outputs": ["wma"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "bull_price_cross",
+      "label": "Bullish Price Crosses Above WMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "wma" }
+      ]
+    },
+    {
+      "id": "bear_price_cross",
+      "label": "Bearish Price Crosses Below WMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "wma" }
+      ]
+    }
+  ],
+  "ui": {
+    "tooltips": {
+      "_indicator": "WMA linearly weights recent prices more, improving responsiveness to trend shifts.",
+      "length": "Number of bars included. Longer = smoother, slower; shorter = faster, noisier.",
+      "source": "Price input used to compute the WMA."
+    }
+  },
+  "constraints": {
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "For volatile markets, consider longer lengths or add a secondary trend filter."
+  },
+  "examples": [
+    { "name": "WMA 50 Trend-Follow (Price Cross)", "presetRef": "wma_normal_trend_50" },
+    { "name": "WMA 20 Pullback in WMA50 Uptrend", "presetRef": "wma_normal_pullback_20_50" },
+    { "name": "WMA 200 Regime Filter", "presetRef": "wma_normal_filter_200" },
+    { "name": "WMA Hero: Breakout + RSI Confirm", "presetRef": "wma_hero_breakout_rsi" },
+    { "name": "WMA Hero: Momentum Stack (20/50/200)", "presetRef": "wma_hero_stack_momentum" },
+    { "name": "WMA Hero: Pullback + MTF Align", "presetRef": "wma_hero_pullback_mtf" }
+  ],
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
+    }
+  },
+  "presets": [
+    {
+      "id": "wma_normal_trend_50",
+      "name": "WMA 50 Trend-Follow (Price Cross)",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "wma", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "wma" },
+          { "left": "wma", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "wma" },
+          { "left": "wma", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "wma" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "wma" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "wma_normal_pullback_20_50",
+      "name": "WMA 20 Pullback in WMA50 Uptrend",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Pullback",
+      "extras": [],
+      "indicators": [
+        { "id": "wma", "params": { "length": 20, "source": "close" } },
+        { "id": "wma", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "wma[50]" },
+          { "left": "wma[50]", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "wma[20]" }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "wma[50]" },
+          { "left": "wma[50]", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "wma[20]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "wma[20]" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "wma[20]" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "wma_normal_filter_200",
+      "name": "WMA 200 Regime Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "wma", "params": { "length": 200, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "wma" },
+          { "left": "wma", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "wma" },
+          { "left": "wma", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "wma" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "wma" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "wma_hero_breakout_rsi",
+      "name": "WMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "wma", "params": { "length": 20, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "wma" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "wma" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "wma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "wma" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "wma_hero_stack_momentum",
+      "name": "WMA Hero: Momentum Stack (20/50/200)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "wma", "params": { "length": 20, "source": "close" } },
+        { "id": "wma", "params": { "length": 50, "source": "close" } },
+        { "id": "wma", "params": { "length": 200, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
+      },
+      "entry": {
+        "long": [
+          { "left": "wma[20]", "op": ">", "right": "wma[50]" },
+          { "left": "wma[50]", "op": ">", "right": "wma[200]" },
+          { "left": "price", "op": ">", "right": "wma[20]" }
+        ],
+        "short": [
+          { "left": "wma[20]", "op": "<", "right": "wma[50]" },
+          { "left": "wma[50]", "op": "<", "right": "wma[200]" },
+          { "left": "price", "op": "<", "right": "wma[20]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "wma[50]" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "wma[50]" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "wma_hero_pullback_mtf",
+      "name": "WMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "wma", "params": { "length": 34, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "wma" }
+        },
+        "timeWindow": { "session": "Any", "active": true }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "wma" },
+          { "left": "wma", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "wma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "wma" },
+          { "left": "wma", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "wma" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<", "right": "wma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">", "right": "wma" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
+    }
+  ],
+  "deprecated": false
+}
