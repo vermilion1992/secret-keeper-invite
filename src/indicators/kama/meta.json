@@ -1,0 +1,345 @@
+{
+  "identity": {
+    "id": "kama",
+    "label": "KAMA (Kaufman Adaptive Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Adaptive", "Moving Average", "Support/Resistance", "Filter"]
+  },
+  "docs": {
+    "blurb": "Kaufman’s Adaptive Moving Average (KAMA) adapts its speed to market noise—fast in trends, slow in ranges.",
+    "longSummary": "KAMA uses an Efficiency Ratio (ER) to adapt its smoothing constant: when price moves directionally (high ER), KAMA speeds up; when price chops (low ER), it slows down. This reduces whipsaws in ranges while reacting quickly during trends. Traders use price/KAMA crosses, stacked KAMAs for regime confirmation, and KAMA pullbacks in a dominant trend. KAMA also serves as a higher-timeframe filter and a dynamic support/resistance guide.",
+    "mathSummary": "ER = |Price(t) − Price(t−N)| ÷ Σ_{i=1..N} |Price(t−i) − Price(t−i−1)|; SC = [ER·(FC−SCmin)+SCmin]^2, where FC = 2/(fast+1), SCmin = 2/(slow+1); KAMA(t) = KAMA(t−1) + SC·(Price(t) − KAMA(t−1)).",
+    "references": [
+      {
+        "label": "Investopedia — Kaufman’s Adaptive Moving Average (KAMA)",
+        "url": "https://www.investopedia.com/terms/k/kaufman-moving-average.asp"
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "erLength",
+      "label": "Efficiency Ratio Length",
+      "type": "integer",
+      "default": 10,
+      "min": 2,
+      "max": 100,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "fastLength",
+      "label": "Fast Length",
+      "type": "integer",
+      "default": 2,
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "slowLength",
+      "label": "Slow Length",
+      "type": "integer",
+      "default": 30,
+      "min": 2,
+      "max": 200,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    }
+  ],
+  "outputs": ["kama"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "bull_price_cross",
+      "label": "Bullish Price Crosses Above KAMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "kama" }
+      ]
+    },
+    {
+      "id": "bear_price_cross",
+      "label": "Bearish Price Crosses Below KAMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "kama" }
+      ]
+    }
+  ],
+  "ui": {
+    "tooltips": {
+      "_indicator": "KAMA adapts its smoothing based on trend efficiency: fast in trends, slow in chop.",
+      "erLength": "Bars used to compute the Efficiency Ratio (ER). Higher = smoother, slower adaptation.",
+      "fastLength": "Fast EMA-equivalent length used for the maximum speed.",
+      "slowLength": "Slow EMA-equivalent length used for the minimum speed.",
+      "source": "Price series used to compute KAMA."
+    }
+  },
+  "constraints": {
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "For volatile markets, consider a higher erLength or longer slowLength to reduce noise."
+  },
+  "examples": [
+    { "name": "KAMA Adaptive Trend (Price Cross)", "presetRef": "kama_normal_trend_10_2_30" },
+    { "name": "KAMA 10 Pullback in KAMA30 Uptrend", "presetRef": "kama_normal_pullback_10_30" },
+    { "name": "KAMA 50 Regime Filter", "presetRef": "kama_normal_filter_50" },
+    { "name": "KAMA Hero: Breakout + RSI Confirm", "presetRef": "kama_hero_breakout_rsi" },
+    { "name": "KAMA Hero: Momentum Stack (10/30/50)", "presetRef": "kama_hero_stack_momentum" },
+    { "name": "KAMA Hero: Pullback + MTF Align", "presetRef": "kama_hero_pullback_mtf" }
+  ],
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
+    }
+  },
+  "presets": [
+    {
+      "id": "kama_normal_trend_10_2_30",
+      "name": "KAMA Adaptive Trend (Price Cross)",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "kama", "params": { "erLength": 10, "fastLength": 2, "slowLength": 30, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "kama" },
+          { "left": "kama", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "kama" },
+          { "left": "kama", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "kama" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "kama" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "kama_normal_pullback_10_30",
+      "name": "KAMA 10 Pullback in KAMA30 Uptrend",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Pullback",
+      "extras": [],
+      "indicators": [
+        { "id": "kama", "params": { "erLength": 10, "fastLength": 2, "slowLength": 30, "source": "close" } },
+        { "id": "kama", "params": { "erLength": 30, "fastLength": 2, "slowLength": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "kama[30]" },
+          { "left": "kama[30]", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "kama[10]" }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "kama[30]" },
+          { "left": "kama[30]", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "kama[10]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "kama[10]" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "kama[10]" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "kama_normal_filter_50",
+      "name": "KAMA 50 Regime Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "kama", "params": { "erLength": 50, "fastLength": 2, "slowLength": 100, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "kama" },
+          { "left": "kama", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "kama" },
+          { "left": "kama", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "kama" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "kama" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "kama_hero_breakout_rsi",
+      "name": "KAMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "kama", "params": { "erLength": 10, "fastLength": 2, "slowLength": 30, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "kama" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "kama" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "kama" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "kama" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "kama_hero_stack_momentum",
+      "name": "KAMA Hero: Momentum Stack (10/30/50)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "kama", "params": { "erLength": 10, "fastLength": 2, "slowLength": 30, "source": "close" } },
+        { "id": "kama", "params": { "erLength": 30, "fastLength": 2, "slowLength": 50, "source": "close" } },
+        { "id": "kama", "params": { "erLength": 50, "fastLength": 2, "slowLength": 100, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
+      },
+      "entry": {
+        "long": [
+          { "left": "kama[10]", "op": ">", "right": "kama[30]" },
+          { "left": "kama[30]", "op": ">", "right": "kama[50]" },
+          { "left": "price", "op": ">", "right": "kama[10]" }
+        ],
+        "short": [
+          { "left": "kama[10]", "op": "<", "right": "kama[30]" },
+          { "left": "kama[30]", "op": "<", "right": "kama[50]" },
+          { "left": "price", "op": "<", "right": "kama[10]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "kama[30]" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "kama[30]" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "kama_hero_pullback_mtf",
+      "name": "KAMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "kama", "params": { "erLength": 21, "fastLength": 2, "slowLength": 50, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "kama" }
+        },
+        "timeWindow": { "session": "Any", "active": true }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "kama" },
+          { "left": "kama", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "kama" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "kama" },
+          { "left": "kama", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "kama" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<", "right": "kama" }
+        ],
+        "short": [
+          { "left": "price", "op": ">", "right": "kama" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
+    }
+  ],
+  "deprecated": false
+}
