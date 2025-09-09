@@ -1,254 +1,328 @@
 {
-  "schemaVersion": "1.0",
-  "version": "1",
-  "id": "ema",
-  "label": "EMA",
-  "category": "Trend",
-  "tier": "CORE",
-  "tags": ["Trend", "Moving Average"],
-
-  "blurb": "Exponential Moving Average that emphasizes recent prices; widely used as a regime filter and dynamic support/resistance.",
-  "longSummary": "The Exponential Moving Average (EMA) assigns larger weights to recent data, reacting faster than the Simple Moving Average (SMA). Common periods include 50 and 200 for trend identification, with shorter EMAs used for entries and longer EMAs for regime filtering. Traders watch for reclaims after dips, retests of the line, or sustained alignment of price above a rising EMA. EMA works well combined with momentum (e.g., RSI) or volatility context (e.g., ATR rising) to avoid chop.",
-  "mathSummary": "EMA_t = α·Price_t + (1−α)·EMA_{t−1}, where α = 2/(N+1).",
-  "references": [
-    "https://www.investopedia.com/terms/e/ema.asp"
-  ],
-
-  "params": {
-    "period": { "type": "int", "default": 200, "min": 2, "max": 500, "step": 1, "unit": "bars" },
-    "source": { "type": "enum", "default": "close", "options": ["close", "open", "high", "low"] },
-    "offset": { "type": "int", "default": 0, "min": -50, "max": 50, "step": 1, "unit": "bars" }
+  "identity": {
+    "id": "ema",
+    "label": "EMA (Exponential Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Moving Average", "Support/Resistance", "Filter"]
   },
-
-  "outputs": ["value"],
-
-  "supportedOperators": [
-    ">", ">=", "<", "<=", "==",
-    "crosses_above", "crosses_below",
-    "rising", "falling",
-    "within", "outside"
-  ],
-
-  "signals": {
-    "bullish": [
-      { "name": "Price crosses above EMA", "left": "close", "op": "crosses_above", "right": "ema.value" }
-    ],
-    "bearish": [
-      { "name": "Price crosses below EMA", "left": "close", "op": "crosses_below", "right": "ema.value" }
+  "docs": {
+    "blurb": "The Exponential Moving Average (EMA) weights recent prices more heavily, responding faster to trend changes than SMA.",
+    "longSummary": "EMA is a smoothing technique that emphasizes recent price action via an exponential weighting factor. Short EMAs (e.g., 9/12) react quickly and are often used for momentum entries, while longer EMAs (e.g., 50/200) help define the primary trend and dynamic support/resistance. Common tactics include price/EMA crosses, dual-EMA crossovers, and stacked EMAs for regime confirmation. EMA can serve as a filter to keep trades aligned with higher-timeframe direction.",
+    "mathSummary": "EMAₙ(t) = α·Price(t) + (1−α)·EMAₙ(t−1), where α = 2 / (n + 1).",
+    "references": [
+      {
+        "label": "Investopedia — Exponential Moving Average (EMA)",
+        "url": "https://www.investopedia.com/terms/e/ema.asp"
+      }
     ]
   },
-
+  "params": [
+    {
+      "key": "length",
+      "label": "EMA Length",
+      "type": "integer",
+      "default": 50,
+      "min": 2,
+      "max": 500,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    }
+  ],
+  "outputs": ["ema"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "price_above_ema",
+      "label": "Price Above EMA",
+      "when": [
+        { "left": "price", "op": ">", "right": "ema" }
+      ]
+    },
+    {
+      "id": "bull_price_cross",
+      "label": "Bullish Price Crosses Above EMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "ema" }
+      ]
+    },
+    {
+      "id": "bear_price_cross",
+      "label": "Bearish Price Crosses Below EMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "ema" }
+      ]
+    }
+  ],
   "ui": {
     "tooltips": {
-      "_indicator": "EMA weights recent bars more heavily than older bars; faster than SMA.",
-      "period": "Higher = smoother, slower response. Popular: 50/200.",
-      "source": "Price field used to compute the EMA.",
-      "offset": "Shifts the EMA for visualization; does not change calculation."
-    },
-    "badges": ["Trend"]
+      "_indicator": "EMA smooths price with exponential weighting for faster trend detection than SMA.",
+      "length": "Bars used to compute the EMA. Shorter = faster, more noise; longer = smoother, slower.",
+      "source": "Price series used to compute the EMA."
+    }
   },
-
   "constraints": {
-    "recommendedTimeframes": ["15m", "1h", "4h"]
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "For volatile pairs or lower timeframes, consider longer lengths or additional filters."
   },
-
   "examples": [
-    { "name": "EMA Retest Continuation", "presetRef": "ema_retest_continuation" },
-    { "name": "EMA Slope Momentum", "presetRef": "ema_slope_momentum" },
-    { "name": "EMA Clean Trend Filter", "presetRef": "ema_clean_trend_filter" },
-    { "name": "EMA Reclaim 200 (Hero)", "presetRef": "ema_reclaim_200_hero" },
-    { "name": "Donchian Breakout + EMA Filter (Hero)", "presetRef": "ema_donchian_breakout_hero" },
-    { "name": "Z-Score Pullback + EMA Align (Hero)", "presetRef": "ema_zscore_pullback_hero" }
+    { "name": "EMA 50 Trend-Follow (Price Cross)", "presetRef": "ema_normal_trend_50" },
+    { "name": "EMA 9/21 Crossover Momentum", "presetRef": "ema_normal_cross_9_21" },
+    { "name": "EMA 200 Regime Filter", "presetRef": "ema_normal_filter_200" },
+    { "name": "EMA Hero: Breakout + RSI Confirm", "presetRef": "ema_hero_breakout_rsi" },
+    { "name": "EMA Hero: Momentum Stack (9/21/50)", "presetRef": "ema_hero_stack_momentum" },
+    { "name": "EMA Hero: Pullback + MTF Align", "presetRef": "ema_hero_pullback_mtf" }
   ],
-
   "riskTemplates": {
     "atrStop": {
       "enabledDefault": false,
-      "params": { "atrLength": 14, "mult": 2.0 },
-      "tooltip": "ATR-sized protective stop; widens in volatility, tightens when quiet."
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
     },
     "trailingTP": {
       "enabledDefault": false,
-      "params": { "trailPct": 0.6, "activationR": 1.0 },
-      "tooltip": "Trail profits after a minimum move in your favor."
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
     },
     "breakeven": {
       "enabledDefault": false,
-      "params": { "activationR": 1.0 },
-      "tooltip": "Move stop to entry after reaching the activation threshold."
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
     },
     "timeStop": {
       "enabledDefault": false,
-      "params": { "bars": 30 },
-      "tooltip": "Exit after a maximum number of bars if neither SL/TP is hit."
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
     }
   },
-
   "presets": [
     {
-      "id": "ema_retest_continuation",
-      "label": "EMA Retest Continuation",
-      "blurb": "Enter on the first close back above EMA after a recent dip below.",
-      "designIntent": "retest",
-      "riskProfile": "Conservative",
-      "badges": ["Trend", "Retest"],
-      "tags": ["Close-only", "EMA100", "Within-3", "Retest", "Conservative"],
-      "indicators": ["ema", "atr"],
-      "seedParams": {
-        "ema": { "period": 100 },
-        "atr": { "length": 14 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": "<", "right": "ema.value", "lookback": 3 },
-          { "left": "close", "op": ">", "right": "ema.value" }
-        ]
-      },
-      "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 2.1 } },
-        "timeStop": { "params": { "bars": 30 } }
-      }
-    },
-    {
-      "id": "ema_slope_momentum",
-      "label": "EMA Slope Momentum",
-      "blurb": "Trade in the direction of a rising EMA; optional RSI confirm.",
-      "designIntent": "slope_confirm",
+      "id": "ema_normal_trend_50",
+      "name": "EMA 50 Trend-Follow (Price Cross)",
+      "presetTier": "Normal",
       "riskProfile": "Balanced",
-      "badges": ["Trend", "Momentum"],
-      "tags": ["Close-only", "EMA100", "Rising-EMA", "RSI>50", "Balanced"],
-      "indicators": ["ema", "rsi"],
-      "seedParams": {
-        "ema": { "period": 100 },
-        "rsi": { "length": 14 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "ema.value", "op": "rising", "right": null },
-          { "left": "close", "op": ">", "right": "ema.value" },
-          { "left": "rsi.value", "op": ">", "right": 50, "optional": true }
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "ema", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "ema" },
+          { "left": "ema", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "ema" },
+          { "left": "ema", "op": "falling", "right": null }
         ]
       },
-      "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 2.0 } },
-        "trailingTP": { "params": { "trailPct": 0.6, "activationR": 1.0 } }
-      }
-    },
-    {
-      "id": "ema_clean_trend_filter",
-      "label": "EMA Clean Trend Filter",
-      "blurb": "Simple regime + momentum gate: price above long EMA with RSI confirm.",
-      "designIntent": "momentum_filter",
-      "riskProfile": "Balanced",
-      "badges": ["Momentum", "Regime"],
-      "tags": ["Close-only", "EMA200", "RSI>55", "Filter", "Balanced"],
-      "indicators": ["ema", "rsi"],
-      "seedParams": {
-        "ema": { "period": 200 },
-        "rsi": { "length": 14 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": ">", "right": "ema.value" },
-          { "left": "rsi.value", "op": ">", "right": 55 }
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "ema" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "ema" }
         ]
       },
-      "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 1.9 } },
-        "trailingTP": { "params": { "trailPct": 0.7, "activationR": 1.0 } }
-      }
-    },
-
-    {
-      "id": "ema_reclaim_200_hero",
-      "label": "EMA Reclaim 200 (Hero)",
-      "blurb": "Reclaim the long-term EMA after 3 consecutive closes below it.",
-      "designIntent": "reclaim",
-      "riskProfile": "Balanced",
-      "isHero": true,
-      "badges": ["Trend", "Reclaim"],
-      "tags": ["Close-only", "EMA200", "Consecutive-3", "Reclaim", "Balanced"],
-      "indicators": ["ema", "atr"],
-      "seedParams": {
-        "ema": { "period": 200 },
-        "atr": { "length": 14 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": "<", "right": "ema.value", "lookback": 3, "mode": "consecutive" },
-          { "left": "close", "op": "crosses_above", "right": "ema.value" }
-        ]
-      },
-      "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 2.0 } },
-        "breakeven": { "params": { "activationR": 1.0 } }
-      },
-      "priority": 20,
-      "context": { "trend": { "indicator": "ema", "period": 200, "state": "above_and_rising" } }
+      "riskDefaults": {}
     },
     {
-      "id": "ema_donchian_breakout_hero",
-      "label": "Donchian Breakout + EMA Filter (Hero)",
-      "blurb": "Donchian upper break aligned with long-EMA and rising volatility.",
-      "designIntent": "breakout",
+      "id": "ema_normal_cross_9_21",
+      "name": "EMA 9/21 Crossover Momentum",
+      "presetTier": "Normal",
       "riskProfile": "Aggressive",
-      "isHero": true,
-      "badges": ["Breakout", "Vol Expansion"],
-      "tags": ["Close-only", "Donchian20", "EMA200", "ATR Rising", "Aggressive"],
-      "indicators": ["donchian_channels", "ema", "atr"],
-      "seedParams": {
-        "donchian_channels": { "period": 20 },
-        "ema": { "period": 200 },
-        "atr": { "length": 14 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": "crosses_above", "right": "donchian_channels.upper" },
-          { "left": "close", "op": ">", "right": "ema.value" },
-          { "left": "atr.value", "op": "rising", "right": null }
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "ema", "params": { "length": 9, "source": "close" } },
+        { "id": "ema", "params": { "length": 21, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "ema[9]", "op": "crosses_above", "right": "ema[21]" },
+          { "left": "price", "op": ">", "right": "ema[9]" }
+        ],
+        "short": [
+          { "left": "ema[9]", "op": "crosses_below", "right": "ema[21]" },
+          { "left": "price", "op": "<", "right": "ema[9]" }
         ]
       },
-      "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 2.1 } },
-        "trailingTP": { "params": { "trailPct": 0.7, "activationR": 1.0 } }
+      "exit": {
+        "long": [
+          { "left": "ema[9]", "op": "<", "right": "ema[21]" }
+        ],
+        "short": [
+          { "left": "ema[9]", "op": ">", "right": "ema[21]" }
+        ]
       },
-      "entryConfirmationBars": 1,
-      "context": { "volatility": { "indicator": "atr", "length": 14, "state": "rising_or_high" } }
+      "riskDefaults": {}
     },
     {
-      "id": "ema_zscore_pullback_hero",
-      "label": "Z-Score Pullback + EMA Align (Hero)",
-      "blurb": "Standardized pullback (z-score dip) that resolves back above a medium EMA.",
-      "designIntent": "retest",
+      "id": "ema_normal_filter_200",
+      "name": "EMA 200 Regime Filter",
+      "presetTier": "Normal",
       "riskProfile": "Conservative",
-      "isHero": true,
-      "badges": ["Mean Reversion", "Trend"],
-      "tags": ["Close-only", "Zscore20", "EMA50", "Dip-Buy", "Conservative"],
-      "indicators": ["zscore", "ema"],
-      "seedParams": {
-        "zscore": { "length": 20 },
-        "ema": { "period": 50 }
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "ema", "params": { "length": 200, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "ema" },
+          { "left": "ema", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "ema" },
+          { "left": "ema", "op": "falling", "right": null }
+        ]
       },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "zscore.value", "op": "<", "right": -1.5, "lookback": 5 },
-          { "left": "close", "op": ">", "right": "ema.value" }
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "ema" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "ema" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "ema_hero_breakout_rsi",
+      "name": "EMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "ema", "params": { "length": 20, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "ema" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "ema" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "ema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "ema" }
         ]
       },
       "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 1.8 } },
-        "timeStop": { "params": { "bars": 25 } }
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "ema_hero_stack_momentum",
+      "name": "EMA Hero: Momentum Stack (9/21/50)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "ema", "params": { "length": 9, "source": "close" } },
+        { "id": "ema", "params": { "length": 21, "source": "close" } },
+        { "id": "ema", "params": { "length": 50, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
       },
-      "priority": 16,
-      "minSeparationBars": 6
+      "entry": {
+        "long": [
+          { "left": "ema[9]", "op": ">", "right": "ema[21]" },
+          { "left": "ema[21]", "op": ">", "right": "ema[50]" },
+          { "left": "price", "op": ">", "right": "ema[9]" }
+        ],
+        "short": [
+          { "left": "ema[9]", "op": "<", "right": "ema[21]" },
+          { "left": "ema[21]", "op": "<", "right": "ema[50]" },
+          { "left": "price", "op": "<", "right": "ema[9]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "ema[21]" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "ema[21]" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "ema_hero_pullback_mtf",
+      "name": "EMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "ema", "params": { "length": 34, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "ema" }
+        },
+        "timeWindow": { "session": "Any", "active": true }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "ema" },
+          { "left": "ema", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "ema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "ema" },
+          { "left": "ema", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "ema" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<", "right": "ema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">", "right": "ema" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
     }
   ],
-
   "deprecated": false
 }
