@@ -1,209 +1,345 @@
 {
-  "schemaVersion": "1.0",
-  "version": "1",
-  "id": "sma",
-  "label": "SMA",
-  "category": "Trend",
-  "tier": "CORE",
-  "tags": ["Trend", "Moving Average"],
-  "blurb": "Simple Moving Average (SMA) is the unweighted average price over N periods, often used as a trend filter and dynamic support/resistance.",
-  "longSummary": "SMA smooths price by averaging the last N closes (or chosen source) equally. Longer SMAs (e.g., 200) act as higher-timeframe regime filters, while shorter SMAs (e.g., 20–50) track nearer-term bias. Traders often look for price reclaiming or losing a key SMA, or use pullbacks toward an SMA to align entries with trend. SMA is slower than EMA but can reduce noise for swing styles.",
-  "mathSummary": "SMA_N(t) = (1/N) · Σ_{i=0}^{N-1} price(t-i).",
-  "references": [
-    "https://www.investopedia.com/terms/s/sma.asp"
-  ],
-  "params": {
-    "period": { "type": "int", "default": 200, "min": 2, "max": 500, "step": 1, "unit": "bars" },
-    "source": { "type": "enum", "default": "close", "options": ["close", "open", "high", "low"] },
-    "offset": { "type": "int", "default": 0, "min": -50, "max": 50, "step": 1, "unit": "bars" }
+  "identity": {
+    "id": "sma",
+    "label": "SMA (Simple Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Moving Average", "Support/Resistance", "Filter"]
   },
-  "outputs": ["value"],
-  "supportedOperators": [
-    ">",
-    ">=",
-    "<",
-    "<=",
-    "==",
-    "crosses_above",
-    "crosses_below",
-    "rising",
-    "falling",
-    "within",
-    "outside"
-  ],
-  "signals": {
-    "bullish": [
-      { "name": "Price crosses above SMA", "left": "close", "op": "crosses_above", "right": "sma.value" },
-      { "name": "SMA rising", "left": "sma.value", "op": "rising", "lookback": 3 }
-    ],
-    "bearish": [
-      { "name": "Price crosses below SMA", "left": "close", "op": "crosses_below", "right": "sma.value" },
-      { "name": "SMA falling", "left": "sma.value", "op": "falling", "lookback": 3 }
+  "docs": {
+    "blurb": "The Simple Moving Average (SMA) smooths price by averaging the last N bars, helping visualize trend direction and dynamic support/resistance.",
+    "longSummary": "SMA is calculated as the arithmetic mean of prices over a specified lookback. Rising SMAs often indicate uptrends, while falling SMAs suggest downtrends. Traders use price/MA crossovers, MA stacks (e.g., 20/50/200), and pullbacks to an SMA within a dominant trend. SMA can also serve as a higher-timeframe regime filter to avoid counter-trend trades.",
+    "mathSummary": "SMAₙ(t) = (1/n) × Σ_{i=0}^{n-1} Price(t−i).",
+    "references": [
+      {
+        "label": "Investopedia — Simple Moving Average (SMA)",
+        "url": "https://www.investopedia.com/terms/s/sma.asp"
+      }
     ]
   },
+  "params": [
+    {
+      "key": "length",
+      "label": "SMA Length",
+      "type": "integer",
+      "default": 50,
+      "min": 2,
+      "max": 500,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    }
+  ],
+  "outputs": ["sma"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "price_above_sma",
+      "label": "Price Above SMA",
+      "when": [
+        { "left": "price", "op": ">", "right": "sma" }
+      ]
+    },
+    {
+      "id": "bull_cross",
+      "label": "Bullish Price Crosses Above SMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "sma" }
+      ]
+    },
+    {
+      "id": "bear_cross",
+      "label": "Bearish Price Crosses Below SMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "sma" }
+      ]
+    }
+  ],
   "ui": {
     "tooltips": {
-      "_indicator": "Simple Moving Average over N periods; longer = smoother, slower.",
-      "period": "Number of periods to average. Common: 20, 50, 200.",
-      "source": "Price source used to compute SMA.",
-      "offset": "Shift the SMA forward/backward for visualization or testing."
-    },
-    "badges": ["Trend"]
+      "_indicator": "SMA smooths price over a fixed window to reveal trend direction and dynamic support/resistance.",
+      "length": "Number of bars to average. Longer = smoother but slower.",
+      "source": "Which price series to average for the SMA."
+    }
   },
   "constraints": {
-    "recommendedTimeframes": ["15m", "1h", "4h"]
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "Shorter timeframes can be noisy; consider longer lengths or trend filters."
   },
   "examples": [
-    { "name": "SMA Reclaim (Normal)", "presetRef": "sma_reclaim_normal" },
-    { "name": "SMA Pullback Re-entry (Normal)", "presetRef": "sma_pullback_normal" },
-    { "name": "SMA Rising Filter (Normal)", "presetRef": "sma_rising_filter_normal" },
-    { "name": "SMA + RSI Momentum (Hero)", "presetRef": "sma_rsi_momentum_hero" },
-    { "name": "SMA Breakout Confirm (Hero)", "presetRef": "sma_breakout_confirm_hero" },
-    { "name": "SMA Volatility Bias (Hero)", "presetRef": "sma_volatility_bias_hero" }
+    { "name": "SMA 50 Trend-Follow (Price Cross)", "presetRef": "sma_normal_trend_50" },
+    { "name": "SMA 20 Pullback in SMA50 Uptrend", "presetRef": "sma_normal_pullback_20_50" },
+    { "name": "SMA 200 Regime Filter", "presetRef": "sma_normal_filter_200" },
+    { "name": "SMA Hero: Breakout + RSI Confirm", "presetRef": "sma_hero_breakout_rsi" },
+    { "name": "SMA Hero: Momentum Stack (20/50/200)", "presetRef": "sma_hero_stack_momentum" },
+    { "name": "SMA Hero: Pullback + MTF Align", "presetRef": "sma_hero_pullback_mtf" }
   ],
   "riskTemplates": {
     "atrStop": {
       "enabledDefault": false,
-      "params": { "atrLength": 14, "mult": 2.0 },
-      "tooltip": "Protective stop at ATR × multiple; adapts to volatility."
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": {
+        "atrPeriod": 14,
+        "atrMult": 1.5
+      }
     },
     "trailingTP": {
       "enabledDefault": false,
-      "params": { "trailPct": 0.7, "activationR": 1.0 },
-      "tooltip": "Trail profit once trade reaches a threshold."
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": {
+        "type": "percent",
+        "percent": 0.8
+      }
     },
     "breakeven": {
       "enabledDefault": false,
-      "params": { "activationR": 1.0 },
-      "tooltip": "Move stop to entry after reaching +R."
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": {
+        "triggerPercent": 1.0,
+        "offsetPercent": 0.05
+      }
     },
     "timeStop": {
       "enabledDefault": false,
-      "params": { "bars": 30 },
-      "tooltip": "Exit after a maximum number of bars."
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": {
+        "maxBars": 120
+      }
     }
   },
   "presets": [
     {
-      "id": "sma_reclaim_normal",
-      "label": "SMA Reclaim (Normal)",
-      "blurb": "Enter when price reclaims a long SMA.",
-      "indicators": ["sma"],
-      "seedParams": {
-        "sma": { "period": 200, "source": "close", "offset": 0 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": "crosses_above", "right": "sma.value" }
+      "id": "sma_normal_trend_50",
+      "name": "SMA 50 Trend-Follow (Price Cross)",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "sma", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "sma" },
+          { "left": "sma", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "sma" },
+          { "left": "sma", "op": "falling", "right": null }
         ]
       },
-      "riskDefaults": {},
-      "badges": ["Trend", "Reclaim"]
-    },
-    {
-      "id": "sma_pullback_normal",
-      "label": "SMA Pullback Re-entry (Normal)",
-      "blurb": "Buy the dip: brief dip below SMA then reclaim.",
-      "indicators": ["sma"],
-      "seedParams": {
-        "sma": { "period": 200, "source": "close", "offset": 0 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": "<", "right": "sma.value", "lookback": 3 },
-          { "left": "close", "op": "crosses_above", "right": "sma.value" }
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "sma" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "sma" }
         ]
       },
-      "riskDefaults": {},
-      "badges": ["Trend", "Pullback"]
+      "riskDefaults": {}
     },
     {
-      "id": "sma_rising_filter_normal",
-      "label": "SMA Rising Filter (Normal)",
-      "blurb": "Trade only when SMA is rising.",
-      "indicators": ["sma"],
-      "seedParams": {
-        "sma": { "period": 50, "source": "close", "offset": 0 }
-      },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "sma.value", "op": "rising", "lookback": 3 },
-          { "left": "close", "op": ">", "right": "sma.value" }
+      "id": "sma_normal_pullback_20_50",
+      "name": "SMA 20 Pullback in SMA50 Uptrend",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Pullback",
+      "extras": [],
+      "indicators": [
+        { "id": "sma", "params": { "length": 20, "source": "close" } },
+        { "id": "sma", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "sma[50]" },
+          { "left": "sma[50]", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "sma[20]" }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "sma[50]" },
+          { "left": "sma[50]", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "sma[20]" }
         ]
       },
-      "riskDefaults": {},
-      "badges": ["Trend", "Filter"]
+      "exit": {
+        "long": [
+          { "left": "price", "op": ">", "right": "sma[20]" },
+          { "left": "price", "op": "outside", "right": [0, 999999] }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "sma[20]" },
+          { "left": "price", "op": "outside", "right": [ -999999, 0 ] }
+        ]
+      },
+      "riskDefaults": {}
     },
     {
-      "id": "sma_rsi_momentum_hero",
-      "label": "SMA + RSI Momentum (Hero)",
-      "blurb": "SMA trend plus RSI momentum confirmation with cooldown.",
-      "indicators": ["sma", "rsi"],
-      "seedParams": {
-        "sma": { "period": 200, "source": "close", "offset": 0 },
-        "rsi": { "length": 14, "source": "close", "obLevel": 55, "osLevel": 45 }
+      "id": "sma_normal_filter_200",
+      "name": "SMA 200 Regime Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "sma", "params": { "length": 200, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "sma" },
+          { "left": "sma", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "sma" },
+          { "left": "sma", "op": "falling", "right": null }
+        ]
       },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": ">", "right": "sma.value" },
-          { "left": "rsi.value", "op": ">", "right": 55 },
-          { "left": "signalCooldown.bars", "op": ">=", "right": 10 }
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "sma" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "sma" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "sma_hero_breakout_rsi",
+      "name": "SMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "sma", "params": { "length": 20, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "sma" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "sma" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "sma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "sma" }
         ]
       },
       "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 2.0 } },
-        "breakeven": { "params": { "activationR": 1.0 } }
-      },
-      "badges": ["Hero", "Momentum", "Cooldown"]
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 0.9 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
     },
     {
-      "id": "sma_breakout_confirm_hero",
-      "label": "SMA Breakout Confirm (Hero)",
-      "blurb": "Above SMA with Donchian breakout and session filter.",
-      "indicators": ["sma", "donchian_channels"],
-      "seedParams": {
-        "sma": { "period": 200, "source": "close", "offset": 0 },
-        "donchian_channels": { "period": 20 }
+      "id": "sma_hero_stack_momentum",
+      "name": "SMA Hero: Momentum Stack (20/50/200)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "sma", "params": { "length": 20, "source": "close" } },
+        { "id": "sma", "params": { "length": 50, "source": "close" } },
+        { "id": "sma", "params": { "length": 200, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
       },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": ">", "right": "sma.value" },
-          { "left": "close", "op": ">", "right": "donchian_channels.upper" },
-          { "left": "sessionFilter.window", "op": "within", "right": ["09:00", "17:00"] }
+      "entry": {
+        "long": [
+          { "left": "sma[20]", "op": ">", "right": "sma[50]" },
+          { "left": "sma[50]", "op": ">", "right": "sma[200]" },
+          { "left": "price", "op": ">", "right": "sma[20]" }
+        ],
+        "short": [
+          { "left": "sma[20]", "op": "<", "right": "sma[50]" },
+          { "left": "sma[50]", "op": "<", "right": "sma[200]" },
+          { "left": "price", "op": "<", "right": "sma[20]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "sma[50]" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "sma[50]" }
         ]
       },
       "riskDefaults": {
-        "trailingTP": { "params": { "trailPct": 0.6, "activationR": 1.0 } },
-        "timeStop": { "params": { "bars": 40 } }
-      },
-      "badges": ["Hero", "Breakout", "Session"]
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
     },
     {
-      "id": "sma_volatility_bias_hero",
-      "label": "SMA Volatility Bias (Hero)",
-      "blurb": "Trade with SMA trend only within a volatility band and long bias.",
-      "indicators": ["sma", "atr"],
-      "seedParams": {
-        "sma": { "period": 200, "source": "close", "offset": 0 },
-        "atr": { "length": 14, "smoothing": "wilder", "outputMode": "percent", "percentScale": 100.0 }
+      "id": "sma_hero_pullback_mtf",
+      "name": "SMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "sma", "params": { "length": 34, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "sma" }
+        },
+        "timeWindow": {
+          "session": "Any",
+          "active": true
+        }
       },
-      "rules": {
-        "joiner": "AND",
-        "rules": [
-          { "left": "close", "op": ">", "right": "sma.value" },
-          { "left": "atr.value", "op": "within", "right": [0.3, 0.8] },
-          { "left": "directionBias", "op": "==", "right": "long" }
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "sma" },
+          { "left": "sma", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "sma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "sma" },
+          { "left": "sma", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "sma" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<", "right": "sma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">", "right": "sma" }
         ]
       },
       "riskDefaults": {
-        "atrStop": { "params": { "atrLength": 14, "mult": 2.2 } }
-      },
-      "badges": ["Hero", "Volatility", "Bias"]
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
     }
   ],
   "deprecated": false
