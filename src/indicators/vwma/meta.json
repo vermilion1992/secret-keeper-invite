@@ -1,0 +1,311 @@
+{
+  "identity": {
+    "id": "vwma",
+    "label": "VWMA (Volume-Weighted Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Moving Average", "Volume-Weighted", "Support/Resistance", "Filter"]
+  },
+  "docs": {
+    "blurb": "The Volume-Weighted Moving Average (VWMA) weights price by traded volume, emphasizing levels formed on heavier participation.",
+    "longSummary": "VWMA gives more influence to bars with higher volume, often tracking trend strength better than equal-weighted averages. It can help distinguish high-participation moves from low-volume drift and is commonly used for price/VWMA cross entries, dual-VWMA crossovers, and as a dynamic support/resistance guide. In trending markets, shorter VWMAs react quickly while longer VWMAs serve as regime filters. Pairing VWMA with momentum or volatility filters may reduce whipsaws on fast charts.",
+    "mathSummary": "VWMAₙ(t) = Σ_{i=0..n−1}[Price(t−i)·Vol(t−i)] ÷ Σ_{i=0..n−1}[Vol(t−i)].",
+    "references": [
+      {
+        "label": "Investopedia — Moving Average (MA)",
+        "url": "https://www.investopedia.com/terms/m/movingaverage.asp"
+      },
+      {
+        "label": "Investopedia — Volume-Weighted Average Price (VWAP)",
+        "url": "https://www.investopedia.com/terms/v/vwap.asp"
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "length",
+      "label": "VWMA Length",
+      "type": "integer",
+      "default": 50,
+      "min": 2,
+      "max": 500,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "priceSource",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    },
+    {
+      "key": "volumeField",
+      "label": "Volume Field",
+      "type": "enum",
+      "options": ["volume"],
+      "default": "volume"
+    }
+  ],
+  "outputs": ["vwma"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "bull_price_cross",
+      "label": "Bullish Price Crosses Above VWMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "vwma" }
+      ]
+    },
+    {
+      "id": "bear_price_cross",
+      "label": "Bearish Price Crosses Below VWMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "vwma" }
+      ]
+    }
+  ],
+  "ui": {
+    "tooltips": {
+      "_indicator": "VWMA weights price by volume, highlighting levels formed with stronger participation.",
+      "length": "Lookback for the volume-weighted average. Shorter = faster, noisier; longer = smoother.",
+      "priceSource": "Price input used in the VWMA numerator.",
+      "volumeField": "Volume series used as weights."
+    }
+  },
+  "constraints": {
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "On illiquid symbols, VWMA may behave erratically; consider longer lengths or additional filters."
+  },
+  "examples": [
+    { "name": "VWMA 50 Trend-Follow (Price Cross)", "presetRef": "vwma_normal_trend_50" },
+    { "name": "VWMA 20 Pullback in VWMA50 Uptrend", "presetRef": "vwma_normal_pullback_20_50" },
+    { "name": "VWMA 200 Regime Filter", "presetRef": "vwma_normal_filter_200" },
+    { "name": "VWMA Hero: Breakout + RSI Confirm", "presetRef": "vwma_hero_breakout_rsi" },
+    { "name": "VWMA Hero: Momentum Stack (20/50/200)", "presetRef": "vwma_hero_stack_momentum" },
+    { "name": "VWMA Hero: Pullback + MTF Align", "presetRef": "vwma_hero_pullback_mtf" }
+  },
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
+    }
+  },
+  "presets": [
+    {
+      "id": "vwma_normal_trend_50",
+      "name": "VWMA 50 Trend-Follow (Price Cross)",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "vwma", "params": { "length": 50, "priceSource": "close", "volumeField": "volume" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "vwma" },
+          { "left": "vwma", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "vwma" },
+          { "left": "vwma", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [{ "left": "price", "op": "crosses_below", "right": "vwma" }],
+        "short": [{ "left": "price", "op": "crosses_above", "right": "vwma" }]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "vwma_normal_pullback_20_50",
+      "name": "VWMA 20 Pullback in VWMA50 Uptrend",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Pullback",
+      "extras": [],
+      "indicators": [
+        { "id": "vwma", "params": { "length": 20, "priceSource": "close", "volumeField": "volume" } },
+        { "id": "vwma", "params": { "length": 50, "priceSource": "close", "volumeField": "volume" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "vwma[50]" },
+          { "left": "vwma[50]", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "vwma[20]" }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "vwma[50]" },
+          { "left": "vwma[50]", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "vwma[20]" }
+        ]
+      },
+      "exit": {
+        "long": [{ "left": "price", "op": "<=", "right": "vwma[20]" }],
+        "short": [{ "left": "price", "op": ">=", "right": "vwma[20]" }]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "vwma_normal_filter_200",
+      "name": "VWMA 200 Regime Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "vwma", "params": { "length": 200, "priceSource": "close", "volumeField": "volume" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "vwma" },
+          { "left": "vwma", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "vwma" },
+          { "left": "vwma", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [{ "left": "price", "op": "crosses_below", "right": "vwma" }],
+        "short": [{ "left": "price", "op": "crosses_above", "right": "vwma" }]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "vwma_hero_breakout_rsi",
+      "name": "VWMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "vwma", "params": { "length": 20, "priceSource": "close", "volumeField": "volume" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "vwma" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "vwma" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [{ "left": "price", "op": "<=", "right": "vwma" }],
+        "short": [{ "left": "price", "op": ">=", "right": "vwma" }]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "vwma_hero_stack_momentum",
+      "name": "VWMA Hero: Momentum Stack (20/50/200)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "vwma", "params": { "length": 20, "priceSource": "close", "volumeField": "volume" } },
+        { "id": "vwma", "params": { "length": 50, "priceSource": "close", "volumeField": "volume" } },
+        { "id": "vwma", "params": { "length": 200, "priceSource": "close", "volumeField": "volume" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
+      },
+      "entry": {
+        "long": [
+          { "left": "vwma[20]", "op": ">", "right": "vwma[50]" },
+          { "left": "vwma[50]", "op": ">", "right": "vwma[200]" },
+          { "left": "price", "op": ">", "right": "vwma[20]" }
+        ],
+        "short": [
+          { "left": "vwma[20]", "op": "<", "right": "vwma[50]" },
+          { "left": "vwma[50]", "op": "<", "right": "vwma[200]" },
+          { "left": "price", "op": "<", "right": "vwma[20]" }
+        ]
+      },
+      "exit": {
+        "long": [{ "left": "price", "op": "crosses_below", "right": "vwma[50]" }],
+        "short": [{ "left": "price", "op": "crosses_above", "right": "vwma[50]" }]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "vwma_hero_pullback_mtf",
+      "name": "VWMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "vwma", "params": { "length": 34, "priceSource": "close", "volumeField": "volume" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "vwma" }
+        },
+        "timeWindow": { "session": "Any", "active": true }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "vwma" },
+          { "left": "vwma", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "vwma" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "vwma" },
+          { "left": "vwma", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "vwma" }
+        ]
+      },
+      "exit": {
+        "long": [{ "left": "price", "op": "<", "right": "vwma" }],
+        "short": [{ "left": "price", "op": ">", "right": "vwma" }]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
+    }
+  ],
+  "deprecated": false
+}
