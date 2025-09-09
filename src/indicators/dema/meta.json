@@ -1,0 +1,321 @@
+{
+  "identity": {
+    "id": "dema",
+    "label": "DEMA (Double Exponential Moving Average)",
+    "category": "Trend",
+    "tier": "CORE",
+    "tags": ["Trend", "Moving Average", "Support/Resistance", "Filter"]
+  },
+  "docs": {
+    "blurb": "The Double Exponential Moving Average (DEMA) reduces lag versus traditional MAs by combining two EMAs.",
+    "longSummary": "DEMA is designed to respond faster to price changes while remaining relatively smooth. It is constructed by doubling an EMA and subtracting a second EMA of that EMA, which cancels some lag. Traders use price/DEMA crosses for trend-following, dual-DEMA crossovers for momentum entries, and higher-length DEMAs as regime filters. Stacked DEMA structures (e.g., 9/21/50) can clarify directional bias and pullback opportunities.",
+    "mathSummary": "DEMAₙ = 2·EMA(price, n) − EMA(EMA(price, n), n).",
+    "references": [
+      {
+        "label": "Investopedia — Double Exponential Moving Average (DEMA)",
+        "url": "https://www.investopedia.com/terms/d/double-exponential-moving-average.asp"
+      }
+    ]
+  },
+  "params": [
+    {
+      "key": "length",
+      "label": "DEMA Length",
+      "type": "integer",
+      "default": 50,
+      "min": 2,
+      "max": 500,
+      "step": 1,
+      "unit": "bars"
+    },
+    {
+      "key": "source",
+      "label": "Price Source",
+      "type": "enum",
+      "options": ["close", "open", "high", "low", "hl2", "hlc3", "ohlc4"],
+      "default": "close"
+    }
+  ],
+  "outputs": ["dema"],
+  "supportedOperators": [">", ">=", "<", "<=", "==", "crosses_above", "crosses_below", "rising", "falling", "within", "outside"],
+  "signals": [
+    {
+      "id": "bull_price_cross",
+      "label": "Bullish Price Crosses Above DEMA",
+      "when": [
+        { "left": "price", "op": "crosses_above", "right": "dema" }
+      ]
+    },
+    {
+      "id": "bear_price_cross",
+      "label": "Bearish Price Crosses Below DEMA",
+      "when": [
+        { "left": "price", "op": "crosses_below", "right": "dema" }
+      ]
+    }
+  ],
+  "ui": {
+    "tooltips": {
+      "_indicator": "DEMA combines two EMAs to reduce lag while keeping a smooth trend line.",
+      "length": "Bars used for DEMA. Shorter = faster, noisier; longer = smoother, slower.",
+      "source": "Price series used to compute the DEMA."
+    }
+  },
+  "constraints": {
+    "recommendedTimeframes": ["5m", "15m", "1h", "4h", "1D"],
+    "notes": "On highly volatile pairs, consider slightly longer lengths or add a secondary trend filter."
+  },
+  "examples": [
+    { "name": "DEMA 50 Trend-Follow (Price Cross)", "presetRef": "dema_normal_trend_50" },
+    { "name": "DEMA 9/21 Crossover Momentum", "presetRef": "dema_normal_cross_9_21" },
+    { "name": "DEMA 200 Regime Filter", "presetRef": "dema_normal_filter_200" },
+    { "name": "DEMA Hero: Breakout + RSI Confirm", "presetRef": "dema_hero_breakout_rsi" },
+    { "name": "DEMA Hero: Momentum Stack (9/21/50)", "presetRef": "dema_hero_stack_momentum" },
+    { "name": "DEMA Hero: Pullback + MTF Align", "presetRef": "dema_hero_pullback_mtf" }
+  ],
+  "riskTemplates": {
+    "atrStop": {
+      "enabledDefault": false,
+      "tooltip": "Places stop a multiple of ATR from entry.",
+      "params": { "atrPeriod": 14, "atrMult": 1.6 }
+    },
+    "trailingTP": {
+      "enabledDefault": false,
+      "tooltip": "Locks in profits with a trailing take-profit.",
+      "params": { "type": "percent", "percent": 0.9 }
+    },
+    "breakeven": {
+      "enabledDefault": false,
+      "tooltip": "Moves stop to entry after a defined unrealized gain.",
+      "params": { "triggerPercent": 1.1, "offsetPercent": 0.05 }
+    },
+    "timeStop": {
+      "enabledDefault": false,
+      "tooltip": "Exits after a fixed number of bars.",
+      "params": { "maxBars": 120 }
+    }
+  },
+  "presets": [
+    {
+      "id": "dema_normal_trend_50",
+      "name": "DEMA 50 Trend-Follow (Price Cross)",
+      "presetTier": "Normal",
+      "riskProfile": "Balanced",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "dema", "params": { "length": 50, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "dema" },
+          { "left": "dema", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "dema" },
+          { "left": "dema", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "dema" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "dema" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "dema_normal_cross_9_21",
+      "name": "DEMA 9/21 Crossover Momentum",
+      "presetTier": "Normal",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": [],
+      "indicators": [
+        { "id": "dema", "params": { "length": 9, "source": "close" } },
+        { "id": "dema", "params": { "length": 21, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "dema[9]", "op": "crosses_above", "right": "dema[21]" },
+          { "left": "price", "op": ">", "right": "dema[9]" }
+        ],
+        "short": [
+          { "left": "dema[9]", "op": "crosses_below", "right": "dema[21]" },
+          { "left": "price", "op": "<", "right": "dema[9]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "dema[9]", "op": "<", "right": "dema[21]" }
+        ],
+        "short": [
+          { "left": "dema[9]", "op": ">", "right": "dema[21]" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "dema_normal_filter_200",
+      "name": "DEMA 200 Regime Filter",
+      "presetTier": "Normal",
+      "riskProfile": "Conservative",
+      "designIntent": "Filter",
+      "extras": [],
+      "indicators": [
+        { "id": "dema", "params": { "length": 200, "source": "close" } }
+      ],
+      "entry": {
+        "long": [
+          { "left": "price", "op": ">", "right": "dema" },
+          { "left": "dema", "op": "rising", "right": null }
+        ],
+        "short": [
+          { "left": "price", "op": "<", "right": "dema" },
+          { "left": "dema", "op": "falling", "right": null }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "dema" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "dema" }
+        ]
+      },
+      "riskDefaults": {}
+    },
+    {
+      "id": "dema_hero_breakout_rsi",
+      "name": "DEMA Hero: Breakout + RSI Confirm",
+      "presetTier": "Hero",
+      "riskProfile": "Balanced",
+      "designIntent": "Breakout",
+      "extras": ["confirmationIndicator", "signalCooldown"],
+      "indicators": [
+        { "id": "dema", "params": { "length": 20, "source": "close" } },
+        { "id": "rsi", "params": { "length": 14, "source": "close", "upper": 70, "lower": 30, "middle": 50, "smooth": true } }
+      ],
+      "extrasConfig": {
+        "confirmationIndicator": {
+          "id": "rsi",
+          "mode": "momentumAboveMid",
+          "rule": { "left": "rsi", "op": ">", "right": 50 }
+        },
+        "signalCooldown": { "bars": 10 }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "crosses_above", "right": "dema" },
+          { "left": "rsi", "op": ">", "right": 50 }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_below", "right": "dema" },
+          { "left": "rsi", "op": "<", "right": 50 }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "dema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "dema" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.7 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.0 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 1.2, "offsetPercent": 0.05 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 96 } }
+      }
+    },
+    {
+      "id": "dema_hero_stack_momentum",
+      "name": "DEMA Hero: Momentum Stack (9/21/50)",
+      "presetTier": "Hero",
+      "riskProfile": "Aggressive",
+      "designIntent": "Momentum",
+      "extras": ["priority", "riskGuard"],
+      "indicators": [
+        { "id": "dema", "params": { "length": 9, "source": "close" } },
+        { "id": "dema", "params": { "length": 21, "source": "close" } },
+        { "id": "dema", "params": { "length": 50, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "priority": { "tier": 2 },
+        "riskGuard": { "maxOpenPositions": 6, "dailyMaxDrawdownPct": 6.0 }
+      },
+      "entry": {
+        "long": [
+          { "left": "dema[9]", "op": ">", "right": "dema[21]" },
+          { "left": "dema[21]", "op": ">", "right": "dema[50]" },
+          { "left": "price", "op": ">", "right": "dema[9]" }
+        ],
+        "short": [
+          { "left": "dema[9]", "op": "<", "right": "dema[21]" },
+          { "left": "dema[21]", "op": "<", "right": "dema[50]" },
+          { "left": "price", "op": "<", "right": "dema[9]" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "crosses_below", "right": "dema[21]" }
+        ],
+        "short": [
+          { "left": "price", "op": "crosses_above", "right": "dema[21]" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 2.0 } },
+        "trailingTP": { "enabledDefault": false, "params": { "type": "percent", "percent": 1.2 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 72 } }
+      }
+    },
+    {
+      "id": "dema_hero_pullback_mtf",
+      "name": "DEMA Hero: Pullback + MTF Align",
+      "presetTier": "Hero",
+      "riskProfile": "Conservative",
+      "designIntent": "Pullback",
+      "extras": ["multiTFConfirm", "timeWindow"],
+      "indicators": [
+        { "id": "dema", "params": { "length": 34, "source": "close" } }
+      ],
+      "extrasConfig": {
+        "multiTFConfirm": {
+          "higherTF": "4h",
+          "rule": { "left": "price", "op": ">", "right": "dema" }
+        },
+        "timeWindow": { "session": "Any", "active": true }
+      },
+      "entry": {
+        "long": [
+          { "left": "price", "op": "<=", "right": "dema" },
+          { "left": "dema", "op": "rising", "right": null },
+          { "left": "price", "op": "crosses_above", "right": "dema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">=", "right": "dema" },
+          { "left": "dema", "op": "falling", "right": null },
+          { "left": "price", "op": "crosses_below", "right": "dema" }
+        ]
+      },
+      "exit": {
+        "long": [
+          { "left": "price", "op": "<", "right": "dema" }
+        ],
+        "short": [
+          { "left": "price", "op": ">", "right": "dema" }
+        ]
+      },
+      "riskDefaults": {
+        "atrStop": { "enabledDefault": false, "params": { "atrPeriod": 14, "atrMult": 1.6 } },
+        "breakeven": { "enabledDefault": false, "params": { "triggerPercent": 0.9, "offsetPercent": 0.03 } },
+        "timeStop": { "enabledDefault": false, "params": { "maxBars": 144 } }
+      }
+    }
+  ],
+  "deprecated": false
+}
