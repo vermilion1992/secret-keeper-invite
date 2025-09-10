@@ -129,8 +129,8 @@ export const useIndicatorCatalog = create<CatalogState>((set, get) => ({
   load: () => {
     // Use multiple glob roots to avoid env path issues (Lovable/Vite)
     const g1 = import.meta.glob("/src/indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
-    const g2 = import.meta.glob("src/indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
-    const g3 = import.meta.glob("./indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
+    const g2 = import.meta.glob("./indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
+    const g3 = import.meta.glob("../indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
     const files = Object.keys(g1).length + Object.keys(g2).length + Object.keys(g3).length
       ? { ...g1, ...g2, ...g3 }
       : FALLBACK;
