@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import IndicatorsPage from "./pages/Indicators";
+import IndicatorDetail from "./pages/IndicatorDetail";
 import NotFound from "./pages/NotFound";
 import StrategyBuilder from "./pages/StrategyBuilder";
 import BotCommunity from "./pages/BotCommunity";
@@ -31,6 +33,8 @@ const App = () => (
               <Route path="/bot-community" element={<BotCommunity />} />
               <Route path="/my-bots" element={<MyBots />} />
               <Route path="/ai-chat" element={<AIChat />} />
+              <Route path="/indicators" element={<IndicatorsPage />} />
+              <Route path="/indicator/:id" element={<IndicatorDetail />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

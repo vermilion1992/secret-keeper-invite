@@ -1,178 +1,158 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Catalog, IndicatorMeta, DesignIntent, IndicatorCategory, PresetMeta } from '@/types/indicator-catalog';
+import { create } from "zustand";
+import type { Catalog, IndicatorMeta, PresetMeta, DesignIntent } from "./indicatorTypes";
+import { FALLBACK } from "./indicatorCatalogFallback";
 
-interface IndicatorCatalogStore {
-  catalog: Catalog | null;
-  isLoaded: boolean;
-  error: string | null;
-  toastShown: boolean;
-  loadCatalog: () => Promise<void>;
-  setToastShown: () => void;
-}
+const INTENTS: DesignIntent[] = ["Breakout","Pullback","Filter","Momentum","MeanReversion"];
 
-// Available indicators to scan
-const AVAILABLE_INDICATORS = [
-  'atr', 'dema', 'ema', 'hma', 'kama', 'macd', 'rsi', 'sma', 'tema', 'vwma', 'wma'
-];
+function toUnix(p: string) { return p.replace(/\\/g, "/"); }
 
-const VALID_DESIGN_INTENTS: DesignIntent[] = [
-  "Breakout", "Pullback", "Filter", "Momentum", "MeanReversion"
-];
+function validateIndicator(path: string, data: any): IndicatorMeta | null {
+  const p = toUnix(path);
+  const parts = p.split("/");
+  const ix = parts.lastIndexOf("indicators");
+  const folder = ix >= 0 ? parts[ix + 1] : undefined;
 
-const VALID_CATEGORIES: IndicatorCategory[] = [
-  "Trend", "Momentum", "Volatility", "Volume", "Other"
-];
+  const id: string | undefined = data?.identity?.id;
+  const label: string | undefined = data?.identity?.label;
+  const category: any = data?.identity?.category;
+  const tier: any = data?.identity?.tier;
+  const tags: string[] = Array.isArray(data?.identity?.tags) ? data.identity.tags : (data?.tags ?? []);
 
-/**
- * Validate a single preset for required fields and enum values
- */
-function validatePreset(preset: any, indicatorId: string): PresetMeta | null {
-  try {
-    if (!preset.id || !preset.name || !preset.designIntent || !preset.riskProfile) {
-      console.warn(`Preset missing required fields in ${indicatorId}:`, preset.id);
-      return null;
-    }
-
-    if (!VALID_DESIGN_INTENTS.includes(preset.designIntent)) {
-      console.warn(`Invalid designIntent "${preset.designIntent}" in ${indicatorId}:${preset.id}`);
-      return null;
-    }
-
-    if (!["Conservative", "Balanced", "Aggressive"].includes(preset.riskProfile)) {
-      console.warn(`Invalid riskProfile "${preset.riskProfile}" in ${indicatorId}:${preset.id}`);
-      return null;
-    }
-
-    return {
-      id: preset.id,
-      name: preset.name,
-      presetTier: preset.presetTier || "Normal",
-      designIntent: preset.designIntent,
-      riskProfile: preset.riskProfile,
-      ...preset // Include all other properties
-    };
-  } catch (error) {
-    console.warn(`Error validating preset in ${indicatorId}:`, error);
+  if (!id || !folder || id !== folder) {
+    console.warn(`[catalog] skip: id/folder mismatch`, { path, id, folder });
     return null;
   }
-}
+  if (!label || !category || !tier) {
+    console.warn(`[catalog] skip: missing identity fields`, { path, id, label, category, tier });
+    return null;
+  }
 
-/**
- * Load and validate a single indicator
- */
-async function loadIndicator(indicatorId: string): Promise<IndicatorMeta | null> {
-  try {
-    const meta = await import(`@/indicators/${indicatorId}/meta.json`);
-    
-    // Validate structure
-    if (!meta.identity?.id || !meta.identity?.label || !meta.identity?.category) {
-      console.warn(`Invalid structure in ${indicatorId}/meta.json`);
-      return null;
-    }
-
-    // Validate folder name matches identity.id
-    if (meta.identity.id !== indicatorId) {
-      console.warn(`Folder name "${indicatorId}" doesn't match identity.id "${meta.identity.id}"`);
-      return null;
-    }
-
-    // Validate category
-    if (!VALID_CATEGORIES.includes(meta.identity.category)) {
-      console.warn(`Invalid category "${meta.identity.category}" in ${indicatorId}`);
-      return null;
-    }
-
-    // Validate and filter presets
-    const validPresets: PresetMeta[] = [];
-    if (meta.presets && Array.isArray(meta.presets)) {
-      for (const preset of meta.presets) {
-        const validPreset = validatePreset(preset, indicatorId);
-        if (validPreset) {
-          validPresets.push(validPreset);
-        }
+  const rawPresets: any[] = Array.isArray(data?.presets) ? data.presets : [];
+  const presets: PresetMeta[] = rawPresets
+    .map((p) => {
+      const ok =
+        p?.id && p?.name &&
+        (p?.presetTier === "Normal" || p?.presetTier === "Hero") &&
+        INTENTS.includes(p?.designIntent) &&
+        ["Conservative","Balanced","Aggressive"].includes(p?.riskProfile);
+      if (!ok) {
+        console.warn(`[catalog] preset skipped`, { path, presetId: p?.id, reason: "invalid fields" });
+        return null;
       }
-    }
+      return {
+        id: p.id,
+        name: p.name,
+        presetTier: p.presetTier,
+        designIntent: p.designIntent,
+        riskProfile: p.riskProfile
+      } as PresetMeta;
+    })
+    .filter(Boolean) as PresetMeta[];
 
-    return {
-      id: meta.identity.id,
-      label: meta.identity.label,
-      category: meta.identity.category,
-      tier: meta.identity.tier || "CORE",
-      tags: meta.identity.tags || [],
-      presets: validPresets,
-      blurb: meta.docs?.blurb
-    };
-  } catch (error) {
-    console.warn(`Failed to load ${indicatorId}:`, error);
+  if (presets.length === 0) {
+    console.warn(`[catalog] skip: no valid presets`, { path, id });
     return null;
   }
-}
-
-/**
- * Build the catalog by scanning all available indicators
- */
-async function buildCatalog(): Promise<Catalog> {
-  const indicators: IndicatorMeta[] = [];
-  
-  // Load all indicators in parallel
-  const results = await Promise.allSettled(
-    AVAILABLE_INDICATORS.map(id => loadIndicator(id))
-  );
-
-  results.forEach((result, index) => {
-    if (result.status === 'fulfilled' && result.value) {
-      indicators.push(result.value);
-    } else {
-      console.warn(`Failed to load indicator ${AVAILABLE_INDICATORS[index]}`);
-    }
-  });
-
-  // Derive unique design intents and categories from loaded data
-  const allDesignIntents = new Set<DesignIntent>();
-  const allCategories = new Set<IndicatorCategory>();
-
-  indicators.forEach(indicator => {
-    allCategories.add(indicator.category);
-    indicator.presets.forEach(preset => {
-      allDesignIntents.add(preset.designIntent);
-    });
-  });
 
   return {
-    indicators,
-    allDesignIntents: Array.from(allDesignIntents).sort(),
-    allCategories: Array.from(allCategories).sort()
+    id,
+    label,
+    category,
+    tier,
+    tags,
+    presets
   };
 }
 
-export const useIndicatorCatalog = create<IndicatorCatalogStore>()(
-  persist(
-    (set, get) => ({
-      catalog: null,
-      isLoaded: false,
-      error: null,
-      toastShown: false,
+function buildCatalog(files: Record<string, any>): Catalog {
+  const indicators: IndicatorMeta[] = [];
+  for (const [path, mod] of Object.entries(files)) {
+    // Vite glob with import: 'default' gives the JSON directly
+    const data = mod as any;
+    const ind = validateIndicator(path, data);
+    if (ind) indicators.push(ind);
+  }
 
-      loadCatalog: async () => {
-        try {
-          set({ error: null });
-          const catalog = await buildCatalog();
-          set({ catalog, isLoaded: true });
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to load indicator catalog';
-          set({ error: errorMessage, isLoaded: true });
-          console.error('Error loading indicator catalog:', error);
-        }
-      },
+  // Diagnostics
+  const presetTotal = indicators.reduce((acc, i) => acc + i.presets.length, 0);
+  console.info(`[catalog] loaded indicators: ${indicators.length}, presets: ${presetTotal}`);
 
-      setToastShown: () => set({ toastShown: true })
-    }),
-    {
-      name: 'indicator-catalog-storage',
-      partialize: (state) => ({ 
-        toastShown: state.toastShown 
-      })
+  // Derived unions for chips
+  const allDesignIntents = Array.from(
+    new Set(indicators.flatMap((i) => i.presets.map((p) => p.designIntent)))
+  ) as DesignIntent[];
+  const allCategories = Array.from(new Set(indicators.map((i) => i.category)));
+
+  return { indicators, allDesignIntents, allCategories };
+}
+
+type FilterState = {
+  intents: DesignIntent[];
+  categories: IndicatorMeta["category"][];
+};
+
+type CatalogState = {
+  catalog: Catalog | null;
+  filters: FilterState;
+  setIntents: (ints: DesignIntent[]) => void;
+  setCategories: (cats: IndicatorMeta["category"][]) => void;
+  hydrateFromUrl: (search: string) => void;
+  toQuery: () => string;
+  load: () => void;
+};
+
+export const useIndicatorCatalog = create<CatalogState>((set, get) => ({
+  catalog: null,
+  filters: { intents: [], categories: [] }, // IMPORTANT: empty = show all
+  setIntents: (ints) => set((s) => ({ filters: { ...s.filters, intents: ints } })),
+  setCategories: (cats) => set((s) => ({ filters: { ...s.filters, categories: cats } })),
+  hydrateFromUrl: (search) => {
+    const params = new URLSearchParams(search);
+    const intents = (params.get("intent") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => INTENTS.includes(s as DesignIntent)) as DesignIntent[];
+    const categories = (params.get("cat") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean) as IndicatorMeta["category"][];
+    set({ filters: { intents, categories } });
+  },
+  toQuery: () => {
+    const { filters } = get();
+    const qs = new URLSearchParams();
+    if (filters.intents.length) qs.set("intent", filters.intents.join(","));
+    if (filters.categories.length) qs.set("cat", filters.categories.join(","));
+    const str = qs.toString();
+    return str ? `?${str}` : "";
+  },
+  load: () => {
+    // Use multiple glob roots to avoid env path issues (Lovable/Vite)
+    const g1 = import.meta.glob("/src/indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
+    const g2 = import.meta.glob("src/indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
+    const g3 = import.meta.glob("./indicators/*/meta.json", { eager: true, import: "default" }) as Record<string, any>;
+    const files = Object.keys(g1).length + Object.keys(g2).length + Object.keys(g3).length
+      ? { ...g1, ...g2, ...g3 }
+      : FALLBACK;
+    const catalog = buildCatalog(files);
+    set({ catalog });
+    // Toast once per session
+    if (!sessionStorage.getItem("catalog_toast_shown")) {
+      const n = catalog.indicators.length;
+      console.info(`Loaded ${n} indicators`);
+      sessionStorage.setItem("catalog_toast_shown", "1");
     }
-  )
-);
+  }
+}));
+
+// Selectors
+export function selectIndicatorsByFilters(catalog: Catalog, intents: DesignIntent[], cats: IndicatorMeta["category"][]) {
+  const byIntent = (ind: IndicatorMeta) =>
+    intents.length === 0 || ind.presets.some((p) => intents.includes(p.designIntent));
+  const byCat = (ind: IndicatorMeta) => cats.length === 0 || cats.includes(ind.category);
+  return catalog.indicators.filter((ind) => byIntent(ind) && byCat(ind));
+}
+
+export function selectPresetsByIntent(indicator: IndicatorMeta, intents: DesignIntent[]) {
+  return indicator.presets.filter((p) => (intents.length ? intents.includes(p.designIntent) : true));
+}

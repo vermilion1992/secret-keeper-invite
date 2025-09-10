@@ -84,7 +84,7 @@
     { "name": "VWMA Hero: Breakout + RSI Confirm", "presetRef": "vwma_hero_breakout_rsi" },
     { "name": "VWMA Hero: Momentum Stack (20/50/200)", "presetRef": "vwma_hero_stack_momentum" },
     { "name": "VWMA Hero: Pullback + MTF Align", "presetRef": "vwma_hero_pullback_mtf" }
-  },
+  ],
   "riskTemplates": {
     "atrStop": {
       "enabledDefault": false,
