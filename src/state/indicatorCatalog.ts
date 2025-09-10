@@ -65,13 +65,18 @@ function validateIndicator(path: string, data: any): IndicatorMeta | null {
 }
 
 function buildCatalog(files: Record<string, any>): Catalog {
-  const indicators: IndicatorMeta[] = [];
+  const indicatorMap = new Map<string, IndicatorMeta>();
+  
   for (const [path, mod] of Object.entries(files)) {
     // Vite glob with import: 'default' gives the JSON directly
     const data = mod as any;
     const ind = validateIndicator(path, data);
-    if (ind) indicators.push(ind);
+    if (ind && !indicatorMap.has(ind.id)) {
+      indicatorMap.set(ind.id, ind);
+    }
   }
+
+  const indicators = Array.from(indicatorMap.values());
 
   // Diagnostics
   const presetTotal = indicators.reduce((acc, i) => acc + i.presets.length, 0);
