@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, ChevronDown, Settings, TrendingUp, BarChart3, Target, AlertTriangle, Search, Plus, X, Filter, RotateCcw, Zap } from 'lucide-react';
 import { useState, useEffect, useLayoutEffect } from 'react';
 import rsiMeta from '@/indicators/rsi/meta.json';
+import vwmaMeta from '@/indicators/vwma/meta.json';
 
 interface StepAdvancedSettingsProps {
   strategy: Strategy | null;
@@ -210,7 +211,7 @@ export function StepAdvancedSettings({
     loadConfig();
   }, []);
 
-  // Hydration gate - block until RSI data loaded and form filled
+  // Hydration gate - load indicator and preset data from URL
   useLayoutEffect(() => {
     const hydrateFromURL = () => {
       try {
@@ -218,16 +219,28 @@ export function StepAdvancedSettings({
         const indicator = urlParams.get('indicator');
         const presetId = (urlParams.get('preset') || '').trim();
         
-        if (indicator !== 'rsi') {
+        if (!indicator) {
           setIsHydrated(true);
           return;
         }
 
         console.log('Hydrating from URL:', { indicator, presetId });
-        console.log('RSI meta', rsiMeta);
 
-        // Build base params from meta defaults
-        const meta = rsiMeta;
+        // Load specific indicator meta
+        let meta: any = rsiMeta;
+        try {
+          if (indicator === 'rsi') {
+            meta = rsiMeta;
+          } else if (indicator === 'vwma') {
+            meta = vwmaMeta;
+          } else {
+            // For other indicators, use rsiMeta as fallback but override id/label
+            meta = rsiMeta;
+            console.warn(`Using RSI meta as fallback for ${indicator}`);
+          }
+        } catch (error) {
+          console.warn('Could not load indicator meta for', indicator, 'using fallback');
+        }
         const paramsArray = meta.params || [];
         
         const findParam = (key: string) => paramsArray.find((p: any) => p.key === key);
@@ -254,7 +267,7 @@ export function StepAdvancedSettings({
             riskPrefills = preset.riskDefaults || {};
           }
         } else {
-          riskPrefills = (rsiMeta as any).riskTemplates || {};
+          riskPrefills = (meta as any).riskTemplates || (meta as any).riskDefaults || {};
         }
 
         console.log('Hydrated params', finalParams);
