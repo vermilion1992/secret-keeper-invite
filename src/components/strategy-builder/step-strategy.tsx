@@ -1,32 +1,23 @@
-import { Strategy, STRATEGIES, UserTier, IndicatorConfig } from '@/types/botforge';
-import { canAccessStrategy } from '@/lib/tier-access';
+import { Strategy, UserTier } from '@/types/botforge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Checkbox } from '@/components/ui/checkbox';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { ChipGroup } from '@/components/ui/chips';
 import { 
-  Lock, 
   TrendingUp, 
   BarChart3, 
   Activity, 
-  Zap, 
-  Target, 
-  Shield, 
-  Waves,
-  LineChart,
-  PieChart,
   Gauge,
   Settings,
-  Info
+  Crown
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { loadRSIIndicator } from '@/lib/indicators/loader';
 import { useToast } from '@/hooks/use-toast';
+import { useIndicatorCatalog, selectIndicatorsByFilters, selectPresetsByIntent } from '@/state/indicatorCatalog';
+import type { DesignIntent } from '@/state/indicatorTypes';
 
 interface StepStrategyProps {
   selected: Strategy | null;
@@ -36,659 +27,133 @@ interface StepStrategyProps {
   userTier: UserTier;
 }
 
-// Enhanced strategy data with all 20 strategies
-const ENHANCED_STRATEGIES = [
-  {
-    id: 'ema-crossover-pro',
-    name: 'EMA Crossover Pro',
-    tooltip: 'Classic moving average crossover with trend filter.',
-    blurb: 'Combines fast and slow EMAs to capture trend shifts, with confirmation from longer-term trend direction. Best for trending markets.',
-    tier: 'basic' as UserTier,
-    icon: TrendingUp,
-    tags: ['EMA', 'Trend', 'Classic'],
-    advanced: ['Fast EMA length', 'Slow EMA length', 'Trend EMA length', 'Risk/Reward ratio']
-  },
-  {
-    id: 'rsi-mean-reversion',
-    name: 'RSI Mean Reversion',
-    tooltip: 'Buy oversold, sell overbought — filtered by volatility.',
-    blurb: 'Takes contrarian trades when RSI reaches extreme levels, with an ATR filter to avoid false signals in low-volatility conditions.',
-    tier: 'basic' as UserTier,
-    icon: Activity,
-    tags: ['RSI', 'Mean Reversion', 'ATR'],
-    advanced: ['RSI period', 'Overbought/oversold levels', 'ATR threshold', 'Stop-loss method']
-  },
-  {
-    id: 'macd-confirmation',
-    name: 'MACD Confirmation',
-    tooltip: 'MACD cross validated by EMA trend.',
-    blurb: 'Uses MACD crosses for entries but only in the direction of the higher timeframe EMA trend, filtering out weak countertrend trades.',
-    tier: 'basic' as UserTier,
-    icon: BarChart3,
-    tags: ['MACD', 'EMA', 'Trend'],
-    advanced: ['MACD fast', 'MACD slow', 'MACD signal', 'EMA filter']
-  },
-  {
-    id: 'bollinger-bounce',
-    name: 'Bollinger Band Bounce',
-    tooltip: 'Bounce trades at Bollinger extremes with RSI filter.',
-    blurb: 'Looks for price bounces from Bollinger Band edges, with RSI confirmation to avoid trades in strong trends.',
-    tier: 'basic' as UserTier,
-    icon: Waves,
-    tags: ['Bollinger', 'RSI', 'Bounce'],
-    advanced: ['BB period', 'BB deviation', 'RSI filter', 'Exit method']
-  },
-  {
-    id: 'stochastic-swing',
-    name: 'Stochastic Swing Filter',
-    tooltip: 'Swing trades filtered by Stochastic + SMA.',
-    blurb: 'Times entries with the Stochastic oscillator, only when confirmed by a moving average trend filter.',
-    tier: 'basic' as UserTier,
-    icon: LineChart,
-    tags: ['Stochastic', 'SMA', 'Swing'],
-    advanced: ['Stoch length', 'Stoch OB/OS levels', 'SMA length']
-  },
-  {
-    id: 'vwap-trend-rider',
-    name: 'VWAP Trend Rider',
-    tooltip: 'VWAP trend with EMA slope filter.',
-    blurb: 'Captures intraday trends using VWAP alignment and EMA slope confirmation, reducing false breakouts.',
-    tier: 'pro' as UserTier,
-    icon: Target,
-    tags: ['VWAP', 'EMA', 'Intraday'],
-    advanced: ['VWAP lookback', 'EMA slope length', 'Stop distance']
-  },
-  {
-    id: 'atr-trailing-stops',
-    name: 'ATR Trailing Stops',
-    tooltip: 'Dynamic stop loss based on volatility.',
-    blurb: 'Uses ATR multipliers to trail stops as volatility changes, locking in profits on strong moves.',
-    tier: 'pro' as UserTier,
-    icon: Shield,
-    tags: ['ATR', 'Trailing', 'Volatility'],
-    advanced: ['ATR length', 'ATR multiplier', 'Trail step']
-  },
-  {
-    id: 'momentum-king',
-    name: 'Momentum King',
-    tooltip: 'Ranks assets by momentum score + volume.',
-    blurb: 'Trades only the strongest movers by combining momentum ranking and volume confirmation. Ideal for capturing explosive trends.',
-    tier: 'pro' as UserTier,
-    icon: Zap,
-    tags: ['Momentum', 'Volume', 'Ranking'],
-    advanced: ['Momentum lookback', 'Volume filter', 'Max positions']
-  },
-  {
-    id: 'vol-spike-breakout',
-    name: 'Vol Spike Breakout',
-    tooltip: 'Entry after unusual volume spikes.',
-    blurb: 'Waits for sudden volume spikes and confirms with breakout levels to capture sharp expansions in volatility.',
-    tier: 'pro' as UserTier,
-    icon: Activity,
-    tags: ['Volume', 'Breakout', 'Spike'],
-    advanced: ['Volume multiplier', 'Breakout lookback', 'ATR filter']
-  },
-  {
-    id: 'breadth-monitor',
-    name: 'Breadth Monitor',
-    tooltip: 'Market-wide strength filter.',
-    blurb: 'Measures the % of assets above a moving average. Trades only when market breadth confirms strength.',
-    tier: 'expert' as UserTier,
-    icon: PieChart,
-    tags: ['Breadth', 'Market', 'Filter'],
-    advanced: ['Breadth lookback', 'MA length', 'Threshold %']
-  },
-  {
-    id: 'k-strength-divergence',
-    name: 'K-Strength Divergence',
-    tooltip: 'Custom K-strength divergence with RSI.',
-    blurb: 'Tracks divergences between K-strength momentum and RSI, signaling potential reversals.',
-    tier: 'expert' as UserTier,
-    icon: Gauge,
-    tags: ['Divergence', 'K-Strength', 'RSI'],
-    advanced: ['K period', 'RSI period', 'Divergence sensitivity']
-  },
-  {
-    id: 'turbo-k6',
-    name: 'Turbo K6',
-    tooltip: 'Multi-layer breakout system with volatility targeting.',
-    blurb: 'Combines layered momentum filters with volatility targeting and rebalance rules. Designed for aggressive trend riding.',
-    tier: 'expert' as UserTier,
-    icon: Zap,
-    tags: ['Breakout', 'Volatility', 'Aggressive'],
-    advanced: ['Lookback', 'K value', 'Volatility target %', 'Exit rules']
-  },
-  {
-    id: 'echo-market-neutral',
-    name: 'Echo Market Neutral',
-    tooltip: 'Long leaders, short laggards.',
-    blurb: 'Pairs long positions in top momentum assets with shorts in weak assets. Market-neutral by design.',
-    tier: 'expert' as UserTier,
-    icon: Target,
-    tags: ['Market Neutral', 'Long/Short', 'Momentum'],
-    advanced: ['Ranking length', '# longs', '# shorts', 'Rebalance freq']
-  },
-  {
-    id: 'echo-hybrid',
-    name: 'Echo Hybrid',
-    tooltip: 'Blend of Turbo K6 + Market Neutral.',
-    blurb: 'Dynamically allocates between Turbo K6 and Market Neutral depending on market breadth.',
-    tier: 'expert' as UserTier,
-    icon: Settings,
-    tags: ['Hybrid', 'Dynamic', 'Allocation'],
-    advanced: ['Allocation %', 'Breadth triggers', 'Rebalance freq']
-  },
-  {
-    id: 'breakout-pullback',
-    name: 'Breakout Pullback',
-    tooltip: 'Entry on breakout + RSI pullback.',
-    blurb: 'Enters after breakout confirmation, but only after an RSI pullback avoids chasing.',
-    tier: 'pro' as UserTier,
-    icon: TrendingUp,
-    tags: ['Breakout', 'Pullback', 'RSI'],
-    advanced: ['Breakout length', 'RSI filter', 'ATR stop']
-  },
-  {
-    id: 'range-reversal',
-    name: 'Range Reversal',
-    tooltip: 'Fade extremes inside ranges.',
-    blurb: 'Looks for price reversals inside trading ranges using Bollinger + RSI.',
-    tier: 'basic' as UserTier,
-    icon: Waves,
-    tags: ['Range', 'Reversal', 'Bollinger'],
-    advanced: ['BB period', 'RSI filter', 'Stop method']
-  },
-  {
-    id: 'trend-following-core',
-    name: 'Trend Following Core',
-    tooltip: 'Simple EMA trend with MACD filter.',
-    blurb: 'Classic trend following. EMA slope + MACD confirmation keep trades aligned with strong moves.',
-    tier: 'basic' as UserTier,
-    icon: LineChart,
-    tags: ['Trend', 'EMA', 'MACD'],
-    advanced: ['EMA length', 'MACD fast/slow/signal', 'Exit method']
-  },
-  {
-    id: 'multi-confirm-swing',
-    name: 'Multi-Confirm Swing',
-    tooltip: 'RSI + MACD + Stoch triple filter.',
-    blurb: 'Requires alignment of three major oscillators before entry, reducing noise but fewer signals.',
-    tier: 'pro' as UserTier,
-    icon: Activity,
-    tags: ['Multi-confirm', 'Oscillators', 'Swing'],
-    advanced: ['RSI length', 'MACD settings', 'Stoch settings']
-  },
-  {
-    id: 'support-resistance-bounce',
-    name: 'Support/Resistance Bounce',
-    tooltip: 'Trades bounces at key levels.',
-    blurb: 'Enters trades when price respects S/R zones, confirmed with volume filters.',
-    tier: 'pro' as UserTier,
-    icon: BarChart3,
-    tags: ['S/R', 'Bounce', 'Volume'],
-    advanced: ['S/R lookback', 'Volume threshold', 'Stop size']
-  },
-  {
-    id: 'high-volatility-rider',
-    name: 'High Volatility Rider',
-    tooltip: 'Focus on high-volatility assets.',
-    blurb: 'Targets volatile coins, scaling size by ATR and volatility ranks to ride explosive trends.',
-    tier: 'expert' as UserTier,
-    icon: Zap,
-    tags: ['Volatility', 'ATR', 'Explosive'],
-    advanced: ['ATR length', 'Vol rank %', 'Position cap']
+const getIndicatorIcon = (category: string) => {
+  switch (category) {
+    case 'Trend': return TrendingUp;
+    case 'Momentum': return Activity;
+    case 'Volatility': return Gauge;
+    case 'Volume': return BarChart3;
+    default: return Settings;
   }
-];
-
-// Enhanced indicator data with all 20 indicators
-const ENHANCED_INDICATORS = [
-  {
-    id: 'ema',
-    name: 'EMA',
-    tooltip: 'Exponential Moving Average.',
-    blurb: 'Smooths price data, reacting faster to changes than a simple MA.',
-    icon: TrendingUp,
-    tier: 'basic' as UserTier,
-    advanced: ['Length']
-  },
-  {
-    id: 'sma',
-    name: 'SMA',
-    tooltip: 'Simple Moving Average.',
-    blurb: 'Basic moving average of past prices, used for long-term trend confirmation.',
-    icon: LineChart,
-    tier: 'basic' as UserTier,
-    advanced: ['Length']
-  },
-  {
-    id: 'rsi',
-    name: 'RSI',
-    tooltip: 'Relative Strength Index.',
-    blurb: 'Momentum oscillator showing overbought/oversold conditions.',
-    icon: Activity,
-    tier: 'basic' as UserTier,
-    advanced: ['Period', 'OB/OS levels']
-  },
-  {
-    id: 'macd',
-    name: 'MACD',
-    tooltip: 'Moving Average Convergence Divergence.',
-    blurb: 'Tracks momentum by comparing two EMAs, with signal crossovers.',
-    icon: BarChart3,
-    tier: 'basic' as UserTier,
-    advanced: ['Fast', 'Slow', 'Signal']
-  },
-  {
-    id: 'atr',
-    name: 'ATR',
-    tooltip: 'Average True Range.',
-    blurb: 'Measures volatility by averaging true range values.',
-    icon: Gauge,
-    tier: 'basic' as UserTier,
-    advanced: ['Period', 'Multiplier']
-  },
-  {
-    id: 'bollinger-bands',
-    name: 'Bollinger Bands',
-    tooltip: 'Bands around SMA using volatility.',
-    blurb: 'Shows volatility envelopes that expand/contract with market conditions.',
-    icon: Waves,
-    tier: 'basic' as UserTier,
-    advanced: ['Period', 'StdDev']
-  },
-  {
-    id: 'stochastic',
-    name: 'Stochastic',
-    tooltip: 'Momentum oscillator.',
-    blurb: 'Shows where price sits relative to recent highs/lows.',
-    icon: Activity,
-    tier: 'pro' as UserTier,
-    advanced: ['%K', '%D', 'OB/OS']
-  },
-  {
-    id: 'vwap',
-    name: 'VWAP',
-    tooltip: 'Volume Weighted Average Price.',
-    blurb: 'Combines price and volume for intraday mean value.',
-    icon: Target,
-    tier: 'pro' as UserTier,
-    advanced: ['Session length']
-  },
-  {
-    id: 'obv',
-    name: 'OBV',
-    tooltip: 'On Balance Volume.',
-    blurb: 'Uses volume flow to confirm price trends.',
-    icon: BarChart3,
-    tier: 'basic' as UserTier,
-    advanced: ['None (basic)']
-  },
-  {
-    id: 'cci',
-    name: 'CCI',
-    tooltip: 'Commodity Channel Index.',
-    blurb: 'Oscillator for cyclical market trends.',
-    icon: Activity,
-    tier: 'pro' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'momentum',
-    name: 'Momentum',
-    tooltip: 'Simple momentum measure.',
-    blurb: 'Compares recent price to past price for directional strength.',
-    icon: TrendingUp,
-    tier: 'basic' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'roc',
-    name: 'ROC',
-    tooltip: 'Rate of Change.',
-    blurb: 'Percentage change between current and past price.',
-    icon: LineChart,
-    tier: 'basic' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'adx',
-    name: 'ADX',
-    tooltip: 'Average Directional Index.',
-    blurb: 'Measures trend strength, not direction.',
-    icon: Gauge,
-    tier: 'pro' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'williams-r',
-    name: 'Williams %R',
-    tooltip: 'Momentum oscillator.',
-    blurb: 'Shows overbought/oversold relative to highs/lows.',
-    icon: Activity,
-    tier: 'pro' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'parabolic-sar',
-    name: 'Parabolic SAR',
-    tooltip: 'Stop-and-reverse system.',
-    blurb: 'Plots trailing stops that flip when trend reverses.',
-    icon: Target,
-    tier: 'expert' as UserTier,
-    advanced: ['Step', 'Max']
-  },
-  {
-    id: 'vw-macd',
-    name: 'VW-MACD',
-    tooltip: 'Volume-Weighted MACD.',
-    blurb: 'Adds volume weighting to MACD signals.',
-    icon: BarChart3,
-    tier: 'expert' as UserTier,
-    advanced: ['Fast', 'Slow', 'Signal']
-  },
-  {
-    id: 'chaikin-money-flow',
-    name: 'Chaikin Money Flow',
-    tooltip: 'Tracks buying/selling pressure.',
-    blurb: 'Volume-weighted oscillator to confirm accumulation/distribution.',
-    icon: Waves,
-    tier: 'pro' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'supertrend',
-    name: 'Supertrend',
-    tooltip: 'Trend-following overlay.',
-    blurb: 'Plots trailing stops based on ATR, flipping when trend reverses.',
-    icon: TrendingUp,
-    tier: 'expert' as UserTier,
-    advanced: ['ATR length', 'Multiplier']
-  },
-  {
-    id: 'dmi',
-    name: 'DMI',
-    tooltip: 'Directional Movement Index.',
-    blurb: 'Shows positive/negative directional trends.',
-    icon: LineChart,
-    tier: 'expert' as UserTier,
-    advanced: ['Period']
-  },
-  {
-    id: 'keltner-channels',
-    name: 'Keltner Channels',
-    tooltip: 'ATR-based volatility bands.',
-    blurb: 'Volatility channels built around EMA, good for trend detection.',
-    icon: Waves,
-    tier: 'expert' as UserTier,
-    advanced: ['EMA length', 'ATR multiplier']
-  }
-];
+};
 
 export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier }: StepStrategyProps) {
   const navigate = useNavigate();
-  const [expandedItem, setExpandedItem] = useState<any>(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const [rsiData, setRsiData] = useState<{ indicator: any; presets: any[] } | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  const [selectedIntents, setSelectedIntents] = useState<DesignIntent[]>([]);
   const { toast } = useToast();
+  const { catalog, load } = useIndicatorCatalog();
 
-  const openModal = (item: any) => {
-    setExpandedItem(item);
-    setIsClosing(false);
-    // Lock body scroll
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeModal = () => {
-    setIsClosing(true);
-    // Wait for animation to complete before actually closing
-    setTimeout(() => {
-      setExpandedItem(null);
-      setIsClosing(false);
-      document.body.style.overflow = '';
-    }, 200); // Match animation duration
-  };
-
-  // Load RSI indicator data on mount
+  // Load catalog on mount
   useEffect(() => {
-    const loadData = async () => {
+    load();
+  }, [load]);
+
+  // Filter data based on catalog
+  const filteredIndicators = catalog ? selectIndicatorsByFilters(catalog, selectedIntents, []) : [];
+  const allPresets = catalog ? catalog.indicators.flatMap(ind => 
+    selectPresetsByIntent(ind, selectedIntents).map(preset => ({
+      ...preset,
+      indicatorId: ind.id,
+      indicatorLabel: ind.label,
+      indicatorCategory: ind.category
+    }))
+  ) : [];
+
+  // Get filter options
+  const intentOptions = catalog ? catalog.allDesignIntents.map(intent => ({
+    value: intent,
+    label: intent,
+    count: catalog.indicators.reduce((acc, ind) => 
+      acc + ind.presets.filter(p => p.designIntent === intent).length, 0
+    )
+  })) : [];
+
+  const renderIndicatorTile = (indicator: any) => {
+    const Icon = getIndicatorIcon(indicator.category);
+    const isSelected = selected?.id === `indicator:${indicator.id}`;
+
+    const handleIndicatorClick = () => {
       try {
-        const loaded = await loadRSIIndicator();
-        if (loaded) {
-          setRsiData(loaded);
-        } else {
-          setLoadError(true);
-          toast({
-            title: "Couldn't load RSI indicator",
-            description: "Check src/indicators/rsi/meta.json.",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        setLoadError(true);
+        onSelect({ 
+          id: `indicator:${indicator.id}`,
+          name: indicator.label, 
+          description: indicator.blurb || '',
+          tier: 'basic',
+          defaultIndicators: [],
+          canAddFilters: true
+        });
+        
+        navigate(`/strategy-builder/advanced?indicator=${indicator.id}&preset=`);
+      } catch (e) {
         toast({
-          title: "Couldn't load RSI indicator", 
-          description: "Check src/indicators/rsi/meta.json.",
+          title: "Selection failed",
+          description: "Could not select this indicator. Please try again.",
           variant: "destructive"
         });
       }
     };
-    
-    loadData();
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [toast]);
 
-  const accessibleStrategies = ENHANCED_STRATEGIES.filter((s) => {
-    if (userTier === 'expert') return true;
-    if (userTier === 'pro') return s.tier === 'basic' || s.tier === 'pro';
-    return s.tier === 'basic';
-  });
-
-  const lockedStrategies = ENHANCED_STRATEGIES.filter((s) => {
-    if (userTier === 'expert') return false;
-    if (userTier === 'pro') return s.tier === 'expert';
-    return s.tier !== 'basic';
-  });
-
-  const accessibleIndicators = ENHANCED_INDICATORS.filter((i) => {
-    if (userTier === 'expert') return true;
-    if (userTier === 'pro') return i.tier === 'basic' || i.tier === 'pro';
-    return i.tier === 'basic';
-  });
-
-  const lockedIndicators = ENHANCED_INDICATORS.filter((i) => {
-    if (userTier === 'expert') return false;
-    if (userTier === 'pro') return i.tier === 'expert';
-    return i.tier !== 'basic';
-  });
-
-  const renderStrategyTile = (strategy: any, isLocked = false) => {
-    const Icon = strategy.icon;
-    const isSelected = selected?.id === strategy.id;
-
-    const handleStrategyClick = async () => {
-      if (!isLocked) {
-        // Check if strategy resolves to config before opening modal
-        try {
-          const { loadConfigs, resolveStrategyId } = await import('./correlation');
-          const { strategies } = await loadConfigs();
-          
-          const configKeyMap: Record<string, string> = {
-            'EMA Crossover Pro': 'ema_crossover_pro',
-            'MACD Confirmation': 'macd_momentum_shift',
-            'RSI Mean Reversion': 'rsi_breakout',
-            'Echo Hybrid': 'breadth_tilt_hybrid',
-            'Breadth Monitor': 'breadth_tilt_hybrid',
-            'Echo Market Neutral': 'breadth_tilt_hybrid',
-          };
-
-          const mappedKey = configKeyMap[strategy.name] || strategy.id;
-          const canonicalId = resolveStrategyId(mappedKey, strategies);
-          
-          if (!canonicalId) {
-            const { toast } = await import('@/hooks/use-toast');
-            toast({
-              title: "Not configured yet",
-              description: "This strategy is not available in the current configuration.",
-              variant: "destructive"
-            });
-            return;
-          }
-          
-          openModal({...strategy, type: 'strategy'});
-        } catch (e) {
-          const { toast } = await import('@/hooks/use-toast');
-          toast({
-            title: "Not configured yet",
-            description: "This strategy is not available in the current configuration.",
-            variant: "destructive"
-          });
-        }
-      }
-    };
-
-    return (
-      <TooltipProvider key={strategy.id}>
-        <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
-            isLocked ? 'opacity-60 cursor-not-allowed' : isSelected
-            ? 'ring-2 ring-success border-success bg-success/10'
-            : 'hover:border-primary hover:bg-primary/10'
-          }`}
-          onClick={handleStrategyClick}
-        >
-          {isLocked && (
-            <div className="absolute top-2 right-2 z-10">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent className="z-50" sideOffset={5}>
-                  <p>Upgrade to unlock this option</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          )}
-          
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Icon className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-success' : 'text-primary'}`} />
-              <div className="flex-1 min-w-0 flex items-center justify-between">
-                <div className="flex items-center gap-1 min-w-0">
-                  <h3 className="font-medium text-sm leading-tight truncate">
-                    {strategy.name}
-                  </h3>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs z-[1000] pointer-events-none" sideOffset={8}>
-                      <p>{strategy.tooltip}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            </div>
-            <Badge variant="default" className="text-xs font-semibold uppercase w-fit">{strategy.tier} TIER</Badge>
-          </CardHeader>
-          
-          <CardContent className="pt-0 space-y-2">
-            <div className="flex flex-wrap gap-1">
-              {strategy.tags.slice(0, 3).map((tag: string) => (
-                <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </TooltipProvider>
-    );
-  };
-
-  const renderIndicatorTile = (indicator: any, isLocked = false) => {
-    const Icon = indicator.icon;
-    
     return (
       <TooltipProvider key={indicator.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
-            isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/10'
+          className={`cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
+            isSelected
+            ? 'ring-2 ring-success border-success bg-success/10'
+            : 'hover:border-primary hover:bg-primary/10'
           }`}
-          onClick={() => !isLocked && openModal({...indicator, type: 'indicator'})}
+          onClick={handleIndicatorClick}
         >
-          {isLocked && (
-            <div className="absolute top-2 right-2 z-10">
-              <Tooltip>
-                <TooltipTrigger>
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent className="z-50" sideOffset={5}>
-                  <p>Upgrade to unlock this option</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          )}
-          
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Icon className="h-5 w-5 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0 flex items-center justify-between">
-                <div className="flex items-center gap-1 min-w-0">
-                  <h3 className="font-medium text-sm leading-tight truncate">
-                    {indicator.name}
-                  </h3>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs z-[1000] pointer-events-none" sideOffset={8}>
-                      <p>{indicator.tooltip}</p>
-                    </TooltipContent>
-                  </Tooltip>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Icon className={`h-6 w-6 ${isSelected ? 'text-success' : 'text-primary'}`} />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">{indicator.label}</h3>
+                <p className="text-muted-foreground text-sm">{indicator.blurb || ''}</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <Badge variant="outline" className="text-xs">
+                    {indicator.category}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {indicator.presets.length} presets
+                  </Badge>
                 </div>
               </div>
             </div>
-            <Badge variant="default" className="text-xs font-semibold uppercase w-fit">{indicator.tier} TIER</Badge>
           </CardHeader>
-          
-          <CardContent className="pt-0 space-y-2">
-            {/* No content for indicators for now */}
-          </CardContent>
         </Card>
       </TooltipProvider>
     );
   };
 
-  const renderRSIPresetTile = (preset: any, isSelected = false) => {
-    const handlePresetClick = async () => {
+  const renderPresetTile = (preset: any) => {
+    const isSelected = selected?.id === preset.id;
+    const Icon = preset.presetTier === 'Hero' ? Crown : getIndicatorIcon(preset.indicatorCategory);
+
+    const handlePresetClick = () => {
       try {
-        openModal({...preset, type: 'preset', indicator: rsiData?.indicator});
-      } catch (error) {
+        onSelect({ 
+          id: preset.id,
+          name: preset.name, 
+          description: preset.blurb || '',
+          tier: 'basic',
+          defaultIndicators: [],
+          canAddFilters: true
+        });
+        
+        navigate(`/strategy-builder/advanced?indicator=${preset.indicatorId}&preset=${preset.id}`);
+      } catch (e) {
         toast({
-          title: "Not configured yet",
-          description: "This preset is not available.",
+          title: "Selection failed",
+          description: "Could not select this preset. Please try again.",
           variant: "destructive"
         });
-      }
-    };
-
-    const getRiskProfileColor = (profile: string) => {
-      switch (profile?.toLowerCase()) {
-        case 'conservative': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-        case 'balanced': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-        case 'aggressive': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-        default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
       }
     };
 
     return (
       <TooltipProvider key={preset.id}>
         <Card 
-          className={`relative cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
+          className={`cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale ${
             isSelected
             ? 'ring-2 ring-success border-success bg-success/10'
             : 'hover:border-primary hover:bg-primary/10'
@@ -697,490 +162,143 @@ export function StepStrategy({ selected, onSelect, onNext, onPrevious, userTier 
         >
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Activity className={`h-5 w-5 flex-shrink-0 ${isSelected ? 'text-success' : 'text-primary'}`} />
-              <div className="flex-1 min-w-0 flex items-center justify-between">
-                <div className="flex items-center gap-1 min-w-0">
-                  <h3 className="font-medium text-sm leading-tight truncate">
-                    {preset.label}
-                  </h3>
-                  {preset.isHero && (
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                      Hero
-                    </Badge>
-                  )}
-                </div>
+              <Icon className={`h-5 w-5 ${isSelected ? 'text-success' : 'text-primary'}`} />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-tight truncate">
+                  {preset.name}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {preset.indicatorLabel}
+                </p>
               </div>
+              {preset.presetTier === 'Hero' && (
+                <Badge className="text-xs bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">
+                  Hero
+                </Badge>
+              )}
             </div>
           </CardHeader>
           
           <CardContent className="pt-0 space-y-2">
-            <p className="text-xs text-muted-foreground line-clamp-2">{preset.blurb}</p>
-            
             <div className="flex flex-wrap gap-1">
-              {preset.badges?.slice(0, 2).map((badge: string) => (
-                <Badge key={badge} variant="outline" className="text-xs px-1.5 py-0.5">
-                  {badge}
-                </Badge>
-              ))}
-              {preset.riskProfile && (
-                <Badge className={`text-xs px-1.5 py-0.5 ${getRiskProfileColor(preset.riskProfile)}`}>
-                  {preset.riskProfile}
-                </Badge>
-              )}
+              <Badge className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20">
+                {preset.designIntent}
+              </Badge>
+              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                {preset.riskProfile}
+              </Badge>
             </div>
-            
-            {preset.tags && preset.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {preset.tags.slice(0, 4).map((tag: string) => (
-                  <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">
-                    {tag}
-                  </Badge>
-                ))}
-                {preset.tags.length > 4 && (
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                    +{preset.tags.length - 4}
-                  </Badge>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
       </TooltipProvider>
     );
   };
 
-  const handleRSIIndicatorSelect = async () => {
-    try {
-      if (!rsiData?.indicator) return;
-      
-      // Build comprehensive state object from RSI metadata
-      const rsiParams = rsiData.indicator.params || {};
-      const riskTemplates = rsiData.indicator.riskTemplates || {};
-      
-      // Store RSI indicator selection in builder state
-      const { writeBuilderState } = await import('./builderState');
-      
-      const builderState = {
-        strategyId: `indicator:${rsiData.indicator.id}`,
-        direction: 'long' as const,
-        indicatorParams: {
-          [rsiData.indicator.id]: {
-            length: rsiParams.length?.default || 14,
-            source: rsiParams.source?.default || 'close',
-            obLevel: rsiParams.obLevel?.default || 70,
-            osLevel: rsiParams.osLevel?.default || 30
-          }
-        },
-        ruleGroup: { joiner: 'AND' as const, rules: [] },
-        // Add metadata for Page 4 to consume
-        metadata: {
-          indicatorId: rsiData.indicator.id,
-          indicatorLabel: rsiData.indicator.label,
-          presetId: null,
-          riskTemplates: riskTemplates,
-          params: rsiParams
-        }
-      };
-      
-      writeBuilderState(builderState);
-      try { sessionStorage.setItem('bf:builderState', JSON.stringify(builderState)); } catch {}
-
-      // Legacy storage for backward compatibility
-      localStorage.setItem('bf_selected_strategy', `indicator:${rsiData.indicator.id}`);
-      (window as any).selectedStrategyKey = `indicator:${rsiData.indicator.id}`;
-
-      onSelect({ 
-        id: `indicator:${rsiData.indicator.id}`,
-        name: rsiData.indicator.label || 'RSI', 
-        description: rsiData.indicator.blurb || '',
-        tier: 'basic',
-        defaultIndicators: [],
-        canAddFilters: true
-      });
-      
-      navigate("/strategy-builder/advanced?indicator=rsi&preset=");
-    } catch (e) {
-      console.error('Failed to select RSI indicator:', e);
-      toast({
-        title: "Selection failed",
-        description: "Could not select the RSI indicator. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
+  if (!catalog) {
+    return (
+      <div className="space-y-6">
+        <header className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Choose a strategy</h2>
+            <p className="text-muted-foreground text-sm">Loading indicators and strategies...</p>
+          </div>
+          <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
+        </header>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Loading catalog...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Choose a strategy</h2>
-          <p className="text-muted-foreground text-sm">Select from RSI indicator or its presets with pre-configured rules you can tweak later.</p>
+          <p className="text-muted-foreground text-sm">Select from {catalog.indicators.length} indicators or {allPresets.length} prebuilt strategies.</p>
         </div>
         <Badge variant="secondary" className="uppercase">{userTier} tier</Badge>
       </header>
 
       <Tabs defaultValue="indicators" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="indicators">Indicators</TabsTrigger>
-          <TabsTrigger value="strategies">Prebuilt Strategies</TabsTrigger>
+          <TabsTrigger value="indicators">Indicators ({filteredIndicators.length})</TabsTrigger>
+          <TabsTrigger value="strategies">Prebuilt Strategies ({allPresets.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="indicators" className="space-y-4">
-          {/* RSI Indicator Section */}
-          {rsiData && rsiData.indicator && (
-            <div className="space-y-4">
-              <Card className="cursor-pointer transition-all duration-200 hover:shadow-md border hover-scale hover:border-primary hover:bg-primary/10">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Activity className="h-6 w-6 text-primary" />
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">{rsiData.indicator.label}</h3>
-                      <p className="text-muted-foreground text-sm">{rsiData.indicator.blurb}</p>
-                      {rsiData.indicator.tags && rsiData.indicator.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {rsiData.indicator.tags.map((tag: string) => (
-                            <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0.5">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Button onClick={handleRSIIndicatorSelect} className="w-full">
-                    Use RSI
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+          {intentOptions.length > 0 && (
+            <ChipGroup
+              label="Filter by Design Intent"
+              options={intentOptions}
+              selected={selectedIntents}
+              onSelectionChange={(selected) => setSelectedIntents(selected as DesignIntent[])}
+            />
           )}
 
-          {/* Error state */}
-          {loadError && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Failed to load RSI indicator data.</p>
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredIndicators.map(indicator => renderIndicatorTile(indicator))}
+          </div>
 
-          {/* Loading state */}
-          {!rsiData && !loadError && (
+          {filteredIndicators.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading RSI indicator...</p>
+              <p className="text-muted-foreground">
+                {selectedIntents.length > 0 
+                  ? "No indicators match the selected filters." 
+                  : "No indicators available."
+                }
+              </p>
+              {selectedIntents.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setSelectedIntents([])}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="strategies" className="space-y-4">
-          {/* RSI Presets Section */}
-          {rsiData && rsiData.presets && rsiData.presets.length > 0 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {rsiData.presets.map((preset) => renderRSIPresetTile(preset))}
-              </div>
-            </div>
+          {intentOptions.length > 0 && (
+            <ChipGroup
+              label="Filter by Design Intent"
+              options={intentOptions}
+              selected={selectedIntents}
+              onSelectionChange={(selected) => setSelectedIntents(selected as DesignIntent[])}
+            />
           )}
 
-          {/* Empty state for presets */}
-          {rsiData && (!rsiData.presets || rsiData.presets.length === 0) && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No presets found.</p>
-            </div>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allPresets.map(preset => renderPresetTile(preset))}
+          </div>
 
-          {/* Error state */}
-          {loadError && (
+          {allPresets.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Failed to load RSI presets.</p>
-            </div>
-          )}
-
-          {/* Loading state */}
-          {!rsiData && !loadError && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading RSI presets...</p>
+              <p className="text-muted-foreground">
+                {selectedIntents.length > 0 
+                  ? "No presets match the selected filters." 
+                  : "No presets available."
+                }
+              </p>
+              {selectedIntents.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setSelectedIntents([])}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Centered Modal with Animation, Blur and Particles */}
-      {expandedItem && createPortal(
-        <div 
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(8px)',
-            overflow: 'hidden'
-          }}
-          onClick={closeModal}
-        >
-          {/* Constellation Background Effect */}
-          <div className="absolute inset-0 overflow-hidden">
-            <svg className="absolute inset-0 w-full h-full opacity-45 pointer-events-none">
-              {/* Generate constellation stars */}
-              {[...Array(40)].map((_, i) => {
-                const x = Math.random() * 100;
-                const y = Math.random() * 100;
-                const size = 1.5 + Math.random() * 2.5;
-                return (
-                  <circle
-                    key={`star-${i}`}
-                    cx={`${x}%`}
-                    cy={`${y}%`}
-                    r={size}
-                    fill="hsl(0 0% 100% / 0.9)"
-                    className="animate-pulse"
-                    style={{
-                      animationDelay: `${Math.random() * 4}s`,
-                      animationDuration: `${2 + Math.random() * 2}s`,
-                      filter: 'drop-shadow(0 0 6px hsl(var(--primary)))'
-                    }}
-                  />
-                );
-              })}
-              
-              {/* Generate connecting lines */}
-              {[...Array(8)].map((_, i) => {
-                const x1 = Math.random() * 100;
-                const y1 = Math.random() * 100;
-                const x2 = x1 + (Math.random() - 0.5) * 30;
-                const y2 = y1 + (Math.random() - 0.5) * 30;
-                return (
-                  <line
-                    key={`line-${i}`}
-                    x1={`${x1}%`}
-                    y1={`${y1}%`}
-                    x2={`${Math.max(0, Math.min(100, x2))}%`}
-                    y2={`${Math.max(0, Math.min(100, y2))}%`}
-                    stroke="hsl(var(--primary) / 0.3)"
-                    strokeWidth="1"
-                    className="opacity-60"
-                    style={{
-                      animation: 'constellation-pulse 8s ease-in-out infinite',
-                      animationDelay: `${Math.random() * 3}s`
-                    }}
-                  />
-                );
-              })}
-            </svg>
-          </div>
-          
-          <div
-            className={`bg-white dark:bg-gray-900 border border-border rounded-lg shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto relative z-10 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">
-                    <Activity className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">
-                      {expandedItem.label || expandedItem.name}
-                    </h2>
-                    <Badge variant="default" className="text-sm font-semibold uppercase">
-                      BASIC TIER
-                    </Badge>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={closeModal}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  ✕
-                </Button>
-              </div>
-              
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                {expandedItem.blurb}
-              </p>
-
-              {expandedItem.tags && (
-                <div className="mb-6">
-                  <h4 className="font-medium mb-2 text-sm">Tags:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {expandedItem.tags.map((tag: string) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {expandedItem.advanced && (
-                <div className="mb-6">
-                  <h4 className="font-medium mb-2 text-sm">Advanced Settings:</h4>
-                  <div className="text-sm text-muted-foreground">
-                    {expandedItem.advanced.join(', ')}
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={async () => {
-                    if (expandedItem.type === 'preset') {
-                      try {
-                        if (!rsiData?.indicator || !expandedItem) return;
-                        
-                        // Build comprehensive state object from RSI preset + indicator metadata
-                        const seedParams = expandedItem.seedParams || {};
-                        const riskDefaults = expandedItem.riskDefaults || {};
-                        const ruleTemplates = expandedItem.rules || {};
-                        const rsiParams = rsiData.indicator.params || {};
-                        const riskTemplates = rsiData.indicator.riskTemplates || {};
-                        
-                        // Store RSI preset selection in builder state
-                        const { writeBuilderState } = await import('./builderState');
-                        
-                        const builderState = {
-                          strategyId: expandedItem.id,
-                          direction: 'long' as const,
-                          indicatorParams: {
-                            [rsiData.indicator.id]: {
-                              ...seedParams,
-                              length: seedParams.length || rsiParams.length?.default || 14,
-                              source: seedParams.source || rsiParams.source?.default || 'close',
-                              obLevel: seedParams.obLevel || rsiParams.obLevel?.default || 70,
-                              osLevel: seedParams.osLevel || rsiParams.osLevel?.default || 30
-                            }
-                          },
-                          ruleGroup: ruleTemplates || { joiner: 'AND' as const, rules: [] },
-                          // Add metadata for Page 4 to consume
-                          metadata: {
-                            indicatorId: rsiData.indicator.id,
-                            indicatorLabel: rsiData.indicator.label,
-                            presetId: expandedItem.id,
-                            presetLabel: expandedItem.label,
-                            riskDefaults: riskDefaults,
-                            riskTemplates: riskTemplates,
-                            params: rsiParams,
-                            seedParams: seedParams,
-                            designIntent: expandedItem.designIntent,
-                            riskProfile: expandedItem.riskProfile
-                          }
-                        };
-                        
-                        writeBuilderState(builderState);
-                        try { sessionStorage.setItem('bf:builderState', JSON.stringify(builderState)); } catch {}
-
-                         // Legacy storage for backward compatibility
-                         localStorage.setItem('bf_selected_strategy', expandedItem.id);
-                         (window as any).selectedStrategyKey = expandedItem.id;
-
-                        onSelect({ 
-                          id: expandedItem.id,
-                          name: expandedItem.label, 
-                          description: expandedItem.blurb,
-                          tier: 'basic',
-                          defaultIndicators: [],
-                          canAddFilters: true
-                        });
-                        
-                        navigate(`/strategy-builder/advanced?indicator=rsi&preset=${expandedItem.id}`);
-                      } catch (e) {
-                        console.error('Failed to select preset:', e);
-                        toast({
-                          title: "Selection failed",
-                          description: "Could not select this preset. Please try again.",
-                          variant: "destructive"
-                        });
-                      }
-                    } else if (expandedItem.type === 'strategy') {
-                      try {
-                        // Load configs and resolve strategy ID
-                        const { loadConfigs, resolveStrategyId } = await import('./correlation');
-                        const { strategies } = await loadConfigs();
-                        
-                        // Map UI strategy names to config keys
-                        const configKeyMap: Record<string, string> = {
-                          'EMA Crossover Pro': 'ema_crossover_pro',
-                          'MACD Confirmation': 'macd_momentum_shift',
-                          'RSI Mean Reversion': 'rsi_breakout',
-                          'Echo Hybrid': 'breadth_tilt_hybrid',
-                          'Breadth Monitor': 'breadth_tilt_hybrid',
-                          'Echo Market Neutral': 'breadth_tilt_hybrid',
-                        };
-
-                        const mappedKey = configKeyMap[expandedItem.name] || expandedItem.id;
-                        const canonicalId = resolveStrategyId(mappedKey, strategies);
-                        
-                        if (!canonicalId) {
-                          toast({
-                            title: "Not configured yet",
-                            description: "This strategy is not available in the current configuration.",
-                            variant: "destructive"
-                          });
-                          closeModal();
-                          return;
-                        }
-
-                        // Store canonical strategy ID in builder state
-                        const { writeBuilderState, readBuilderState } = await import('./builderState');
-                        const currentState = readBuilderState() || {
-                          strategyId: '',
-                          direction: 'long' as const,
-                          indicatorParams: {},
-                          ruleGroup: { joiner: 'AND' as const, rules: [] }
-                        };
-                        
-                        writeBuilderState({
-                          ...currentState,
-                          strategyId: canonicalId
-                        });
-
-                        // Also maintain legacy storage for backward compatibility
-                        localStorage.setItem('bf_selected_strategy', canonicalId);
-                        (window as any).selectedStrategyKey = canonicalId;
-
-                        onSelect({ 
-                          id: canonicalId, // Use canonical ID
-                          name: expandedItem.name, 
-                          description: expandedItem.tooltip,
-                          tier: expandedItem.tier,
-                          defaultIndicators: [],
-                          canAddFilters: expandedItem.tier !== 'basic'
-                        });
-                        
-                        navigate("/strategy-builder/advanced");
-                      } catch (e) {
-                        console.error('Failed to load strategy config:', e);
-                        alert('Failed to load strategy configuration. Please try again.');
-                      }
-                    } else {
-                      closeModal();
-                    }
-                  }}
-                  className="flex-1"
-                >
-                  Select {expandedItem.type === 'preset' ? 'Preset' : expandedItem.type === 'strategy' ? 'Strategy' : 'Indicator'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Clear selection on cancel if this was the selected item
-                    if (selected?.id === expandedItem.id) {
-                      onSelect(null);
-                    }
-                    closeModal();
-                  }}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
 
       <div className="flex justify-between pt-6">
         <Button onClick={onPrevious} variant="outline" size="lg" className="px-8">
