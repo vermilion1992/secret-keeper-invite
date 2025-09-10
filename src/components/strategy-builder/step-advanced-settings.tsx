@@ -90,6 +90,8 @@ export function StepAdvancedSettings({
     rsiOverbought: 70,
     rsiOversold: 30,
     rsiSource: 'close',
+    vwmaLength: 50,
+    vwmaPriceSource: 'close',
     reentryBars: 1,
     confirmBars: 1,
     oneTradePerSession: false
@@ -152,6 +154,9 @@ export function StepAdvancedSettings({
     maType: 'EMA',
     rsiOverbought: 70,
     rsiOversold: 30,
+    rsiSource: 'close',
+    vwmaLength: 50,
+    vwmaPriceSource: 'close',
     reentryBars: 1,
     confirmBars: 1,
     oneTradePerSession: false
@@ -246,10 +251,10 @@ export function StepAdvancedSettings({
         const findParam = (key: string) => paramsArray.find((p: any) => p.key === key);
         
         const baseParams = {
-          length: findParam('length')?.default || 14,
-          source: findParam('source')?.default || 'close',
-          obLevel: findParam('upper')?.default || 70,
-          osLevel: findParam('lower')?.default || 30,
+          length: findParam('length')?.default ?? 14,
+          source: (findParam('source')?.default ?? findParam('priceSource')?.default ?? 'close'),
+          obLevel: findParam('upper')?.default ?? 70,
+          osLevel: findParam('lower')?.default ?? 30,
         };
 
         let finalParams = { ...baseParams };
@@ -258,13 +263,19 @@ export function StepAdvancedSettings({
 
         // If preset, overlay preset data
         if (presetId) {
-          const preset = (rsiMeta as any).presets.find((p: any) => p.id === presetId);
+          const preset = (meta as any).presets?.find((p: any) => p.id === presetId);
           if (preset) {
-            if (preset.seedParams?.rsi) {
-              finalParams = { ...finalParams, ...preset.seedParams.rsi };
+            // Overlay indicator params from preset
+            const indCfg = (preset as any).indicators?.find((i: any) => i.id === indicator);
+            if (indCfg?.params) {
+              finalParams = { ...finalParams, ...indCfg.params };
             }
-            rules = preset.rules?.rules || [];
-            riskPrefills = preset.riskDefaults || {};
+            // Extract entry rules (prefer long)
+            const entry = (preset as any).entry;
+            if (entry?.long?.length) rules = entry.long;
+            else if (entry?.short?.length) rules = entry.short;
+            // Risk defaults
+            riskPrefills = (preset as any).riskDefaults || {};
           }
         } else {
           riskPrefills = (meta as any).riskTemplates || (meta as any).riskDefaults || {};
@@ -278,13 +289,21 @@ export function StepAdvancedSettings({
         setHydrationData({ finalParams, rules, riskPrefills });
 
         // Apply indicator settings immediately
-        setStrategySettings(prev => ({
-          ...prev,
-          rsiLength: Number(finalParams.length) || 14,
-          rsiOverbought: Number(finalParams.obLevel) || 70,
-          rsiOversold: Number(finalParams.osLevel) || 30,
-          rsiSource: String(finalParams.source) || 'close',
-        }));
+        if (indicator === 'rsi') {
+          setStrategySettings(prev => ({
+            ...prev,
+            rsiLength: Number(finalParams.length) || 14,
+            rsiOverbought: Number(finalParams.obLevel) || 70,
+            rsiOversold: Number(finalParams.osLevel) || 30,
+            rsiSource: String(finalParams.source) || 'close',
+          }));
+        } else if (indicator === 'vwma') {
+          setStrategySettings(prev => ({
+            ...prev,
+            vwmaLength: Number(finalParams.length) || 50,
+            vwmaPriceSource: String(finalParams.source) || 'close',
+          }));
+        }
 
         // Map and apply rules
         if (rules.length > 0) {
@@ -306,10 +325,15 @@ export function StepAdvancedSettings({
           };
           
           const toFamily = (left: string, right: any) => {
-            if (String(left).includes('rsi')) return 'rsi';
-            if (String(right).includes('ema')) return 'ema';
-            if (String(right).includes('sma')) return 'sma';
-            return 'rsi';
+            const L = String(left || '').toLowerCase();
+            const R = String(right || '').toLowerCase();
+            if (L.includes('rsi') || R.includes('rsi')) return 'rsi';
+            if (L.includes('vwma') || R.includes('vwma')) return 'vwma';
+            if (L.includes('ema') || R.includes('ema')) return 'ema';
+            if (L.includes('sma') || R.includes('sma')) return 'sma';
+            if (L.includes('bollinger') || R.includes('bb')) return 'bollinger';
+            if (L.includes('macd') || R.includes('macd')) return 'macd';
+            return 'ma';
           };
           
           const toLeftOperand = (family: string) => (family === 'rsi' ? 'RSI' : 'Price');
@@ -319,6 +343,7 @@ export function StepAdvancedSettings({
               if (typeof right === 'number') return nearestRSI(right);
               return '50';
             }
+            if (family === 'vwma') return 'VWMA';
             if (family === 'ema') return 'EMA Slow';
             if (family === 'sma') return 'SMA';
             return '50';
@@ -436,6 +461,7 @@ export function StepAdvancedSettings({
       ma: ["Price", "MA Fast", "MA Slow", "MA"],
       stochastic: ["%K", "%D", "80", "20"],
       breadth: ["Breadth OK", "50", "%UpCoins"],
+      vwma: ["Price", "VWMA Fast", "VWMA Slow", "VWMA", "0"],
     };
 
     if (!config?.operands) return defaultsByFamily[family] || ["Price", "Value"];
@@ -456,6 +482,7 @@ export function StepAdvancedSettings({
       ma: [" MA", "MA "],
       stochastic: ["%K", "%D", "Stochastic"],
       breadth: ["Breadth", "%UpCoins"],
+      vwma: ["VWMA", "vwma"],
     };
 
     const tokens = tokensByFamily[family] || [];
@@ -733,7 +760,7 @@ export function StepAdvancedSettings({
 
   const strategyKey = getSelectedStrategyKey();
   const indicatorFromURL = new URLSearchParams(window.location.search).get('indicator');
-  const families = indicatorFromURL === 'rsi' ? ['rsi'] : getStrategyFamilies(strategyKey);
+  const families = indicatorFromURL ? [indicatorFromURL] : getStrategyFamilies(strategyKey);
   const operators = getAvailableOperators();
 
   // Hydration gate - show loading until ready
@@ -896,6 +923,38 @@ export function StepAdvancedSettings({
                     </>
                   )}
                   
+                  {family === 'vwma' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="font-medium">VWMA Length</Label>
+                        <Input
+                          type="number"
+                          value={strategySettings.vwmaLength}
+                          onChange={(e) => setStrategySettings(prev => ({ ...prev, vwmaLength: Number(e.target.value) }))}
+                          min="2"
+                          max="500"
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <Label className="font-medium">Price Source</Label>
+                        <Select value={strategySettings.vwmaPriceSource as any} onValueChange={(val) => setStrategySettings(prev => ({ ...prev, vwmaPriceSource: val }))}>
+                          <SelectTrigger className="bg-background/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="close">Close</SelectItem>
+                            <SelectItem value="open">Open</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="hl2">HL2</SelectItem>
+                            <SelectItem value="hlc3">HLC3</SelectItem>
+                            <SelectItem value="ohlc4">OHLC4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
                   {family === 'macd' && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-3">
