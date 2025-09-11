@@ -17,6 +17,18 @@ import { useState, useEffect, useLayoutEffect } from 'react';
 import rsiMeta from '@/indicators/rsi/meta.json';
 import vwmaMeta from '@/indicators/vwma/meta.json';
 
+// Load all indicator metas eagerly for generic wiring
+const INDICATOR_META_FILES = import.meta.glob('/src/indicators/*/meta.json', { eager: true, import: 'default' }) as Record<string, any>;
+const getMetaById = (id: string | null) => {
+  if (!id) return null;
+  for (const mod of Object.values(INDICATOR_META_FILES)) {
+    const data = mod as any;
+    if (data?.identity?.id === id) return data;
+  }
+  return null;
+};
+
+
 interface StepAdvancedSettingsProps {
   strategy: Strategy | null;
   filterIndicators: IndicatorConfig[];
@@ -73,6 +85,8 @@ export function StepAdvancedSettings({
   const [entryDirection, setEntryDirection] = useState('both'); // 'long', 'short', 'both'
   const [entryInverse, setEntryInverse] = useState(false);
   const [familyTileStates, setFamilyTileStates] = useState<FamilyTileState>({});
+  const [currentMeta, setCurrentMeta] = useState<any | null>(null);
+  const [dynamicIndicatorParams, setDynamicIndicatorParams] = useState<Record<string, any>>({});
   
   // Strategy settings
   const [strategySettings, setStrategySettings] = useState({
@@ -235,31 +249,23 @@ export function StepAdvancedSettings({
 
         console.log('Hydrating from URL:', { indicator, presetId });
 
-        // Load specific indicator meta
-        let meta: any = rsiMeta;
-        try {
-          if (indicator === 'rsi') {
-            meta = rsiMeta;
-          } else if (indicator === 'vwma') {
-            meta = vwmaMeta;
-          } else {
-            // For other indicators, use rsiMeta as fallback but override id/label
-            meta = rsiMeta;
-            console.warn(`Using RSI meta as fallback for ${indicator}`);
-          }
-        } catch (error) {
-          console.warn('Could not load indicator meta for', indicator, 'using fallback');
+        // Load specific indicator meta (generic)
+        let meta: any = getMetaById(indicator) || (indicator === 'vwma' ? vwmaMeta : rsiMeta);
+        if (!getMetaById(indicator)) {
+          console.warn(`Using fallback for ${indicator}`);
         }
+        setCurrentMeta(meta);
         const paramsArray = meta.params || [];
         
         const findParam = (key: string) => paramsArray.find((p: any) => p.key === key);
         
-        const baseParams = {
-          length: findParam('length')?.default ?? 14,
-          source: (findParam('source')?.default ?? findParam('priceSource')?.default ?? 'close'),
-          obLevel: findParam('upper')?.default ?? 70,
-          osLevel: findParam('lower')?.default ?? 30,
-        };
+        // Build defaults for ALL params generically
+        const defaults: Record<string, any> = (paramsArray || []).reduce((acc: any, p: any) => {
+          if (p?.key) acc[p.key] = p.default;
+          return acc;
+        }, {} as Record<string, any>);
+
+        const baseParams = defaults;
 
         let finalParams: Record<string, any> = { ...baseParams };
         let rules: any[] = [];
@@ -291,6 +297,7 @@ export function StepAdvancedSettings({
 
         // Store hydration data
         setHydrationData({ finalParams, rules, riskPrefills });
+        setDynamicIndicatorParams(finalParams);
 
         // Apply indicator settings immediately
         if (indicator === 'rsi') {
@@ -334,6 +341,7 @@ export function StepAdvancedSettings({
           const toFamily = (left: string, right: any) => {
             const L = String(left || '').toLowerCase();
             const R = String(right || '').toLowerCase();
+            if (indicator && (L.includes(indicator) || R.includes(indicator))) return indicator;
             if (L.includes('rsi') || R.includes('rsi')) return 'rsi';
             if (L.includes('vwma') || R.includes('vwma')) return 'vwma';
             if (L.includes('ema') || R.includes('ema')) return 'ema';
@@ -470,6 +478,18 @@ export function StepAdvancedSettings({
       breadth: ["Breadth OK", "50", "%UpCoins"],
       vwma: ["Price", "VWMA Fast", "VWMA Slow", "VWMA", "0"],
     };
+    // If current indicator meta is available, build operands from meta (outputs + thresholds)
+    if (family === (indicatorFromURL || '') && currentMeta) {
+      const outputs = Array.isArray(currentMeta.outputs) ? currentMeta.outputs : [];
+      const thresholdParams = Array.isArray(currentMeta.params)
+        ? currentMeta.params.filter((p: any) => p.type === 'number' && ['upper','lower','middle'].includes(p.key))
+        : [];
+      const thresholds = thresholdParams.map((p: any) => String(p.default));
+      const label = currentMeta.identity?.label?.split('(')[0]?.trim() || family.toUpperCase();
+      const base = ['Price', '0'];
+      const ops = [label, ...outputs.map((o: any) => String(o).toUpperCase()), ...thresholds, ...base];
+      return Array.from(new Set(ops));
+    }
 
     if (!config?.operands) return defaultsByFamily[family] || ["Price", "Value"];
 
