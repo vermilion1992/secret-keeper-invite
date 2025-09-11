@@ -89,6 +89,8 @@ export function StepAdvancedSettings({
     maType: 'EMA',
     rsiOverbought: 70,
     rsiOversold: 30,
+    rsiMiddle: 50,
+    rsiSmooth: true,
     rsiSource: 'close',
     vwmaLength: 50,
     vwmaPriceSource: 'close',
@@ -154,6 +156,8 @@ export function StepAdvancedSettings({
     maType: 'EMA',
     rsiOverbought: 70,
     rsiOversold: 30,
+    rsiMiddle: 50,
+    rsiSmooth: true,
     rsiSource: 'close',
     vwmaLength: 50,
     vwmaPriceSource: 'close',
@@ -257,7 +261,7 @@ export function StepAdvancedSettings({
           osLevel: findParam('lower')?.default ?? 30,
         };
 
-        let finalParams = { ...baseParams };
+        let finalParams: Record<string, any> = { ...baseParams };
         let rules: any[] = [];
         let riskPrefills: any = {};
 
@@ -295,6 +299,8 @@ export function StepAdvancedSettings({
             rsiLength: Number(finalParams.length) || 14,
             rsiOverbought: Number(finalParams.obLevel) || 70,
             rsiOversold: Number(finalParams.osLevel) || 30,
+            rsiMiddle: Number(finalParams.middle) || 50,
+            rsiSmooth: typeof finalParams.smooth === 'boolean' ? finalParams.smooth : true,
             rsiSource: String(finalParams.source) || 'close',
           }));
         } else if (indicator === 'vwma') {
@@ -311,6 +317,7 @@ export function StepAdvancedSettings({
             if (op === '>' || op === '>=') return 'is_above';
             if (op === '<' || op === '<=') return 'is_below';
             if (op === 'crosses_above' || op === 'crosses_below') return op;
+            if (op === 'rising' || op === 'falling' || op === 'within' || op === 'outside') return op;
             return 'is_above';
           };
           
@@ -524,6 +531,10 @@ export function StepAdvancedSettings({
       { value: 'crosses_below', label: 'Crosses Below', tooltip: 'Triggers when left-hand series moves from above to below right-hand series on bar close.' },
       { value: 'is_above', label: 'Is Above', tooltip: 'True when left-hand value is greater than right-hand value.' },
       { value: 'is_below', label: 'Is Below', tooltip: 'True when left-hand value is less than right-hand value.' },
+      { value: 'within', label: 'Within Range', tooltip: 'True when left-hand value is within the right-hand band/range.' },
+      { value: 'outside', label: 'Outside Range', tooltip: 'True when left-hand value is outside the right-hand band/range.' },
+      { value: 'rising', label: 'Rising', tooltip: 'True when the left-hand series is increasing over recent bars.' },
+      { value: 'falling', label: 'Falling', tooltip: 'True when the left-hand series is decreasing over recent bars.' },
       { value: 'is_true', label: 'Is True', tooltip: 'Used for yes/no signals, e.g., MACD Histogram > 0 or Breadth_ok.' }
     ];
   };
@@ -914,9 +925,9 @@ export function StepAdvancedSettings({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="close">Close</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="hl2">HL2 (High+Low)/2</SelectItem>
+                            <SelectItem value="hlc3">HLC3 (High+Low+Close)/3</SelectItem>
+                            <SelectItem value="ohlc4">OHLC4 (Open+High+Low+Close)/4</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
