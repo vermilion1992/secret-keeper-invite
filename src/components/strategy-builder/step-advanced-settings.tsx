@@ -798,6 +798,7 @@ export function StepAdvancedSettings({
 
   const strategyKey = getSelectedStrategyKey();
   const indicatorFromURL = new URLSearchParams(window.location.search).get('indicator');
+  // Prioritize URL indicator over strategy families
   const families = indicatorFromURL ? [indicatorFromURL] : getStrategyFamilies(strategyKey);
   const operators = getAvailableOperators();
 
@@ -868,7 +869,10 @@ export function StepAdvancedSettings({
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Core indicator configurations for the {strategyKey.replace(/_/g, ' ')} strategy
+                {indicatorFromURL 
+                  ? `Configure parameters for the ${indicatorFromURL.toUpperCase()} indicator`
+                  : `Core indicator configurations for the ${strategyKey.replace(/_/g, ' ')} strategy`
+                }
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -879,8 +883,8 @@ export function StepAdvancedSettings({
                     {family.toUpperCase()} Settings
                   </h3>
                   
-                  {/* Dynamic Parameter Rendering */}
-                  {family === (indicatorFromURL || '') && currentMeta?.params && (
+                  {/* Dynamic Parameter Rendering - prioritize URL indicator */}
+                  {family === indicatorFromURL && currentMeta?.params && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {currentMeta.params.map((param: any) => (
                         <div key={param.key} className="space-y-3">
@@ -935,6 +939,14 @@ export function StepAdvancedSettings({
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+                  
+                  {/* Show message when URL indicator has no meta */}
+                  {family === indicatorFromURL && !currentMeta && (
+                    <div className="text-sm text-muted-foreground italic">
+                      No parameter configuration found for {family.toUpperCase()}. 
+                      Check that src/indicators/{indicatorFromURL}/meta.json exists.
                     </div>
                   )}
                   
@@ -1194,10 +1206,10 @@ export function StepAdvancedSettings({
                           Preview: <em>{getPreviewText(condition)}</em>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                        ))}
+                      </div>
+                    </div>
+                  )}
               
               {entryConditions.length >= getRuleCap() && (
                 <Alert>
