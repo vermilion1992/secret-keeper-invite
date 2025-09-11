@@ -299,13 +299,16 @@ export function StepAdvancedSettings({
         setHydrationData({ finalParams, rules, riskPrefills });
         setDynamicIndicatorParams(finalParams);
 
-        // Apply indicator settings immediately
+        // Apply indicator settings immediately (generic for any indicator)
+        setDynamicIndicatorParams(finalParams);
+        
+        // Also update legacy strategySettings for backward compatibility
         if (indicator === 'rsi') {
           setStrategySettings(prev => ({
             ...prev,
             rsiLength: Number(finalParams.length) || 14,
-            rsiOverbought: Number(finalParams.obLevel) || 70,
-            rsiOversold: Number(finalParams.osLevel) || 30,
+            rsiOverbought: Number(finalParams.upper) || 70,
+            rsiOversold: Number(finalParams.lower) || 30,
             rsiMiddle: Number(finalParams.middle) || 50,
             rsiSmooth: typeof finalParams.smooth === 'boolean' ? finalParams.smooth : true,
             rsiSource: String(finalParams.source) || 'close',
@@ -756,6 +759,10 @@ export function StepAdvancedSettings({
     return ruleTexts.join(connector) + '.';
   };
 
+  const updateDynamicParam = (key: string, value: any) => {
+    setDynamicIndicatorParams(prev => ({ ...prev, [key]: value }));
+  };
+
   const updateStrategySetting = (key: string, value: any) => {
     setStrategySettings(prev => ({ ...prev, [key]: value }));
   };
@@ -872,8 +879,67 @@ export function StepAdvancedSettings({
                     {family.toUpperCase()} Settings
                   </h3>
                   
-                  {/* Family-specific settings */}
-                  {family === 'ema' && (
+                  {/* Dynamic Parameter Rendering */}
+                  {family === (indicatorFromURL || '') && currentMeta?.params && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {currentMeta.params.map((param: any) => (
+                        <div key={param.key} className="space-y-3">
+                          <Label className="font-medium">{param.label}</Label>
+                          
+                          {/* Number/Integer Input */}
+                          {(param.type === 'number' || param.type === 'integer') && (
+                            <Input
+                              type="number"
+                              value={dynamicIndicatorParams[param.key] ?? param.default ?? 0}
+                              onChange={(e) => updateDynamicParam(param.key, Number(e.target.value))}
+                              min={param.min}
+                              max={param.max}
+                              step={param.step || (param.type === 'integer' ? 1 : 0.1)}
+                              className="bg-background/50"
+                            />
+                          )}
+                          
+                          {/* Boolean Switch */}
+                          {param.type === 'boolean' && (
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id={param.key}
+                                checked={dynamicIndicatorParams[param.key] !== undefined ? !!dynamicIndicatorParams[param.key] : !!param.default}
+                                onCheckedChange={(v) => updateDynamicParam(param.key, v)}
+                              />
+                              <Label htmlFor={param.key} className="text-sm">{param.label}</Label>
+                            </div>
+                          )}
+                          
+                          {/* Enum Select */}
+                          {param.type === 'enum' && param.options && (
+                            <Select 
+                              value={String(dynamicIndicatorParams[param.key] ?? param.default ?? param.options[0])} 
+                              onValueChange={(val) => updateDynamicParam(param.key, val)}
+                            >
+                              <SelectTrigger className="bg-background/50">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {param.options.map((option: string) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option === 'close' ? 'Close' :
+                                     option === 'hl2' ? 'HL2 (High+Low)/2' :
+                                     option === 'hlc3' ? 'HLC3 (High+Low+Close)/3' :
+                                     option === 'ohlc4' ? 'OHLC4 (Open+High+Low+Close)/4' :
+                                     option.charAt(0).toUpperCase() + option.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Legacy hardcoded settings for backward compatibility */}
+                  {family === 'ema' && !currentMeta && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label className="font-medium">EMA Fast Length</Label>
@@ -900,93 +966,7 @@ export function StepAdvancedSettings({
                     </div>
                   )}
                   
-                  {family === 'rsi' && (
-                    <>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-3">
-                          <Label className="font-medium">RSI Length</Label>
-                          <Input
-                            type="number"
-                            value={strategySettings.rsiLength}
-                            onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiLength: Number(e.target.value) }))}
-                            min="5"
-                            max="50"
-                            className="bg-background/50"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label className="font-medium">Overbought</Label>
-                          <Input
-                            type="number"
-                            value={strategySettings.rsiOverbought}
-                            onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiOverbought: Number(e.target.value) }))}
-                            min="60"
-                            max="90"
-                            className="bg-background/50"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label className="font-medium">Oversold</Label>
-                          <Input
-                            type="number"
-                            value={strategySettings.rsiOversold}
-                            onChange={(e) => setStrategySettings(prev => ({ ...prev, rsiOversold: Number(e.target.value) }))}
-                            min="10"
-                            max="40"
-                            className="bg-background/50"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-3 mt-6">
-                        <Label className="font-medium">Source</Label>
-                        <Select value={strategySettings.rsiSource as any} onValueChange={(val) => setStrategySettings(prev => ({ ...prev, rsiSource: val }))}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="close">Close</SelectItem>
-                            <SelectItem value="hl2">HL2 (High+Low)/2</SelectItem>
-                            <SelectItem value="hlc3">HLC3 (High+Low+Close)/3</SelectItem>
-                            <SelectItem value="ohlc4">OHLC4 (Open+High+Low+Close)/4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-                  
-                  {family === 'vwma' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label className="font-medium">VWMA Length</Label>
-                        <Input
-                          type="number"
-                          value={strategySettings.vwmaLength}
-                          onChange={(e) => setStrategySettings(prev => ({ ...prev, vwmaLength: Number(e.target.value) }))}
-                          min="2"
-                          max="500"
-                          className="bg-background/50"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label className="font-medium">Price Source</Label>
-                        <Select value={strategySettings.vwmaPriceSource as any} onValueChange={(val) => setStrategySettings(prev => ({ ...prev, vwmaPriceSource: val }))}>
-                          <SelectTrigger className="bg-background/50">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="close">Close</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="hl2">HL2</SelectItem>
-                            <SelectItem value="hlc3">HLC3</SelectItem>
-                            <SelectItem value="ohlc4">OHLC4</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                  {family === 'macd' && (
+                  {family === 'macd' && !currentMeta && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-3">
                         <Label className="font-medium">Fast Period</Label>
@@ -1018,58 +998,6 @@ export function StepAdvancedSettings({
                           onChange={(e) => setStrategySettings(prev => ({ ...prev, macdSignal: Number(e.target.value) }))}
                           min="5"
                           max="20"
-                          className="bg-background/50"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {family === 'bollinger' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label className="font-medium">Bollinger Period</Label>
-                        <Input
-                          type="number"
-                          value={strategySettings.bbPeriod}
-                          onChange={(e) => setStrategySettings(prev => ({ ...prev, bbPeriod: Number(e.target.value) }))}
-                          min="10"
-                          max="50"
-                          className="bg-background/50"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label className="font-medium">Standard Deviation</Label>
-                        <Input
-                          type="number"
-                          value={2}
-                          min="1"
-                          max="3"
-                          step="0.1"
-                          className="bg-background/50"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {family === 'breadth' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label className="font-medium">Breadth Period</Label>
-                        <Input
-                          type="number"
-                          value={20}
-                          min="5"
-                          max="50"
-                          className="bg-background/50"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label className="font-medium">Threshold</Label>
-                        <Input
-                          type="number"
-                          value={50}
-                          min="30"
-                          max="70"
                           className="bg-background/50"
                         />
                       </div>
